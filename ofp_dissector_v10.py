@@ -7,6 +7,8 @@ def get_ofp_error(error_type, code):
             return 'HelloFailed', 'Incompatible'
         elif code == 1:
             return 'HelloFailed', 'EPerm'
+        else:
+            return 'HelloFailed', 'UnknownCode'
     elif error_type == 1:
         if code == 0:
             return 'BadRequest', 'BadVersion'
@@ -26,6 +28,8 @@ def get_ofp_error(error_type, code):
             return 'BadRequest', 'BufferEmpty'
         elif code == 8:
             return 'BadRequest', 'BufferUnknown'
+        else:
+            return 'BadRequest', 'UnknownCode'
     elif error_type == 2:
         if code == 0:
             return 'Bad Action', 'BadType'
@@ -45,6 +49,8 @@ def get_ofp_error(error_type, code):
             return 'Bad Action', 'TooMany'
         elif code == 9:
             return 'Bad Action', 'BadQueue'
+        else:
+            return 'Bad Action', 'UnknownCode'
     elif error_type == 3:
         if code == 0:
             return 'FlowMod Failed', 'AllTablesFull'
@@ -58,11 +64,15 @@ def get_ofp_error(error_type, code):
             return 'FlowMod Failed', 'BadCommand'
         elif code == 6:
             return 'FlowMod Failed', 'Unsupported'
+        else:
+            return 'FlowMod Failed', 'UnknownCode'
     elif error_type == 4:
         if code == 0:
             return 'PortMod Failed', 'BadPort'
         elif code == 1:
             return 'PortMod Failed', 'BadHwAddr'
+        else:
+            return 'PortMod Failed', 'UnknownCode'
     elif error_type == 5:
         if code == 0:
             return 'QueueOpFailed', 'BadPort'
@@ -70,7 +80,10 @@ def get_ofp_error(error_type, code):
             return 'QueueOpFailed', 'BadQueue'
         elif code == 2:
             return 'QueueOpFailed', 'EPerm'
-
+        else:
+            return 'QueueOpFailed', 'UnknownCode'
+    else
+        return 'UnknownType', 'UnknownCode'
 
 def get_ofp_command(command):
     if command == 0:
