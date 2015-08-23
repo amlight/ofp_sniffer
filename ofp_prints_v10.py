@@ -43,6 +43,10 @@ def print_openflow_header(of_version, of_type, of_length, of_xid):
         + ' Length: ' + str(of_length) + ' XID: ' + str(colored(of_xid, 'red'))
 
 
+def print_of_hello(of_xid):
+    print str(of_xid) + ' OpenFlow Hello'
+
+
 def print_of_error(of_xid, nameCode, typeCode):
     print str(of_xid) + ' OpenFlow Error - Type: ' + colored(nameCode, 'red') + \
         ' Code: ' + colored(typeCode, 'red')

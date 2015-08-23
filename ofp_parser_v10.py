@@ -54,7 +54,8 @@ def process_ofp_type(of_type, packet, h_size, of_xid):
 
 
 def parse_Hello(packet, h_size, of_xid):
-    return 0
+    ofp_prints_v10.print_of_hello(of_xid)
+    return 1
 
 
 def parse_Error(packet, h_size, of_xid):

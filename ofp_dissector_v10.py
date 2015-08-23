@@ -82,7 +82,7 @@ def get_ofp_error(error_type, code):
             return 'QueueOpFailed', 'EPerm'
         else:
             return 'QueueOpFailed', 'UnknownCode'
-    else
+    else:
         return 'UnknownType', 'UnknownCode'
 
 def get_ofp_command(command):
