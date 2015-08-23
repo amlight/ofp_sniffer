@@ -81,9 +81,11 @@ def get_ofp_error(error_type, code):
         elif code == 2:
             return 'QueueOpFailed', 'EPerm'
         else:
-            return 'QueueOpFailed', 'UnknownCode'
+            return 'QueueOpFailed', 'UnknownCode(' + str(code) + ')'
     else:
-        return 'UnknownType', 'UnknownCode'
+        return (('UnknownType(' + str(error_type) + ')'),
+                ('UnknownCode(' + str(code) + ')'))
+
 
 def get_ofp_command(command):
     if command == 0:
@@ -146,6 +148,7 @@ def get_action(action_type, length, payload):
     elif action_type == int('ffff', 16):
         return 'Vendor'
 
+
 def get_flow_removed_reason(ofrem_reason):
     if ofrem_reason == 0:
         return 'IdleTimeOut'
@@ -155,4 +158,3 @@ def get_flow_removed_reason(ofrem_reason):
         return 'Delete'
     else:
         return 'PacketMalFormed'
-
