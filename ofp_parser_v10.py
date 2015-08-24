@@ -210,20 +210,37 @@ def parse_FlowMod(packet, h_size, of_xid):
                                   ofmod_prio, ofmod_buffer_id,
                                   ofmod_out_port, ofmod_flags)
 
-    # Actions: Header, Port plus each possible
+    # Actions: Header = 4 , plus each possible action
+    # Payload varies:
+    #  4 for types 0,1,2,6,7,8,9,a,ffff
+    #  0 for type 3
+    #  12 for types 4,5,b
     start = h_size+64
+    action_header = 4
     while (1):
-        ofp_action = packet[start:start+4]
+        ofp_action = packet[start:start + action_header]
         if len(ofp_action) > 0:
+            print str(len(ofp_action))
+            # Get type and length
             ofa = unpack('!HH', ofp_action)
             ofa_type = ofa[0]
             ofa_length = ofa[1]
-            ofa_action_payload = packet[start+4:start+8]
+
+            start = start + action_header
+            if ofa_type == 4 or ofa_type == 5 or ofa_type == int('b', 16):
+                total_length = 12
+                ofa_action_payload = packet[start:start + 12]
+            else:
+                total_length = 4
+                ofa_action_payload = packet[start:start + 4]
+
             ofp_prints_v10.print_ofp_action(of_xid, ofa_type, ofa_length,
                                             ofa_action_payload)
-            start = start + 4
+            #
+            start = start + total_length
+            print 'Tst'
         else:
-            break
+            return 1
     return 1
 
 

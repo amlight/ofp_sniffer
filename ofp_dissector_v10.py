@@ -120,33 +120,51 @@ def get_action(action_type, length, payload):
         return type_0[0], type_0[1]
     # 1 - SetVLANID. Returns VID and pad
     elif action_type == 1:
-        type_0 = unpack('!HH', payload)
-        return type_0[0], type_0[1]
+        type_1 = unpack('!HH', payload)
+        return type_1[0], type_1[1]
     # 2 - SetVLANPCP
     elif action_type == 2:
-        return 'SetVLANPCP'
+        type_2 = unpack('!B3s', payload)
+        return type_2[0], type_2[1]
     # 3 - StripVLAN
     elif action_type == 3:
-        return 'StripVLAN'
+        pass
     # 4 - SetDLSrc
     elif action_type == 4:
-        return 'SetDLSrc'
+        type_4 = unpack('6s6s', payload)
+        return type_4[0], type_4[1]
+    # 5 - SetDLDst
     elif action_type == 5:
-        return 'SetDLDst'
+        type_5 = unpack('6s6s', payload)
+        return type_5[0], type_5[1]
+    # 6 - SetNWSrc
     elif action_type == 6:
-        return 'SetNWSrc'
+        type_6 = unpack('L', payload)
+        return type_6[0]
+    # 7 - SetNWDst
     elif action_type == 7:
-        return 'SetNWDst'
+        type_7 = unpack('L', payload)
+        return type_7[0]
+    # 8 - SetNWTos
     elif action_type == 8:
-        return 'SetNWTos'
+        type_8 = unpack('B3s', payload)
+        return type_8[0], type_8[1]
+    # 9 - SetTPSrc
     elif action_type == 9:
-        return 'SetTPSc'
+        type_9 = unpack('HH', payload)
+        return type_9[0], type_9[1]
+    # a - SetTPDst
     elif action_type == int('a', 16):
-        return 'SetTPDst'
+        type_a = unpack('HH', payload)
+        return type_a[0], type_a[1]
+    # b - Enqueue
     elif action_type == int('b', 16):
-        return 'Enqueue'
+        type_b = unpack('H6sL', payload)
+        return type_b[0], type_b[1], type_b[2]
+    # ffff - Vendor
     elif action_type == int('ffff', 16):
-        return 'Vendor'
+        type_f = unpack('L', payload)
+        return type_f[0]
 
 
 def get_flow_removed_reason(ofrem_reason):
