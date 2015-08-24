@@ -4,8 +4,10 @@ import datetime
 import pcapy
 import sys
 from ofp_prints_v10 import print_layer1, print_layer2, print_layer3, \
-    print_tcp, print_openflow_header
+    print_tcp, print_openflow_header, print_minimal
 import ofp_parser_v10
+
+print_min = 1
 
 
 def main(argv):
@@ -74,11 +76,10 @@ def parse_packet(packet, date, getlen, caplen):
             if flag_psh == 8:
                 remaining_bytes = caplen - h_size
                 print_header_once = 0
+                start = h_size
                 while (remaining_bytes > 0):
-                    print 'remaining_bytes before minus = ' + str(remaining_bytes)
                     # Get OpenFlow Header = 8 Bytes
-                    of_header = packet[h_size:8+h_size]
-                    print 'h_size : ' + str(h_size) + ' and caplen: ' + str(caplen)
+                    of_header = packet[start:8+start]
                     try:
                         ofh = unpack('!BBHL', of_header)
                         of_version = ofh[0]
@@ -88,48 +89,56 @@ def parse_packet(packet, date, getlen, caplen):
 
                         # In case there are multiple flow_mods
                         remaining_bytes = remaining_bytes - of_length
-                        print 'remaining_bytes = ' + str(remaining_bytes)
 
                         if of_type == 10 or of_type == 13 or of_type == 16\
                            or of_type == 17 or of_type == 18 \
                            or of_type == 19:
                             # If it is PacketIn, PacketOut, StatsReq,
                             # StatsRes or BarrierReq/Res we ignore for now
-                            print 'OpenFlow packet filtered. Type: ' + str(of_type) + '\n'
                             return
 
                         # Starts printing
                         if print_header_once == 0:
-                            print_layer1(date, getlen, caplen)
-                            print_layer2(packet[0:6], packet[6:12],
-                                         eth_protocol)
-                            print_layer3(version, ihl, ttl, protocol, s_addr,
-                                         d_addr)
-                            print_tcp(source_port, dest_port, sequence,
-                                      acknowledgement, tcph_length, tcph[5],
-                                      flag_cwr, flag_ece,
-                                      flag_urg, flag_ack, flag_psh, flag_rst,
-                                      flag_syn, flag_fyn)
+                            if print_min == 1:
+                                print_minimal(date, s_addr, source_port, d_addr,
+                                              dest_port)
+                            else:
+                                print_layer1(date, getlen, caplen)
+                                print_layer2(packet[0:6], packet[6:12],
+                                             eth_protocol)
+                                print_layer3(version, ihl, ttl, protocol,
+                                             s_addr, d_addr)
+                                print_tcp(source_port, dest_port, sequence,
+                                          acknowledgement, tcph_length,
+                                          tcph[5], flag_cwr, flag_ece,
+                                          flag_urg, flag_ack, flag_psh,
+                                          flag_rst, flag_syn, flag_fyn)
                             print_header_once = 1
 
                         print_openflow_header(of_version, of_type, of_length,
                                               of_xid)
 
-                        # Process and Print OF body
-                        # OF_Header lenght = 8
-                        start = h_size + 8
-                        this_OF_packet = packet[start:start+of_length-8]
-                        if not ofp_parser_v10.process_ofp_type(of_type,
-                                                               this_OF_packet,
-                                                               0, of_xid):
-                            print str(of_xid) + ' OpenFlow OFP_Type ' \
-                                + str(of_type) + ' not implemented \n'
+                        # If OpenFlow version is 1
+                        if of_version == int('1', 16):
+                            # Process and Print OF body
+                            # OF_Header lenght = 8
+                            start = h_size + 8
+                            this_packet = packet[start:start+of_length-8]
+                            if not ofp_parser_v10.process_ofp_type(of_type,
+                                                                   this_packet,
+                                                                   0, of_xid):
+                                print str(of_xid) + ' OpenFlow OFP_Type ' \
+                                    + str(of_type) + ' not implemented \n'
+                                return
+                        else:
+                            print
                             return
-                        print 'Here'
+
                     except Exception as e:
                         print e
                         print 'h_size : ' + str(h_size) + ' and caplen: ' + \
-                            str(caplen) + 'remaining_bytes = ' + str(remaining_bytes)
+                            str(caplen) + ' remaining_bytes = ' \
+                            + str(remaining_bytes)
                         print_layer1(date, getlen, caplen)
                         print_layer2(packet[0:6], packet[6:12], eth_protocol)
                         print_layer3(version, ihl, ttl, protocol, s_addr,
@@ -139,6 +148,9 @@ def parse_packet(packet, date, getlen, caplen):
                                   flag_cwr, flag_ece, flag_urg, flag_ack,
                                   flag_psh, flag_rst, flag_syn, flag_fyn)
                         print 'OpenFlow header not complete. Ignoring packet.'
+
+                    # Get next packt
+                    start = start + of_length
                 print
 
 

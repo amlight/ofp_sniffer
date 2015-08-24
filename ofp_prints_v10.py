@@ -8,6 +8,12 @@ def eth_addr(a):
     return mac
 
 
+def print_minimal(date, s_addr, source_port, d_addr, dest_port):
+    print str(date) + ' ' +  colored(str(s_addr), 'blue') + ':' + \
+        colored(str(source_port), 'blue') + ' -> ' + \
+        colored(str(d_addr), 'blue') + ':' + colored(str(dest_port), 'blue')
+
+
 def print_layer1(date, getlen, caplen):
     print ('%s: captured %d bytes, truncated to %d bytes' %
            (date, getlen, caplen))

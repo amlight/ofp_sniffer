@@ -220,7 +220,6 @@ def parse_FlowMod(packet, h_size, of_xid):
     while (1):
         ofp_action = packet[start:start + action_header]
         if len(ofp_action) > 0:
-            print str(len(ofp_action))
             # Get type and length
             ofa = unpack('!HH', ofp_action)
             ofa_type = ofa[0]
@@ -236,9 +235,8 @@ def parse_FlowMod(packet, h_size, of_xid):
 
             ofp_prints_v10.print_ofp_action(of_xid, ofa_type, ofa_length,
                                             ofa_action_payload)
-            #
+            # Next packet would start at..
             start = start + total_length
-            print 'Tst'
         else:
             return 1
     return 1
