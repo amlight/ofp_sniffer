@@ -134,6 +134,12 @@ def parse_packet(packet, date, getlen, caplen):
                             print
                             return
 
+                        # Do not process extra data from Hello and Error.
+                        # Maybe in the future.
+                        if (of_type == 0 or of_type == 1)
+                            print
+                            return
+
                     except Exception as e:
                         print e
                         print 'h_size : ' + str(h_size) + ' and caplen: ' + \
