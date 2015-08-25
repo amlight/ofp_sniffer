@@ -106,10 +106,10 @@ def print_ofp_flow_removed(xid, ofrem_cookie, ofrem_priority, ofrem_reason,
         str(ofrem_priority) + ' Reason: ' + \
         colored(str(
             ofp_dissector_v10.get_flow_removed_reason(ofrem_reason)), 'green')\
-        + ' Pad: ' + str(len(ofrem_pad)) \
+        + ' Pad: ' + str(ofrem_pad) \
         + ' Duration Secs/NSecs ' + str(ofrem_duration_sec) + '/' + \
         str(ofrem_duration_nsec) + ' Idle Timeout: ' + str(ofrem_idle_timeout)\
-        + ' Pad2/Pad3: ' + str(len(ofrem_pad2)) + '/' + str(len(ofrem_pad3)) + \
+        + ' Pad2/Pad3: ' + str(ofrem_pad2) + '/' + str(ofrem_pad3) + \
         ' Packet Count: ' + str(ofrem_packet_count) + ' Byte Count: ' + \
         str(ofrem_byte_count)
 
