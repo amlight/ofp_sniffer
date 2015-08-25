@@ -130,10 +130,11 @@ def parse_packet(packet, date, getlen, caplen):
                                 print str(of_xid) + ' OpenFlow OFP_Type ' \
                                     + str(of_type) + ' not implemented \n'
                                 return
-                            # Get next packet
-                            start = start + of_length - 8
+                            else:
+                                # Get next packet
+                                start = start + of_length - 8
                         else:
-                            print
+                            print 'Only OpenFlow 1.0 is supported \n'
                             return
 
                         # Do not process extra data from Hello and Error.

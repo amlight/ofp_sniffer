@@ -1,5 +1,7 @@
 from termcolor import colored
 import ofp_dissector_v10
+import socket
+import struct
 
 
 def eth_addr(a):
@@ -9,7 +11,7 @@ def eth_addr(a):
 
 
 def print_minimal(date, s_addr, source_port, d_addr, dest_port):
-    print str(date) + ' ' +  colored(str(s_addr), 'blue') + ':' + \
+    print str(date) + ' ' + colored(str(s_addr), 'blue') + ':' + \
         colored(str(source_port), 'blue') + ' -> ' + \
         colored(str(d_addr), 'blue') + ':' + colored(str(dest_port), 'blue')
 
@@ -58,6 +60,10 @@ def print_of_error(of_xid, nameCode, typeCode):
         ' Code: ' + colored(typeCode, 'red')
 
 
+def get_ip_from_long(long_ip):
+    return (socket.inet_ntoa(struct.pack('!L', long_ip)))
+
+
 def print_ofp_match(xid, ofm_wildcards, ofm_in_port, ofm_dl_src, ofm_dl_dst,
                     ofm_dl_vlan, ofm_dl_type, ofm_pcp, ofm_pad, ofm_nw_tos,
                     ofm_nw_prot, ofm_pad2, ofm_nw_src, ofm_nw_dst, ofm_tp_src,
@@ -70,7 +76,8 @@ def print_ofp_match(xid, ofm_wildcards, ofm_in_port, ofm_dl_src, ofm_dl_dst,
             ' pcp: ' + str(ofm_pcp) + ' pad: ' + str(ofm_pad) + \
             ' nw_tos: ' + str(ofm_nw_tos) + ' nw_prot: ' + \
             str(ofm_nw_prot) + ' pad2: ' + str(ofm_pad2) + ' nw_src: ' \
-            + str(ofm_nw_src) + ' nw_dst: ' + str(ofm_nw_dst) + ' tp_src: '\
+            + colored(str(get_ip_from_long(ofm_nw_src)), 'green') + ' nw_dst: ' + \
+            colored(str(get_ip_from_long(ofm_nw_dst)), 'green') + ' tp_src: '\
             + str(ofm_tp_src) + ' tp_dst: ' + str(ofm_tp_dst)
 
 
@@ -97,11 +104,12 @@ def print_ofp_flow_removed(xid, ofrem_cookie, ofrem_priority, ofrem_reason,
     print str(xid) + ' OpenFlow FlowRemoved (11) Body - Cookie: ' + \
         str('0x' + format(ofrem_cookie, '02x')) + ' Priority: ' + \
         str(ofrem_priority) + ' Reason: ' + \
-        str(ofp_dissector_v10.get_flow_removed_reason(ofrem_reason)) + \
-        ' Pad: ' + str(ofrem_pad) \
+        colored(str(
+            ofp_dissector_v10.get_flow_removed_reason(ofrem_reason)), 'green')\
+        + ' Pad: ' + str(len(ofrem_pad)) \
         + ' Duration Secs/NSecs ' + str(ofrem_duration_sec) + '/' + \
         str(ofrem_duration_nsec) + ' Idle Timeout: ' + str(ofrem_idle_timeout)\
-        + ' Pad2/Pad3: ' + str(ofrem_pad2) + '/' + str(ofrem_pad3) + \
+        + ' Pad2/Pad3: ' + str(len(ofrem_pad2)) + '/' + str(len(ofrem_pad3)) + \
         ' Packet Count: ' + str(ofrem_packet_count) + ' Byte Count: ' + \
         str(ofrem_byte_count)
 
