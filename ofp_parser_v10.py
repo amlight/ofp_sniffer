@@ -112,6 +112,13 @@ def parse_FlowRemoved(packet, h_size, of_xid):
      ofm_pad, ofm_dl_type, ofm_nw_tos, ofm_nw_prot, ofm_pad2, ofm_nw_src,
      ofm_nw_dst, ofm_tp_src, ofm_tp_dst) = _parse_OFMatch(packet, h_size)
 
+    ofp_prints_v10.print_ofp_match(of_xid, ofm_wildcards, ofm_in_port,
+                                   ofm_dl_src, ofm_dl_dst,
+                                   ofm_dl_vlan, ofm_dl_type, ofm_pcp,
+                                   ofm_pad, ofm_nw_tos, ofm_nw_prot,
+                                   ofm_pad2, ofm_nw_src, ofm_nw_dst,
+                                   ofm_tp_src, ofm_tp_dst)
+
     of_rem_body = packet[h_size+40:h_size+40+40]
     ofrem = unpack('!8sHBBLLHBB8s8s', of_rem_body)
     ofrem_cookie = ofrem[0] if not len(ofrem[0]) else 0

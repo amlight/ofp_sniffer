@@ -122,7 +122,7 @@ def parse_packet(packet, date, getlen, caplen):
                         if of_version == int('1', 16):
                             # Process and Print OF body
                             # OF_Header lenght = 8
-                            start = h_size + 8
+                            start = start + 8
                             this_packet = packet[start:start+of_length-8]
                             if not ofp_parser_v10.process_ofp_type(of_type,
                                                                    this_packet,
@@ -130,13 +130,15 @@ def parse_packet(packet, date, getlen, caplen):
                                 print str(of_xid) + ' OpenFlow OFP_Type ' \
                                     + str(of_type) + ' not implemented \n'
                                 return
+                            # Get next packet
+                            start = start + of_length - 8
                         else:
                             print
                             return
 
                         # Do not process extra data from Hello and Error.
                         # Maybe in the future.
-                        if (of_type == 0 or of_type == 1)
+                        if (of_type == 0 or of_type == 1):
                             print
                             return
 
@@ -155,8 +157,6 @@ def parse_packet(packet, date, getlen, caplen):
                                   flag_psh, flag_rst, flag_syn, flag_fyn)
                         print 'OpenFlow header not complete. Ignoring packet.'
 
-                    # Get next packt
-                    start = start + of_length
                 print
 
 

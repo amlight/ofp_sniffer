@@ -62,7 +62,7 @@ def print_ofp_match(xid, ofm_wildcards, ofm_in_port, ofm_dl_src, ofm_dl_dst,
                     ofm_dl_vlan, ofm_dl_type, ofm_pcp, ofm_pad, ofm_nw_tos,
                     ofm_nw_prot, ofm_pad2, ofm_nw_src, ofm_nw_dst, ofm_tp_src,
                     ofm_tp_dst):
-	print str(xid) + ' OpenFlow FLOW_MOD Match - Wildcard: ' + str(ofm_wildcards) \
+	print str(xid) + ' OpenFlow Flow_Mod(14) Match - Wildcard: ' + str(ofm_wildcards) \
             + ' in_port: ' + colored(str(ofm_in_port), 'green') + ' dl_src: ' + \
             str(eth_addr(ofm_dl_src)) + ' dl_dst: ' + \
             str(eth_addr(ofm_dl_dst)) + ' dl_vlan: ' + colored(str(ofm_dl_vlan), 'green') \
@@ -93,7 +93,8 @@ def print_ofp_flow_removed(xid, ofrem_cookie, ofrem_priority, ofrem_reason,
                            ofrem_duration_nsec, ofrem_idle_timeout,
                            ofrem_pad2, ofrem_pad3, ofrem_packet_count,
                            ofrem_byte_count):
-    print str(xid) + ' OpenFlow FlowRemoved Body - Cookie: ' + \
+
+    print str(xid) + ' OpenFlow FlowRemoved (11) Body - Cookie: ' + \
         str('0x' + format(ofrem_cookie, '02x')) + ' Priority: ' + \
         str(ofrem_priority) + ' Reason: ' + \
         str(ofp_dissector_v10.get_flow_removed_reason(ofrem_reason)) + \
