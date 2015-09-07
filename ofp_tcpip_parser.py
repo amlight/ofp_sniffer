@@ -11,7 +11,9 @@ def get_ethernet_frame(packet):
     eth_header = packet[:eth_length]
     dst_mac, src_mac, prot = unpack('!6s6sH', eth_header)
     eth_protocol = socket.ntohs(prot)
-    return src_mac, dst_mac, eth_protocol, eth_length
+    eth_frame = {'src_mac': src_mac, 'dst_mac': dst_mac,
+                 'protocol': eth_protocol, 'length': eth_length}
+    return eth_frame
 
 
 def get_ip_packet(packet, eth_length):
@@ -29,7 +31,10 @@ def get_ip_packet(packet, eth_length):
     protocol = iph[6]
     s_addr = socket.inet_ntoa(iph[8])
     d_addr = socket.inet_ntoa(iph[9])
-    return version, ihl, iph_length, ttl, protocol, s_addr, d_addr
+    ip_pkt = {'version': version, 'ihl': ihl, 'length': iph_length,
+              'ttl': ttl, 'protocol': protocol, 's_addr': s_addr,
+              'd_addr': d_addr}
+    return ip_pkt
 
 
 def get_tcp_stream(packet, header_size):
@@ -55,9 +60,14 @@ def get_tcp_stream(packet, header_size):
     flag_rst = flags & 0x04
     flag_syn = flags & 0x02
     flag_fyn = flags & 0x01
-    return source_port, dest_port, sequence, acknowledgement, tcph_length, \
-        flag_cwr, flag_ece, flag_urg, flag_ack, flag_psh, flag_rst, \
-        flag_syn, flag_fyn
+    tcp_stream = {'source_port': source_port, 'dest_port': dest_port,
+                  'sequence': sequence, 'acknowledgement': acknowledgement,
+                  'length': tcph_length, 'flag_cwr': flag_cwr,
+                  'flag_ece': flag_ece, 'flag_urg': flag_urg,
+                  'flag_ack': flag_ack, 'flag_psh': flag_psh,
+                  'flag_rst': flag_rst, 'flag_syn': flag_syn,
+                  'flag_fyn': flag_fyn}
+    return tcp_stream
 
 
 def get_udp_datagram():
@@ -77,11 +87,14 @@ def get_openflow_header(packet, start):
         of_type = ofh[1]
         of_length = ofh[2]
         of_xid = ofh[3]
-        return of_version, of_type, of_length, of_xid
+        of_header = {'version': of_version, 'type': of_type,
+                     'length': of_length, 'xid': of_xid}
+        return of_header
 
     except Exception as exception:
-        print (exception)
-        return -1
+        print exception
+        of_header['version'] = -1
+        return of_header
 
 
 def get_lldp():

@@ -153,69 +153,73 @@ def parse_PacketOut(packet, h_size, of_xid):
     return 1
 
 
+def _process_wildcard(wcard):
+    wildcard = {1: 'in_port',
+                2: 'dl_vlan',
+                4: 'dl_src',
+                8: 'dl_dst',
+                16: 'dl_type',
+                32: 'nw_prot',
+                64: 'tp_src',
+                128: 'tp_dst',
+                1048576: 'pcp',
+                2097152: 'nw_tos'}
+
+    return wildcard.get(wcard)
+
+
 def _parse_OFMatch(packet, h_size):
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
-    ofm_wildcards = ofm[0]
-    ofm_in_port = ofm[1]
-    ofm_dl_src = ofm[2]
-    ofm_dl_dst = ofm[3]
-    ofm_dl_vlan = ofm[4]
-    ofm_pcp = ofm[5]
-    ofm_pad = ofm[6]
-    ofm_dl_type = ofm[7]
-    ofm_nw_tos = ofm[8]
-    ofm_nw_prot = ofm[9]
-    ofm_pad2 = ofm[10]
-    ofm_nw_src = ofm[11]
-    ofm_nw_dst = ofm[12]
-    ofm_tp_src = ofm[13]
-    ofm_tp_dst = ofm[14]
+    wildcards = ofm[0]
+    dl_src = ofp_prints_v10.eth_addr(ofm[2])
+    dl_dst = ofp_prints_v10.eth_addr(ofm[3])
 
-    return (ofm_wildcards, ofm_in_port, ofm_dl_src, ofm_dl_dst, ofm_dl_vlan,
-            ofm_pcp, ofm_pad, ofm_dl_type, ofm_nw_tos, ofm_nw_prot, ofm_pad2,
-            ofm_nw_src, ofm_nw_dst, ofm_tp_src, ofm_tp_dst)
+    ofmatch = {'wildcards': ofm[0], 'in_port': ofm[1], 'dl_src': dl_src,
+               'dl_dst': dl_dst, 'dl_vlan': ofm[4], 'pcp': ofm[5],
+               'dl_type': ofm[7], 'nw_tos': ofm[8], 'nw_prot': ofm[9],
+               'nw_src': ofm[11], 'nw_dst': ofm[12], 'tp_src': ofm[13],
+               'tp_dst': ofm[14]}
+
+    if wildcards == ((1 << 22) - 1):
+        ofmatch = {}
+        return ofmatch
+    else:
+        for i in range(0, 8):
+            mask = 2**i
+            aux = wildcards & mask
+            if aux != 0:
+                ofmatch.pop(_process_wildcard(mask))
+
+        for i in range(20, 22):
+            mask = 2**i
+            aux = wildcards & mask
+            if aux != 0:
+                ofmatch.pop(_process_wildcard(mask))
+
+    return ofmatch
 
 
 def _parse_OFBody(packet, h_size):
     of_mod_body = packet[h_size+40:h_size+40+24]
     ofmod = unpack('!8sHHHHLHH', of_mod_body)
     ofmod_cookie = ofmod[0] if not len(ofmod[0]) else 0
-    ofmod_command = ofmod[1]
-    ofmod_idle_timeout = ofmod[2]
-    ofmod_hard_timeout = ofmod[3]
-    ofmod_prio = ofmod[4]
-    ofmod_buffer_id = ofmod[5]
-    ofmod_out_port = ofmod[6]
-    ofmod_flags = ofmod[7]
 
-    return (ofmod_cookie, ofmod_command, ofmod_idle_timeout, ofmod_idle_timeout,
-            ofmod_hard_timeout, ofmod_prio, ofmod_buffer_id, ofmod_out_port,
-            ofmod_flags)
+    ofbody = {'cookie': ofmod_cookie, 'command': ofmod[1],
+              'idle_timeout': ofmod[2], 'hard_timeout': ofmod[3],
+              'priority': ofmod[4], 'buffer_id': ofmod[5],
+              'buffer_id': ofmod[5], 'out_port': ofmod[6],
+              'flags': ofmod[7]}
+    return ofbody
 
 
 def parse_FlowMod(packet, h_size, of_xid):
 
-    (ofm_wildcards, ofm_in_port, ofm_dl_src, ofm_dl_dst, ofm_dl_vlan, ofm_pcp,
-        ofm_pad, ofm_dl_type, ofm_nw_tos, ofm_nw_prot, ofm_pad2, ofm_nw_src,
-        ofm_nw_dst, ofm_tp_src, ofm_tp_dst) = _parse_OFMatch(packet, h_size)
+    ofmatch = _parse_OFMatch(packet, h_size)
+    ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
 
-    ofp_prints_v10.print_ofp_match(of_xid, ofm_wildcards, ofm_in_port,
-                                   ofm_dl_src, ofm_dl_dst,
-                                   ofm_dl_vlan, ofm_dl_type, ofm_pcp,
-                                   ofm_pad, ofm_nw_tos, ofm_nw_prot,
-                                   ofm_pad2, ofm_nw_src, ofm_nw_dst,
-                                   ofm_tp_src, ofm_tp_dst)
-
-    (ofmod_cookie, ofmod_command, ofmod_idle_timeout, ofmod_idle_timeout,
-     ofmod_hard_timeout, ofmod_prio, ofmod_buffer_id, ofmod_out_port,
-     ofmod_flags) = _parse_OFBody(packet, h_size)
-
-    ofp_prints_v10.print_ofp_body(of_xid, ofmod_cookie, ofmod_command,
-                                  ofmod_idle_timeout,
-                                  ofmod_hard_timeout,
-                                  ofmod_prio, ofmod_buffer_id,
-                                  ofmod_out_port, ofmod_flags)
+    ofbody = _parse_OFBody(packet, h_size)
+    ofp_prints_v10.print_ofp_body(ofbody)
 
     # Actions: Header = 4 , plus each possible action
     # Payload varies:

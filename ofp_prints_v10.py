@@ -10,10 +10,23 @@ def eth_addr(a):
     return mac
 
 
-def print_minimal(date, s_addr, source_port, d_addr, dest_port):
-    print str(date) + ' ' + colored(str(s_addr), 'blue') + ':' + \
-        colored(str(source_port), 'blue') + ' -> ' + \
-        colored(str(d_addr), 'blue') + ':' + colored(str(dest_port), 'blue')
+def print_headers(print_min, date, getlen, caplen, eth, ip, tcp):
+    if print_min == 1:
+        print_minimal(date, getlen, ip, tcp)
+    else:
+        print_layer1(date, getlen, caplen)
+        print_layer2(eth)
+        print_layer3(ip)
+        print_tcp(tcp)
+
+
+def print_minimal(date, getlen, ip, tcp):
+    print str(date) + ' ' + \
+        colored(str(ip['s_addr']), 'blue') + ':' + \
+        colored(str(tcp['source_port']), 'blue') + ' -> ' + \
+        colored(str(ip['d_addr']), 'blue') + ':' + \
+        colored(str(tcp['dest_port']), 'blue') + ' Size: ' + \
+        str(getlen)
 
 
 def print_layer1(date, getlen, caplen):
@@ -21,34 +34,33 @@ def print_layer1(date, getlen, caplen):
            (date, getlen, caplen))
 
 
-def print_layer2(dst_mac, src_mac, eth_protocol):
-    print 'Destination MAC: ' + eth_addr(dst_mac) + ' Source MAC: ' + \
-        eth_addr(src_mac) + ' Protocol: ' + str(eth_protocol)
+def print_layer2(eth):
+    print ('Destination MAC: %s Source MAC: %s Protocol: %d' %
+           (eth_addr(eth['dst_mac']), eth_addr(eth['src_mac']),
+            eth['protocol']))
 
 
-def print_layer3(version, ihl, ttl, protocol, s_addr, d_addr):
-    print 'IP Version: ' + str(version) + ' IP Header Length: ' + str(ihl * 4) \
-        + ' TTL: ' + str(ttl) + ' Protocol: ' + str(protocol) \
-        + ' Source Address: ' + colored(str(s_addr), 'blue') + \
-        ' Destination Address: ' + colored(str(d_addr), 'blue')
+def print_layer3(ip):
+    print (('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '
+           'Source Address: %s Destination Address: %s') %
+           (ip['version'], (ip['ihl'] * 4), ip['ttl'], ip['protocol'],
+            colored(ip['s_addr'], 'blue'),
+            colored(ip['d_addr'], 'blue')))
 
 
-def print_tcp(source_port, dest_port, sequence, acknowledgement, tcph_length,
-              flags, flag_cwr, flag_ece, flag_urg, flag_ack, flag_psh, flag_rst,
-              flag_syn, flag_fyn):
-    print 'TCP Source Port: ' + str(source_port) + ' Dest Port: ' + \
-        str(dest_port) + ' Sequence Number: ' + str(sequence) + \
-        ' Acknowledgement: ' + str(acknowledgement) + \
-        ' TCP header length: ' + str(tcph_length * 4) + ' Flags: ' + str(flags) +  \
-        ' (CWR: ' + str(flag_cwr) + ' ECE: ' + str(flag_ece) + ' URG: '\
-        + str(flag_urg) + ' ACK: ' + str(flag_ack) + ' PSH: ' + str(flag_psh) + \
-        ' RST: ' + str(flag_rst) + ' SYN: ' + str(flag_syn) + ' FYN: ' + \
-        str(flag_fyn) + ')'
+def print_tcp(tcp):
+    print ('TCP Source Port: %s Dest Port: %s Sequence Number: %s '
+           'Acknowledgement: %s TCP header length: %s Flags: (CWR: %s '
+           'ECE: %s URG: %s ACK: %s PSH: %s RST: %s SYN: %s FYN: %s' %
+           (tcp['source_port'], tcp['dest_port'], tcp['sequence'],
+            tcp['acknowledgement'], (tcp['length']), tcp['flag_cwr'],
+            tcp['flag_ece'], tcp['flag_urg'], tcp['flag_ack'], tcp['flag_psh'],
+            tcp['flag_rst'], tcp['flag_syn'], tcp['flag_fyn']))
 
 
-def print_openflow_header(of_version, of_type, of_length, of_xid):
-    print 'OpenFlow Version: ' + str(of_version) + ' Type: ' + str(of_type) \
-        + ' Length: ' + str(of_length) + ' XID: ' + str(colored(of_xid, 'red'))
+def print_openflow_header(of):
+    print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
+           (of['version'], of['type'], of['length'], colored(of['xid'], 'red')))
 
 
 def print_of_hello(of_xid):
@@ -64,21 +76,14 @@ def get_ip_from_long(long_ip):
     return (socket.inet_ntoa(struct.pack('!L', long_ip)))
 
 
-def print_ofp_match(xid, ofm_wildcards, ofm_in_port, ofm_dl_src, ofm_dl_dst,
-                    ofm_dl_vlan, ofm_dl_type, ofm_pcp, ofm_pad, ofm_nw_tos,
-                    ofm_nw_prot, ofm_pad2, ofm_nw_src, ofm_nw_dst, ofm_tp_src,
-                    ofm_tp_dst):
-	print str(xid) + ' OpenFlow Flow_Mod(14) Match - Wildcard: ' + str(ofm_wildcards) \
-            + ' in_port: ' + colored(str(ofm_in_port), 'green') + ' dl_src: ' + \
-            str(eth_addr(ofm_dl_src)) + ' dl_dst: ' + \
-            str(eth_addr(ofm_dl_dst)) + ' dl_vlan: ' + colored(str(ofm_dl_vlan), 'green') \
-            + ' dl_type: ' + colored(str('0x'+format(ofm_dl_type, '02x')), 'green') + \
-            ' pcp: ' + str(ofm_pcp) + ' pad: ' + str(ofm_pad) + \
-            ' nw_tos: ' + str(ofm_nw_tos) + ' nw_prot: ' + \
-            str(ofm_nw_prot) + ' pad2: ' + str(ofm_pad2) + ' nw_src: ' \
-            + colored(str(get_ip_from_long(ofm_nw_src)), 'green') + ' nw_dst: ' + \
-            colored(str(get_ip_from_long(ofm_nw_dst)), 'green') + ' tp_src: '\
-            + str(ofm_tp_src) + ' tp_dst: ' + str(ofm_tp_dst)
+def print_ofp_match(xid, ofmatch):
+    print str(xid) + ' OpenFlow Flow_Mod(14) Match : ' +\
+        'wildcards: ' + str(ofmatch['wildcards'])
+
+    for K in ofmatch:
+        print ("'%s': %s " % (K, colored(ofmatch[K], 'green')))
+
+# ' dl_type: ' + colored(str('0x'+format(ofm_dl_type, '02x')), 'green') + \
 
 
 def print_ofp_body(xid, ofmod_cookie, ofmod_command,
