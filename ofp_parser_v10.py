@@ -153,6 +153,20 @@ def parse_PacketOut(packet, h_size, of_xid):
     return 1
 
 
+def process_dst_subnet(wcard):
+    OFPFW_NW_DST_SHIFT = 14
+    OFPFW_NW_DST_MASK = 1032192
+    nw_dst_bits = (wcard & OFPFW_NW_DST_MASK) >> OFPFW_NW_DST_SHIFT
+    return ((32 - nw_dst_bits) if nw_dst_bits < 32 else 0)
+
+
+def process_src_subnet(wcard):
+    OFPFW_NW_SRC_SHIFT = 8
+    OFPFW_NW_SRC_MASK = 16128
+    nw_src_bits = (wcard & OFPFW_NW_SRC_MASK) >> OFPFW_NW_SRC_SHIFT
+    return ((32 - nw_src_bits) if nw_src_bits < 32 else 0)
+
+
 def _process_wildcard(wcard):
     wildcard = {1: 'in_port',
                 2: 'dl_vlan',
@@ -171,7 +185,7 @@ def _process_wildcard(wcard):
 def _parse_OFMatch(packet, h_size):
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
-    wildcards = ofm[0]
+    wildcard = ofm[0]
     dl_src = ofp_prints_v10.eth_addr(ofm[2])
     dl_dst = ofp_prints_v10.eth_addr(ofm[3])
 
@@ -181,21 +195,23 @@ def _parse_OFMatch(packet, h_size):
                'nw_src': ofm[11], 'nw_dst': ofm[12], 'tp_src': ofm[13],
                'tp_dst': ofm[14]}
 
-    if wildcards == ((1 << 22) - 1):
+    if wildcard == ((1 << 22) - 1):
         ofmatch = {}
         return ofmatch
     else:
         for i in range(0, 8):
             mask = 2**i
-            aux = wildcards & mask
+            aux = wildcard & mask
             if aux != 0:
                 ofmatch.pop(_process_wildcard(mask))
 
         for i in range(20, 22):
             mask = 2**i
-            aux = wildcards & mask
+            aux = wildcard & mask
             if aux != 0:
                 ofmatch.pop(_process_wildcard(mask))
+
+
 
     return ofmatch
 
@@ -219,7 +235,7 @@ def parse_FlowMod(packet, h_size, of_xid):
     ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
 
     ofbody = _parse_OFBody(packet, h_size)
-    ofp_prints_v10.print_ofp_body(ofbody)
+    # ofp_prints_v10.print_ofp_body(ofbody)
 
     # Actions: Header = 4 , plus each possible action
     # Payload varies:

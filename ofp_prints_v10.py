@@ -77,11 +77,19 @@ def get_ip_from_long(long_ip):
 
 
 def print_ofp_match(xid, ofmatch):
-    print str(xid) + ' OpenFlow Flow_Mod(14) Match : ' +\
-        'wildcards: ' + str(ofmatch['wildcards'])
+    print ('%s OpenFlow Flow_Mod(14) Match :' % (xid)),
 
     for K in ofmatch:
-        print ("'%s': %s " % (K, colored(ofmatch[K], 'green')))
+        if K == 'nw_dst' or K == 'nw_src':
+            ip = get_ip_from_long(ofmatch[K])
+            print ("%s: %s" % (K, colored(ip, 'green'))),
+        elif K == 'dl_type':
+            etype = hex(ofmatch[K])
+            print ("%s: %s" % (K, colored(etype, 'green'))),
+        else:
+            print ("%s: %s" % (K, colored(ofmatch[K], 'green'))),
+
+    print
 
 # ' dl_type: ' + colored(str('0x'+format(ofm_dl_type, '02x')), 'green') + \
 

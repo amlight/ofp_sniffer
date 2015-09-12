@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import datetime
 import pcapy
 import sys
@@ -5,32 +7,32 @@ from ofp_prints_v10 import print_headers, print_openflow_header
 import ofp_parser_v10
 from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
     get_tcp_stream, get_openflow_header
-
-
-# Global
-print_min = 0
+import ofp_cli
 
 
 def main(argv):
     '''
         This is the main function
     '''
-    dev = "eth0"
-    print "Sniffing device " + dev
-    cap = pcapy.open_live(dev, 65536, 1, 0)
-    cap.setfilter(" port 6633")
+    print_min, infilter, sanitizer, dev, capfile = ofp_cli.get_params(argv)
 
-    # start sniffing packets
-    while(1):
-        try:
+    try:
+        print "Sniffing device " + dev
+        cap = pcapy.open_live(dev, 65536, 1, 0)
+        main_filter = " port 6633 "
+        cap.setfilter(main_filter + infilter)
+
+        # start sniffing packets
+        while(1):
             (header, packet) = cap.next()
             parse_packet(packet, datetime.datetime.now(),
-                         header.getlen(), header.getcaplen())
-        except:
-            return
+                         header.getlen(), header.getcaplen(), print_min)
+    except Exception as exception:
+        print exception
+        return
 
 
-def parse_packet(packet, date, getlen, caplen):
+def parse_packet(packet, date, getlen, caplen, print_min):
     '''
         This functions gets the raw packet and dissassembly it.
         Only TCP + OpenFlow are analysed. Others are discarted
