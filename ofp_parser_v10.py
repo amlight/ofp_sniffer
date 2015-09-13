@@ -261,6 +261,11 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
     ofbody = _parse_OFBody(packet, h_size)
     ofp_prints_v10.print_ofp_body(of_xid, ofbody)
 
+    if ofbody['command'] == 3:
+        ovs_command = 'del-flows'
+    else:
+        ovs_command = 'add-flow'
+
     # Print OVS
     ofactions = []
     ofactions.append("action=")
@@ -300,7 +305,8 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
             break
 
     if print_options['ovs'] == 1:
-        ofp_prints_v10.print_ofp_ovs(print_options, ofmatch, ofactions)
+        ofp_prints_v10.print_ofp_ovs(print_options, ofmatch, ofactions,
+                                     ovs_command)
     return 1
 
 
