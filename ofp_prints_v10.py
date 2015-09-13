@@ -219,7 +219,8 @@ def print_ofp_action(xid, action_type, length, payload):
         return 'Error'
 
 
-def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command):
+def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command, prio):
+
     '''
         If -o or --print-ovs is provided by user, print a ovs-ofctl add-dump
     '''
@@ -236,8 +237,10 @@ def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command):
     matches = ''.join(ofm)
     actions = ''.join(ofactions)
 
-    print ('ovs-ofctl %s tcp:%s:%s "%s %s"' %
-           (ovs_command, switch_ip, switch_port, matches, (actions if ovs_command != 'del-flows' else '')))
+    print ('ovs-ofctl %s tcp:%s:%s "priority=%s %s %s"' %
+           (ovs_command, switch_ip, switch_port, prio, matches,
+            (actions if ovs_command != 'del-flows' else '')))
+
     return
 
 
