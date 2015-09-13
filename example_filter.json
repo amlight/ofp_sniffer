@@ -1,0 +1,50 @@
+{
+  "filtered_of_types": [
+    2, 
+    3,
+    10,
+    13,
+    16,
+    17
+  ],
+  "flowMod_logs": {
+    "filter_1": {
+      "match": {
+        "vlan": "any",
+        "in_port": "1"
+      },
+      "action": {
+        "output": "2",
+        "mod_dl_src": "14"
+      },
+      "label": "onos"
+    },
+    "filter_2": {
+      "match": {
+        "any": "any"
+      },
+      "action": {
+        "mod_dl_dst": "any"
+      },
+      "label": "oess_test"
+    },
+    "filter_3": {
+      "match": {
+        "in_port": "4"
+      },
+      "action": {
+        "any": "any"
+      },
+      "label": "fibre"
+    },
+    "all": {
+      "match": {
+        "any": "any"
+      },
+      "action": {
+        "any": "any"
+      },
+      "label": 0
+    }
+  }
+}

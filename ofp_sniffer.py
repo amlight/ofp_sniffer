@@ -15,7 +15,6 @@ def main(argv):
         This is the main function
     '''
     print_min, infilter, sanitizer, dev, capfile = ofp_cli.get_params(argv)
-
     try:
         print "Sniffing device " + dev
         cap = pcapy.open_live(dev, 65536, 1, 0)
@@ -26,18 +25,21 @@ def main(argv):
         while(1):
             (header, packet) = cap.next()
             parse_packet(packet, datetime.datetime.now(),
-                         header.getlen(), header.getcaplen(), print_min)
+                         header.getlen(), header.getcaplen(),
+                         print_min, sanitizer)
+    except KeyboardInterrupt:
+        print 'Exiting...'
+        sys.exit(0)
     except Exception as exception:
         print exception
         return
 
 
-def parse_packet(packet, date, getlen, caplen, print_min):
+def parse_packet(packet, date, getlen, caplen, print_min, sanitizer):
     '''
         This functions gets the raw packet and dissassembly it.
         Only TCP + OpenFlow are analysed. Others are discarted
     '''
-
     eth = get_ethernet_frame(packet)
 
     # If protocol is no IP(8) returns
@@ -79,9 +81,8 @@ def parse_packet(packet, date, getlen, caplen, print_min):
         # In case there are multiple flow_mods
         remaining_bytes = remaining_bytes - of_header['length']
 
-        # If it is PacketIn, PacketOut, StatsReq, StatsRes or BarrierReq/Res
-        # we ignore for now
-        rejected_types = [2, 3, 10, 13, 16, 17, 18, 19]
+        # OF Types to be ignored through json file (-F)
+        rejected_types = sanitizer['filtered_of_types']
         if of_header['type'] in rejected_types:
             return
 

@@ -72,40 +72,22 @@ def print_of_error(of_xid, nameCode, typeCode):
         ' Code: ' + colored(typeCode, 'red')
 
 
-def get_ip_from_long(long_ip):
-    return (socket.inet_ntoa(struct.pack('!L', long_ip)))
-
-
 def print_ofp_match(xid, ofmatch):
     print ('%s OpenFlow Flow_Mod(14) Match :' % (xid)),
-
     for K in ofmatch:
-        if K == 'nw_dst' or K == 'nw_src':
-            ip = get_ip_from_long(ofmatch[K])
-            print ("%s: %s" % (K, colored(ip, 'green'))),
-        elif K == 'dl_type':
-            etype = hex(ofmatch[K])
-            print ("%s: %s" % (K, colored(etype, 'green'))),
-        else:
-            print ("%s: %s" % (K, colored(ofmatch[K], 'green'))),
-
+        print ("%s: %s" % (K, colored(ofmatch[K], 'green'))),
     print
 
-# ' dl_type: ' + colored(str('0x'+format(ofm_dl_type, '02x')), 'green') + \
 
-
-def print_ofp_body(xid, ofmod_cookie, ofmod_command,
-                   ofmod_idle_timeout, ofmod_hard_timeout,
-                   ofmod_prio, ofmod_buffer_id,
-                   ofmod_out_port, ofmod_flags):
+def print_ofp_body(xid, ofbody):
     print str(xid) + ' OpenFlow FLOW_MOD Body - Cookie: ' + \
-        str('0x' + format(ofmod_cookie, '02x')) + ' Command: ' + \
-        colored(ofp_dissector_v10.get_ofp_command(ofmod_command), 'green') + \
-        ' Idle/Hard Timeouts: ' + str(ofmod_idle_timeout) + '/' + \
-        str(ofmod_hard_timeout) + ' Priority: ' + str(ofmod_prio) + \
-        ' Buffer ID: ' + str('0x' + format(ofmod_buffer_id, '02x')) + \
-        ' Out Port: ' + str(ofmod_out_port) + ' Flags: ' + \
-        ofp_dissector_v10.get_ofp_flags(ofmod_flags)
+        str('0x' + format(ofbody['cookie'], '02x')) + ' Command: ' + \
+        colored(ofp_dissector_v10.get_ofp_command(ofbody['command']), 'green') + \
+        ' Idle/Hard Timeouts: ' + str(ofbody['idle_timeout']) + '/' + \
+        str(ofbody['hard_timeout']) + ' Priority: ' + str(ofbody['priority']) + \
+        ' Buffer ID: ' + str('0x' + format(ofbody['buffer_id'], '02x')) + \
+        ' Out Port: ' + str(ofbody['out_port']) + ' Flags: ' + \
+        colored(ofp_dissector_v10.get_ofp_flags(ofbody['flags']), 'green')
 
 
 def print_ofp_flow_removed(xid, ofrem_cookie, ofrem_priority, ofrem_reason,
@@ -214,3 +196,17 @@ def print_ofp_action(xid, action_type, length, payload):
             ' Vendor: ' + colored(str(vendor),  'green')
     else:
         return 'Error'
+
+
+def print_of_BarrierReq(of_xid):
+    print str(of_xid) + ' OpenFlow Barrier Request'
+
+
+def print_of_BarrierReply(of_xid):
+    print str(of_xid) + ' OpenFlow Barrier Reply'
+
+
+def print_of_vendor(of_vendor, of_xid):
+    vendor = ofp_dissector_v10.get_ofp_vendor(of_vendor)
+    print str(of_xid) + ' OpenFlow Vendor : ' + vendor
+

@@ -1,6 +1,6 @@
 import sys
 import getopt
-
+import json
 
 def usage(file):
     """ This funcion prints the Usage in case of errors or help needed.
@@ -15,14 +15,21 @@ def usage(file):
     print '\t -F sanitizer_file.json or --sanitizer-file=sanitizer_file.json'
     print '\t -i interface or --interface=interface. Default: eth0'
     print '\t -r captured.pcap or --src-file=captured.pcap'
+    print '\t -h or --help'
     sys.exit(0)
+
+
+def read_sanitizer(sanitizer_file):
+    jfile = open(sanitizer_file, 'ro')
+    json_content = json.loads(jfile.read())
+    return (json_content)
 
 
 def get_params(argv):
     # Handle all input params
-    letters = 'f:F:i:r:p:'
+    letters = 'f:F:i:r:p:h'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
-                'src-file=']
+                'src-file=', 'help']
 
     # Default Values
     print_min = 1
@@ -52,7 +59,13 @@ def get_params(argv):
             dev = param
         elif option in ['-r', '--captured-file']:
             captured_file = param
+        elif option in ['-h', '--help']:
+            usage(argv[0])
         else:
             usage(argv[0])
 
-    return print_min, input_filter, sanitizer_file, dev, captured_file
+    if len(sanitizer_file) == 0:
+        sanitizer = {'filtered_of_types': [], 'flowMod_logs': {}}
+    else:
+        sanitizer = read_sanitizer(sanitizer_file)
+    return print_min, input_filter, sanitizer, dev, captured_file

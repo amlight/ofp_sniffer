@@ -1,6 +1,8 @@
 from struct import unpack
 import ofp_dissector_v10
 import ofp_prints_v10
+import socket
+import struct
 
 
 def process_ofp_type(of_type, packet, h_size, of_xid):
@@ -77,8 +79,23 @@ def parse_EchoRes(packet, h_size, of_xid):
     return 0
 
 
+def _parse_nicira(packet, start, of_xid):
+    print ('%s OpenFlow Vendor Data: ' % of_xid),
+    while len(packet[start:start+4]) > 0:
+        ofv_subtype = unpack('!L',packet[start:start+4])
+        print ('%s ' % ofv_subtype[0]),
+        start = start + 4
+
+
 def parse_Vendor(packet, h_size, of_xid):
-    return 0
+    of_vendor = packet[h_size:h_size+4]
+    ofv = unpack('!L', of_vendor)
+    ofp_prints_v10.print_of_vendor(ofv[0], of_xid)
+
+    if ofv[0] == 8992:
+        _parse_nicira(packet, h_size+4, of_xid)
+    print
+    return 1
 
 
 def parse_FeatureReq(packet, h_size, of_xid):
@@ -182,23 +199,40 @@ def _process_wildcard(wcard):
     return wildcard.get(wcard)
 
 
+def get_ip_from_long(long_ip):
+    return (socket.inet_ntoa(struct.pack('!L', long_ip)))
+
+
 def _parse_OFMatch(packet, h_size):
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
     wildcard = ofm[0]
     dl_src = ofp_prints_v10.eth_addr(ofm[2])
     dl_dst = ofp_prints_v10.eth_addr(ofm[3])
+    nw_src = get_ip_from_long(ofm[11])
+    nw_dst = get_ip_from_long(ofm[12])
+    etype = hex(ofm[7])
 
     ofmatch = {'wildcards': ofm[0], 'in_port': ofm[1], 'dl_src': dl_src,
                'dl_dst': dl_dst, 'dl_vlan': ofm[4], 'pcp': ofm[5],
-               'dl_type': ofm[7], 'nw_tos': ofm[8], 'nw_prot': ofm[9],
-               'nw_src': ofm[11], 'nw_dst': ofm[12], 'tp_src': ofm[13],
+               'dl_type': etype, 'nw_tos': ofm[8], 'nw_prot': ofm[9],
+               'nw_src': nw_src, 'nw_dst': nw_dst, 'tp_src': ofm[13],
                'tp_dst': ofm[14]}
 
     if wildcard == ((1 << 22) - 1):
         ofmatch = {}
         return ofmatch
     else:
+        src_netmask = process_src_subnet(wildcard)
+        if src_netmask == 0:
+            ofmatch.pop('nw_src')
+        else:
+            ofmatch['nw_src'] = str(ofmatch['nw_src']) + '/' + str(src_netmask)
+        dst_netmask = process_dst_subnet(wildcard)
+        if dst_netmask == 0:
+            ofmatch.pop('nw_dst')
+        else:
+            ofmatch['nw_dst'] = str(ofmatch['nw_dst']) + '/' + str(dst_netmask)
         for i in range(0, 8):
             mask = 2**i
             aux = wildcard & mask
@@ -210,7 +244,6 @@ def _parse_OFMatch(packet, h_size):
             aux = wildcard & mask
             if aux != 0:
                 ofmatch.pop(_process_wildcard(mask))
-
 
 
     return ofmatch
@@ -235,7 +268,7 @@ def parse_FlowMod(packet, h_size, of_xid):
     ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
 
     ofbody = _parse_OFBody(packet, h_size)
-    # ofp_prints_v10.print_ofp_body(ofbody)
+    ofp_prints_v10.print_ofp_body(of_xid, ofbody)
 
     # Actions: Header = 4 , plus each possible action
     # Payload varies:
@@ -282,11 +315,13 @@ def parse_StatsRes(packet, h_size, of_xid):
 
 
 def parse_BarrierReq(packet, h_size, of_xid):
-    return 0
+    ofp_prints_v10.print_of_BarrierReq(of_xid)
+    return 1
 
 
 def parse_BarrierRes(packet, h_size, of_xid):
-    return 0
+    ofp_prints_v10.print_of_BarrierReply(of_xid)
+    return 1
 
 
 def parse_QueueGetConfigReq(packet, h_size, of_xid):

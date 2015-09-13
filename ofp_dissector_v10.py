@@ -87,6 +87,14 @@ def get_ofp_error(error_type, code):
                 ('UnknownCode(' + str(code) + ')'))
 
 
+def get_ofp_vendor(vendor_id):
+    # NICIRA / OVS: 0x2320 or 8992
+    if vendor_id == 8992:
+        return 'NICIRA(' + hex(vendor_id) + ')'
+    else:
+        return str(vendor_id)
+
+
 def get_ofp_command(command):
     if command == 0:
         return 'Add'
