@@ -1,6 +1,21 @@
 from struct import unpack
 
 
+def get_ofp_version(version):
+    of_version = {0: 'Experimental',
+                  1: '1.0',
+                  2: '1.1',
+                  3: '1.2',
+                  4: '1.3',
+                  5: '1.4',
+                  6: '1.5'}
+
+    if version not in range(0, 6):
+        return 'Unknown'
+
+    return of_version[version]
+
+
 def get_ofp_type(type):
     of_types = {0: 'Hello',
                 1: 'Error',
@@ -24,6 +39,9 @@ def get_ofp_type(type):
                 19: 'BarrierRes',
                 20: 'QueueGetConfigReq',
                 21: 'QueueGetConfigRes'}
+
+    if type not in range(0, 21):
+                return 'Other'
 
     return of_types[type]
 

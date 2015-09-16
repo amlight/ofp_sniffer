@@ -59,10 +59,16 @@ def print_tcp(tcp):
 
 
 def print_openflow_header(of):
-    name = ofp_dissector_v10.get_ofp_type(of['type'])
-    name_type = name + '(' + of['type'] + ')'
+    version = ofp_dissector_v10.get_ofp_version(of['version'])
+    name_version = str(version) + '(' + str(of['version']) + ')'
+    if version == '1.0':
+        name = ofp_dissector_v10.get_ofp_type(of['type'])
+        name_type = str(name) + '(' + str(of['type']) + ')'
+    else:
+        name_type = str(of['type'])
+
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
-           (of['version'], name_type, of['length'], colored(of['xid'], 'red')))
+           (name_version, name_type, of['length'], colored(of['xid'], 'red')))
 
 
 def print_of_hello(of_xid):
