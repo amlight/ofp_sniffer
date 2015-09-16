@@ -1,6 +1,33 @@
 from struct import unpack
 
 
+def get_ofp_type(type):
+    of_types = {0: 'Hello',
+                1: 'Error',
+                2: 'EchoReq',
+                3: 'EchoRes',
+                4: 'Vendor',
+                5: 'FeatureReq',
+                6: 'FeatureRes',
+                7: 'GetConfigReq',
+                8: 'GetConfigRes',
+                9: 'SetConfig',
+                10: 'PacketIn',
+                11: 'FlowRemoved',
+                12: 'PortStatus',
+                13: 'PacketOut',
+                14: 'FlowMod',
+                15: 'PortMod',
+                16: 'StatsReq',
+                17: 'StatsRes',
+                18: 'BarrierReq',
+                19: 'BarrierRes',
+                20: 'QueueGetConfigReq',
+                21: 'QueueGetConfigRes'}
+
+    return of_types[type]
+
+
 def get_ofp_error(error_type, code):
     if error_type == 0:
         if code == 0:

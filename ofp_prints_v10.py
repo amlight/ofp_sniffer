@@ -1,7 +1,7 @@
 from termcolor import colored
 import ofp_dissector_v10
-import socket
-import struct
+# import socket
+# import struct
 
 
 def eth_addr(a):
@@ -59,8 +59,10 @@ def print_tcp(tcp):
 
 
 def print_openflow_header(of):
+    name = ofp_dissector_v10.get_ofp_type(of['type'])
+    name_type = name + '(' + of['type'] + ')'
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
-           (of['version'], of['type'], of['length'], colored(of['xid'], 'red')))
+           (of['version'], name_type, of['length'], colored(of['xid'], 'red')))
 
 
 def print_of_hello(of_xid):
@@ -209,4 +211,3 @@ def print_of_BarrierReply(of_xid):
 def print_of_vendor(of_vendor, of_xid):
     vendor = ofp_dissector_v10.get_ofp_vendor(of_vendor)
     print str(of_xid) + ' OpenFlow Vendor : ' + vendor
-

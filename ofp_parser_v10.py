@@ -82,7 +82,7 @@ def parse_EchoRes(packet, h_size, of_xid):
 def _parse_nicira(packet, start, of_xid):
     print ('%s OpenFlow Vendor Data: ' % of_xid),
     while len(packet[start:start+4]) > 0:
-        ofv_subtype = unpack('!L',packet[start:start+4])
+        ofv_subtype = unpack('!L', packet[start:start+4])
         print ('%s ' % ofv_subtype[0]),
         start = start + 4
 
@@ -125,16 +125,8 @@ def parse_PacketIn(packet, h_size, of_xid):
 
 def parse_FlowRemoved(packet, h_size, of_xid):
 
-    (ofm_wildcards, ofm_in_port, ofm_dl_src, ofm_dl_dst, ofm_dl_vlan, ofm_pcp,
-     ofm_pad, ofm_dl_type, ofm_nw_tos, ofm_nw_prot, ofm_pad2, ofm_nw_src,
-     ofm_nw_dst, ofm_tp_src, ofm_tp_dst) = _parse_OFMatch(packet, h_size)
-
-    ofp_prints_v10.print_ofp_match(of_xid, ofm_wildcards, ofm_in_port,
-                                   ofm_dl_src, ofm_dl_dst,
-                                   ofm_dl_vlan, ofm_dl_type, ofm_pcp,
-                                   ofm_pad, ofm_nw_tos, ofm_nw_prot,
-                                   ofm_pad2, ofm_nw_src, ofm_nw_dst,
-                                   ofm_tp_src, ofm_tp_dst)
+    ofmatch = _parse_OFMatch(packet, h_size)
+    ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
 
     of_rem_body = packet[h_size+40:h_size+40+40]
     ofrem = unpack('!8sHBBLLHBB8s8s', of_rem_body)
@@ -244,7 +236,6 @@ def _parse_OFMatch(packet, h_size):
             aux = wildcard & mask
             if aux != 0:
                 ofmatch.pop(_process_wildcard(mask))
-
 
     return ofmatch
 
