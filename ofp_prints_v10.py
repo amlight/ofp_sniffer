@@ -141,9 +141,11 @@ def print_ofp_action(xid, action_type, length, payload):
             colored('SetVLANPCP', 'green') + ' Length: ' + str(length) + \
             ' VLAN PCP: ' + colored(str(vlan_pc), 'green') + ' Pad: ' \
             + str(pad)
+        return 'mod_vlan_pcp:' + str(vlan_pc)
     elif action_type == 3:
         print str(xid) + ' OpenFlow Action - Type: ' + \
             colored('StripVLAN', 'green') + ' Length: ' + str(length)
+        return 'strip_vlan'
     elif action_type == 4:
         setDLSrc, pad = ofp_dissector_v10.get_action(action_type,
                                                      length, payload)
@@ -151,6 +153,7 @@ def print_ofp_action(xid, action_type, length, payload):
             colored('SetDLSrc', 'green') + ' Length: ' + str(length) + \
             ' SetDLSrc: ' + colored(str(eth_addr(setDLSrc)), 'green') + ' Pad: ' \
             + str(pad)
+        return 'mod_dl_src:' + str(eth_addr(setDLSrc))
     elif action_type == 5:
         setDLDst, pad = ofp_dissector_v10.get_action(action_type,
                                                      length, payload)
@@ -158,18 +161,21 @@ def print_ofp_action(xid, action_type, length, payload):
             colored('SetDLDst', 'green') + ' Length: ' + str(length) + \
             ' SetDLDst: ' + colored(str(eth_addr(setDLDst)), 'green') + ' Pad: ' \
             + str(pad)
+        return 'mod_dl_dst:' + str(eth_addr(setDLDst))
     elif action_type == 6:
         nw_addr = ofp_dissector_v10.get_action(action_type,
                                                length, payload)
         print str(xid) + ' OpenFlow Action - Type: ' + \
             colored('SetNWSrc', 'green') + ' Length: ' + str(length) + \
             ' SetNWSrc: ' + colored(str(nw_addr), 'green')
+        return 'mod_nw_src:' + str(nw_addr)
     elif action_type == 7:
         nw_addr = ofp_dissector_v10.get_action(action_type,
                                                length, payload)
         print str(xid) + ' OpenFlow Action - Type: ' + \
             colored('SetNWDst', 'green') + ' Length: ' + str(length) + \
             ' SetNWDst: ' + colored(str(nw_addr), 'green')
+        return 'mod_nw_src:' + str(nw_addr)
     elif action_type == 8:
         nw_tos, pad = ofp_dissector_v10.get_action(action_type,
                                                    length, payload)
@@ -177,6 +183,7 @@ def print_ofp_action(xid, action_type, length, payload):
             colored('SetNWTos' 'green') + ' Length: ' + str(length) + \
             ' SetNWTos: ' + colored(str(nw_tos), 'green') + ' Pad: ' \
             + str(pad)
+        return 'mod_nw_tos:' + str(nw_tos)
     elif action_type == 9:
         port, pad = ofp_dissector_v10.get_action(action_type,
                                                  length, payload)
@@ -184,6 +191,7 @@ def print_ofp_action(xid, action_type, length, payload):
             colored('SetTPSrc' 'green') + ' Length: ' + str(length) + \
             ' SetTPSrc: ' + colored(str(port), 'green') + ' Pad: ' \
             + str(pad)
+        return 'mod_tp_src:' + str(port)
     elif action_type == int('a', 16):
         port, pad = ofp_dissector_v10.get_action(action_type,
                                                  length, payload)
@@ -191,6 +199,7 @@ def print_ofp_action(xid, action_type, length, payload):
             colored('SetTPDst' 'green') + ' Length: ' + str(length) + \
             ' SetTPDst: ' + colored(str(port), 'green') + ' Pad: ' \
             + str(pad)
+        return 'mod_tp_dst:' + str(port)
     elif action_type == int('b', 16):
         port, pad, queue_id = ofp_dissector_v10.get_action(action_type,
                                                            length, payload)
@@ -198,12 +207,14 @@ def print_ofp_action(xid, action_type, length, payload):
             colored('Enqueue', 'green') + ' Length: ' + str(length) + \
             ' Enqueue: ' + colored(str(port),  'green') + ' Pad: ' \
             + str(pad) + ' Queue: ' + str(queue_id)
+        return 'set_queue:' + str(queue_id)
     elif action_type == int('ffff', 16):
         vendor = ofp_dissector_v10.get_action(action_type,
                                               length, payload)
         print str(xid) + ' OpenFlow Action - Type: ' + \
             colored('VENDOR', 'green') + ' Length: ' + str(length) + \
             ' Vendor: ' + colored(str(vendor),  'green')
+        return 'unknown'
     else:
         return 'Error'
 
