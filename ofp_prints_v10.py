@@ -10,8 +10,8 @@ def eth_addr(a):
     return mac
 
 
-def print_headers(print_min, date, getlen, caplen, eth, ip, tcp):
-    if print_min == 1:
+def print_headers(print_options, date, getlen, caplen, eth, ip, tcp):
+    if print_options['min'] == 1:
         print_minimal(date, getlen, ip, tcp)
     else:
         print_layer1(date, getlen, caplen)
@@ -126,12 +126,14 @@ def print_ofp_action(xid, action_type, length, payload):
             + colored(
                 str('CONTROLLER(65533)' if port == 65533 else port),
                 'green') + ' Max Length: ' + str(max_len)
+        return 'output:' + str(port)
     elif action_type == 1:
         vlan, pad = ofp_dissector_v10.get_action(action_type, length, payload)
         print str(xid) + ' OpenFlow Action - Type: ' + \
             colored('SetVLANID', 'green') + ' Length: ' + str(length) + \
             ' VLAN ID: ' + colored(str(vlan), 'green') + ' Pad: ' \
             + str(pad)
+        return 'mod_vlan_vid:' + str(vlan)
     elif action_type == 2:
         vlan_pc, pad = ofp_dissector_v10.get_action(action_type,
                                                     length, payload)
@@ -204,6 +206,28 @@ def print_ofp_action(xid, action_type, length, payload):
             ' Vendor: ' + colored(str(vendor),  'green')
     else:
         return 'Error'
+
+
+def print_ofp_ovs(print_options, ofmatch, ofactions):
+    '''
+        If -o or --print-ovs is provided by user, print a ovs-ofctl add-dump
+    '''
+    switch_ip = print_options['device_ip']
+    switch_port = print_options['device_port']
+
+    ofm = []
+
+    for K in ofmatch:
+        if K != 'wildcards':
+            value = "%s=%s," % (K, ofmatch[K])
+            ofm.append(value)
+
+    matches = ''.join(ofm)
+    actions = ''.join(ofactions)
+
+    print ('ovs-ofctl add-flow tcp:%s:%s "%s %s"' %
+           (switch_ip, switch_port, matches, actions))
+    return
 
 
 def print_of_BarrierReq(of_xid):

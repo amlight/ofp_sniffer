@@ -1,11 +1,9 @@
 {
   "filtered_of_types": [
-    2, 
+    2,
     3,
     10,
-    13,
-    16,
-    17
+    13
   ],
   "flowMod_logs": {
     "filter_1": {

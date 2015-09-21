@@ -142,28 +142,28 @@ def get_ofp_vendor(vendor_id):
 
 def get_ofp_command(command):
     if command == 0:
-        return 'Add'
+        return 'Add(0)'
     elif command == 1:
-        return 'Modify'
+        return 'Modify(1)'
     elif command == 2:
-        return 'ModifyStrict'
+        return 'ModifyStrict(2)'
     elif command == 3:
-        return 'Delete'
+        return 'Delete(3)'
     elif command == 4:
-        return 'DeleteStrict'
+        return 'DeleteStrict(4)'
     else:
-        return 'MalFormed Packet'
+        return 'Unknown Command(' + str(command) + ')'
 
 
 def get_ofp_flags(flag):
     if flag == 1:
-        return 'SendFlowRem'
+        return 'SendFlowRem(1)'
     elif flag == 2:
-        return 'CheckOverLap'
+        return 'CheckOverLap(2)'
     elif flag == 3:
-        return 'Emerg'
+        return 'Emerg(3)'
     else:
-        return 'MalFormed Packet'
+        return 'Unknown Flag(' + str(flag) + ')'
 
 
 def get_action(action_type, length, payload):
@@ -222,10 +222,10 @@ def get_action(action_type, length, payload):
 
 def get_flow_removed_reason(ofrem_reason):
     if ofrem_reason == 0:
-        return 'IdleTimeOut'
+        return 'IdleTimeOut(0)'
     elif ofrem_reason == 1:
-        return 'HardTimeOut'
+        return 'HardTimeOut(1)'
     elif ofrem_reason == 2:
-        return 'Delete'
+        return 'Delete(2)'
     else:
-        return 'PacketMalFormed'
+        return 'UnknownReason(' + str(ofrem_reason) + ')'

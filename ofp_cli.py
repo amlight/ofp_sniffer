@@ -2,6 +2,7 @@ import sys
 import getopt
 import json
 
+
 def usage(file):
     """ This funcion prints the Usage in case of errors or help needed.
         Always ends after printing this lines below.
@@ -15,6 +16,7 @@ def usage(file):
     print '\t -F sanitizer_file.json or --sanitizer-file=sanitizer_file.json'
     print '\t -i interface or --interface=interface. Default: eth0'
     print '\t -r captured.pcap or --src-file=captured.pcap'
+    print '\t -o or --print-ovs : print using ovs-ofctl add-flows format'
     print '\t -h or --help'
     sys.exit(0)
 
@@ -27,12 +29,11 @@ def read_sanitizer(sanitizer_file):
 
 def get_params(argv):
     # Handle all input params
-    letters = 'f:F:i:r:p:h'
+    letters = 'f:F:i:r:p:oh'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
-                'src-file=', 'help']
+                'src-file=', 'print-ovs', 'help']
 
     # Default Values
-    print_min = 1
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
 
     try:
@@ -41,14 +42,13 @@ def get_params(argv):
         print str(err)
         usage(argv[0])
 
+    print_options = {'min': 1, 'ovs': 0, 'colors': 0}
+
     for option, param in opts:
         if option in ['-p', '--print']:
-            print_min = param
-            if print_min == 'min':
-                print_min = 1
-            elif print_min == 'full':
-                print_min = 0
-            else:
+            if param == 'full':
+                print_options['min'] = 0
+            elif param != 'min':
                 print 'Use min or full for printing'
                 usage(argv[0])
         elif option in ['-f', '--pcap-filter']:
@@ -61,6 +61,8 @@ def get_params(argv):
             captured_file = param
         elif option in ['-h', '--help']:
             usage(argv[0])
+        elif option in ['-o', '--print-ovs']:
+            print_options['ovs'] = 1
         else:
             usage(argv[0])
 
@@ -68,4 +70,4 @@ def get_params(argv):
         sanitizer = {'filtered_of_types': [], 'flowMod_logs': {}}
     else:
         sanitizer = read_sanitizer(sanitizer_file)
-    return print_min, input_filter, sanitizer, dev, captured_file
+    return print_options, input_filter, sanitizer, dev, captured_file

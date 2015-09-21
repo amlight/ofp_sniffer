@@ -4,7 +4,7 @@ import datetime
 import pcapy
 import sys
 from ofp_prints_v10 import print_headers, print_openflow_header
-import ofp_parser_v10
+from ofp_parser_v10 import process_ofp_type
 from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
     get_tcp_stream, get_openflow_header
 import ofp_cli
@@ -14,7 +14,7 @@ def main(argv):
     '''
         This is the main function
     '''
-    print_min, infilter, sanitizer, dev, capfile = ofp_cli.get_params(argv)
+    print_options, infilter, sanitizer, dev, capfile = ofp_cli.get_params(argv)
     try:
         print "Sniffing device " + dev
         cap = pcapy.open_live(dev, 65536, 1, 0)
@@ -26,7 +26,7 @@ def main(argv):
             (header, packet) = cap.next()
             parse_packet(packet, datetime.datetime.now(),
                          header.getlen(), header.getcaplen(),
-                         print_min, sanitizer)
+                         print_options, sanitizer)
     except KeyboardInterrupt:
         print 'Exiting...'
         sys.exit(0)
@@ -35,7 +35,7 @@ def main(argv):
         return
 
 
-def parse_packet(packet, date, getlen, caplen, print_min, sanitizer):
+def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
     '''
         This functions gets the raw packet and dissassembly it.
         Only TCP + OpenFlow are analysed. Others are discarted
@@ -88,11 +88,14 @@ def parse_packet(packet, date, getlen, caplen, print_min, sanitizer):
 
         # Starts printing
         if print_header_once == 0:
-            print_headers(print_min, date, getlen, caplen, eth, ip, tcp)
+            print_headers(print_options, date, getlen, caplen, eth, ip, tcp)
             print_header_once = 1
 
         # Prints the OpenFlow header, it doesn't matter the OF version
         print_openflow_header(of_header)
+
+        print_options['device_ip'] = ip['d_addr']
+        print_options['device_port'] = tcp['dest_port']
 
         # If OpenFlow version is 1
         if of_header['version'] == int('1', 16):
@@ -100,11 +103,10 @@ def parse_packet(packet, date, getlen, caplen, print_min, sanitizer):
             # OF_Header lenght = 8
             start = start + 8
             this_packet = packet[start:start+of_header['length'] - 8]
-            if not ofp_parser_v10.process_ofp_type(of_header['type'],
-                                                   this_packet,
-                                                   0, of_header['xid']):
+            if not process_ofp_type(of_header['type'], this_packet, 0,
+                                    of_header['xid'], print_options):
                 print str(of_header['xid']) + ' OpenFlow OFP_Type ' \
-                    + str(of_header['type']) + ' not implemented \n'
+                    + str(of_header['type']) + ' not dissected \n'
                 return
             else:
                 # Get next packet

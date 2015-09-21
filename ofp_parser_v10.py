@@ -5,7 +5,7 @@ import socket
 import struct
 
 
-def process_ofp_type(of_type, packet, h_size, of_xid):
+def process_ofp_type(of_type, packet, h_size, of_xid, print_options):
     if of_type == 0:
         result = parse_Hello(packet, h_size, of_xid)
     elif of_type == 1:
@@ -35,7 +35,7 @@ def process_ofp_type(of_type, packet, h_size, of_xid):
     elif of_type == 13:
         result = parse_PacketOut(packet, h_size, of_xid)
     elif of_type == 14:
-        result = parse_FlowMod(packet, h_size, of_xid)
+        result = parse_FlowMod(packet, h_size, of_xid, print_options)
     elif of_type == 15:
         result = parse_PortMod(packet, h_size, of_xid)
     elif of_type == 16:
@@ -253,13 +253,17 @@ def _parse_OFBody(packet, h_size):
     return ofbody
 
 
-def parse_FlowMod(packet, h_size, of_xid):
+def parse_FlowMod(packet, h_size, of_xid, print_options):
 
     ofmatch = _parse_OFMatch(packet, h_size)
     ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
 
     ofbody = _parse_OFBody(packet, h_size)
     ofp_prints_v10.print_ofp_body(of_xid, ofbody)
+
+    # Print OVS
+    ofactions = []
+    ofactions.append("action=")
 
     # Actions: Header = 4 , plus each possible action
     # Payload varies:
@@ -284,12 +288,19 @@ def parse_FlowMod(packet, h_size, of_xid):
                 total_length = 4
                 ofa_action_payload = packet[start:start + 4]
 
-            ofp_prints_v10.print_ofp_action(of_xid, ofa_type, ofa_length,
-                                            ofa_action_payload)
+            ofa_temp = ofp_prints_v10.print_ofp_action(of_xid, ofa_type,
+                                                       ofa_length,
+                                                       ofa_action_payload)
+            # Print OVS format
+            ofactions.append(ofa_temp)
+            ofactions.append(',')
             # Next packet would start at..
             start = start + total_length
         else:
-            return 1
+            break
+
+    if print_options['ovs'] == 1:
+        ofp_prints_v10.print_ofp_ovs(print_options, ofmatch, ofactions)
     return 1
 
 
