@@ -14,8 +14,8 @@ AmLight SDN uses Internet2 FlowSpace Firewall, OESS and On.Lab ONOS, and these
 apps were tested and are fully supported (well, they should be ;)).
 
 This tool started to be developed after a conversation with Andrew Ragusa
-(a.k.a. A.J) from Indiana University after the NITRD - Roadmap for an 
-Operational SDN Workshop hosted by ESNET and Internet2. Thanks A.J. for your
+(a.k.a. A.J) from Indiana University along the NITRD - Roadmap to Operating 
+SDN-based Networks Workshop hosted by ESNET and Internet2. Thanks A.J. for your
 constant support and mentoring!! (Link to NITRD workshop: https://www.nitrd.gov/nitrdgroups/index.php?title=SDN_Operational_Issues_WS)
 
 Currently, the following OpenFlow 1.0 messages are dissected:
