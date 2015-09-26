@@ -70,12 +70,12 @@ sudo ./ofp_sniffer.py
 ##################### Examples #########################
 
 Examples are provided below:
-
+```
 ----------------------           -------------------------
 | Mininet            |           | OVS-OFCTL 2.3.0       |
 | 192.168.56.101:6634| <-------> | eth1 - 192.168.56.102 |
 ----------------------           -------------------------
-```
+
 # ovs-ofctl dump-flows tcp:192.168.56.101:6634
  cookie=0x0, duration=2183.377s, table=0, n_packets=0, n_bytes=0, idle_age=2183, in_port=1,dl_vlan=2 actions=output:2
 
