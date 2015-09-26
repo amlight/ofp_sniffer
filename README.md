@@ -14,9 +14,9 @@ AmLight SDN uses Internet2 FlowSpace Firewall, OESS and On.Lab ONOS, and these
 apps were tested and are fully supported (well, they should be ;)).
 
 This tool started to be developed after a conversation with Andrew Ragusa
-(a.k.a. A.J) from Indiana University after the NIRTD - Roadmap for an 
+(a.k.a. A.J) from Indiana University after the NITRD - Roadmap for an 
 Operational SDN Workshop hosted by ESNET and Internet2. Thanks A.J. for your
-constant support and mentoring!! (Link to NIRTD workshop: )
+constant support and mentoring!! (Link to NITRD workshop: https://www.nitrd.gov/nitrdgroups/index.php?title=SDN_Operational_Issues_WS)
 
 Currently, the following OpenFlow 1.0 messages are dissected:
 
@@ -34,7 +34,7 @@ were not dissected on first version because, from the troubleshooting point of
 view, they weren't needed.
 
 As a command line interface tool, it has a few input parameters:
-
+```
 # ./ofp_sniffer.py -h
 Usage: 
 ./ofp_sniffer.py [-p min|full] [-f pcap_filter] [-F filter_file] [-i dev] [-r pcap_file] 
@@ -59,14 +59,14 @@ Usage:
       This option is not functional yet
 -o gives you the possibility of printing the ovs-ofctl command that generated a
       specific flow-mod message.
-
+```
 ##################### Instalation ######################
-
+```
 apt-get install python-pcapy or yum install pcapy
 git clone https://github.com/jab1982/ofp_sniffer.git
 cd ofp_sniffer
 sudo ./ofp_sniffer.py
-
+```
 ##################### Examples #########################
 
 Examples are provided below:
@@ -75,7 +75,7 @@ Examples are provided below:
 | Mininet            |           | OVS-OFCTL 2.3.0       |
 | 192.168.56.101:6634| <-------> | eth1 - 192.168.56.102 |
 ----------------------           -------------------------
-
+```
 # ovs-ofctl dump-flows tcp:192.168.56.101:6634
  cookie=0x0, duration=2183.377s, table=0, n_packets=0, n_bytes=0, idle_age=2183, in_port=1,dl_vlan=2 actions=output:2
 
@@ -109,8 +109,8 @@ OpenFlow Version: 1.0(1) Type: StatsReq(16) Length: 32  XID: 4
 2015-09-13 11:47:38.660940 192.168.56.101:6634 -> 192.168.56.102:37450 Size: 162
 OpenFlow Version: 1.0(1) Type: StatsRes(17) Length: 96  XID: 4
 4 OpenFlow OFP_Type 17 not dissected 
-
-
+```
+```
 # ovs-ofctl add-flow tcp:192.168.56.101:6634 "dl_dst=10:00:00:01:20:00,dl_type=0x88bc actions=mod_vlan_vid:14,output:2"
 
 # ./ofp_sniffer.py -i eth1 -f " or port 6634"
@@ -143,7 +143,7 @@ OpenFlow Version: 1.0(1) Type: FlowMod(14) Length: 88  XID: 2
 2 OpenFlow Action - Type: SetVLANID Length: 8 VLAN ID: 14 Pad: 0
 2 OpenFlow Action - Type: OUTPUT Length: 8 Port: 2 Max Length: 0
 ovs-ofctl add-flow tcp:192.168.56.101:6634 "dl_type=0x88bc,dl_dst=10:00:00:01:20:00, action=mod_vlan_vid:14,output:2,"
-
+```
 
 I hope this code helps you. This is the first version, a few changes are already planned for 0.2. Coming soon!
 
