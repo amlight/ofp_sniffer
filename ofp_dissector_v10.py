@@ -220,12 +220,127 @@ def get_action(action_type, length, payload):
         return type_f[0]
 
 
-def get_flow_removed_reason(ofrem_reason):
-    if ofrem_reason == 0:
-        return 'IdleTimeOut(0)'
-    elif ofrem_reason == 1:
-        return 'HardTimeOut(1)'
-    elif ofrem_reason == 2:
-        return 'Delete(2)'
-    else:
-        return 'UnknownReason(' + str(ofrem_reason) + ')'
+def get_flow_removed_reason(reason):
+    rsn = {0: 'IdleTimeOut(0)',
+           1: 'HardTimeOut(1)',
+           2: 'Delete(2)'}
+    try:
+        return rsn[reason]
+    except:
+        return 'UnknownReason(%s)' % reason
+
+
+def get_feature_res_capabilities(cap):
+    caps = {1: 'FLOW_STATS(0x1)',
+            2: 'TABLE_STATS(0x2)',
+            4: 'PORT_STATS(0x4)',
+            8: 'STP(0x8)',
+            16: 'RESERVED(0x10)',
+            32: 'IP_REASM(0x20)',
+            64: 'QUEUE_STATS(0x40)',
+            128: 'ARP_MATCH_IP(0x80)'}
+    try:
+        return caps[cap]
+    except:
+        return 'UnknownCapability(%s)' % cap
+
+
+def get_feature_res_actions(action):
+    actions = {1: 'OUTPUT(0x1)',
+               2: 'SET_VLAN_VID(0x2)',
+               4: 'SET_VLAN_PCP(0x4)',
+               8: 'STRIP_VLAN(0x8)',
+               16: 'SET_DL_SRC(0x10)',
+               32: 'SET_DL_DST(0x20)',
+               64: 'SET_NW_SRC(0x40)',
+               128: 'SET_NW_DST(0x80)',
+               256: 'SET_NW_TOS(0x100)',
+               512: 'SET_TP_SRC(0x200)',
+               1024: 'SET_TP_DST(0x400)',
+               2048: 'ENQUEUE(0x800)'}
+    try:
+        return actions[action]
+    except:
+        return 'UnknownAction(%s)'% action
+
+
+def get_phy_port_id(p_id):
+    ids = {65280: 'Max(OxFF00)',
+           65528: 'InPort(0xFFF8)',
+           65529: 'Table(0xFFF9)',
+           65530: 'Normal(0xFFFA)',
+           65531: 'Flood(0xFFFB)',
+           65532: 'All(0xFFFC)',
+           65533: 'Controller(0xFFFD)',
+           65534: 'Local(0xFFFE)',
+           65535: 'None(0xFFFF)'}
+    try:
+        return ids[p_id]
+    except:
+        return '%s' % p_id
+
+
+def get_phy_config(p_cfg):
+    cfg = {1: 'PortDown(0x01)',
+           2: 'NoSTP(0x02)',
+           4: 'NoRecv(0x04)',
+           8: 'NoRecvSTP(0x08)',
+           16: 'NoFlood(0x10)',
+           32: 'NoFwd(0x20)',
+           64: 'NoPacketIn(0x40)'}
+    try:
+        return cfg[p_cfg]
+    except:
+        return 'UnknownConfig(%s)' % p_cfg
+
+
+def get_phy_state(p_state):
+    state = {0: 'STPListen(0x0)',
+             1: 'LinkDown(0x1)',
+             2: 'STPLearn(0x2)',
+             4: 'STPForward(0x4)',
+             8: 'STPBlock(0x8)',
+             16: 'STPMask(0x10)'}
+    try:
+        return state[p_state]
+    except:
+        return 'UnknownState(%s)' % p_state
+
+def get_phy_feature(p_feature):
+    ftr = {1: '10MB_HD(0x1)',
+           2: '10MB_FD(0x2)',
+           4: '100MB_HD(0x4)',
+           8: '100MB_FD(0x8)',
+           16: '1GB_HD(0x10)',
+           32: '1GB_FD(0x20)',
+           64: '10GB_FD(0x40)',
+           128: 'Copper(0x80)',
+           256: 'Fiber(0x100)',
+           512: 'AutoNeg(0x200)',
+           1024: 'Pause(0x400)',
+           2048: 'PauseAsym(0x800)'}
+    try:
+        return ftr[p_feature]
+    except:
+        return 'UnknownFeature(%s)' % p_feature
+
+
+def get_configres_flags(flag):
+    flags = {0: 'FRAG_NORMAL(0)',
+           1: 'FRAG_DROP(1)',
+           2: 'FRAG_REASM(2)',
+           3: 'FRAG_MASK(3)'}
+    try:
+        return flags[flag]
+    except:
+        return 'UnknownFlag(%s)' % flag
+
+
+def get_portStatus_reason(reason):
+    reasons = {0: 'OFPPR_ADD(0)',
+               1: 'OFPPR_DELETE(1)',
+               2: 'OFPPR_MODIFY(2)'}
+    try:
+        return reasons[reason]
+    except:
+        return 'UnknownReason(%s)' % reason

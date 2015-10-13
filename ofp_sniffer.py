@@ -10,6 +10,17 @@ from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
 import ofp_cli
 
 
+def get_of_version(num_ver):
+    version_name = {0: "EXP",
+                    1: "1.0",
+                    2: "1.1",
+                    3: "1.2",
+                    4: "1.3",
+                    5: "1.4",
+                    6: "1.5"}
+    return version_name[num_ver]
+
+
 def main(argv):
     '''
         This is the main function
@@ -33,6 +44,34 @@ def main(argv):
     except Exception as exception:
         print exception
         return
+
+
+def sanitizer_filters(of_header, date, getlen, caplen, header_size,
+                      eth, ip, tcp, sanitizer):
+    '''
+        If -F was provided, use filters specified
+    '''
+    if (of_header['version'] == -1):
+        print ('h_size : %s - caplen: %s - remaining_bypes %s' %
+               (header_size, caplen, remaining_bytes))
+        print_headers(1, date, getlen, caplen, eth, ip, tcp)
+        print 'OpenFlow header not complete. Ignoring packet.'
+        return 0
+
+    # OF Versions supported through json file (-F)
+    name_version = get_of_version(of_header['version'])
+    supported_versions = []
+    for version in sanitizer['allowed_of_versions']:
+        supported_versions.append(version)
+    if name_version not in supported_versions:
+        return 0
+
+    # OF Types to be ignored through json file (-F)
+    rejected_types = sanitizer['allowed_of_versions'][name_version]
+    if of_header['type'] in rejected_types['rejected_of_types']:
+        return 0
+
+    return 1
 
 
 def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
@@ -71,20 +110,15 @@ def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
     while (remaining_bytes >= 8):
         of_header = get_openflow_header(packet, start)
 
-        if (of_header['version'] == -1):
-            print 'h_size : ' + str(header_size) + ' and caplen: ' + \
-                str(caplen) + ' remaining_bytes = ' + str(remaining_bytes)
-            print_headers(1, date, getlen, caplen, eth, ip, tcp)
-            print 'OpenFlow header not complete. Ignoring packet.'
-            return
+        # If -F was passed...
+        if len(sanitizer['allowed_of_versions']) != 0:
+            result = sanitizer_filters(of_header, date, getlen, caplen, header_size,
+                                   eth, ip, tcp, sanitizer)
+            if result == 0:
+                return
 
         # In case there are multiple flow_mods
         remaining_bytes = remaining_bytes - of_header['length']
-
-        # OF Types to be ignored through json file (-F)
-        rejected_types = sanitizer['filtered_of_types']
-        if of_header['type'] in rejected_types:
-            return
 
         # Starts printing
         if print_header_once == 0:
@@ -105,14 +139,17 @@ def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
             this_packet = packet[start:start+of_header['length'] - 8]
             if not process_ofp_type(of_header['type'], this_packet, 0,
                                     of_header['xid'], print_options):
-                print str(of_header['xid']) + ' OpenFlow OFP_Type ' \
-                    + str(of_header['type']) + ' not dissected \n'
+                print ('%s OpenFlow OFP_Type %s not dissected \n' %
+                       (of_header['xid'], of_header['type']))
                 return
             else:
                 # Get next packet
                 start = start + (of_header['length'] - 8)
+        elif of_header['version'] == int('4', 16):
+            print 'Coming soon...'
+            return
         else:
-            print 'Only OpenFlow 1.0 is supported \n'
+            print 'OpenFlow version %s not supported \n' % of_header['version']
             return
 
         # Do not process extra data from Hello and Error.

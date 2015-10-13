@@ -1,10 +1,24 @@
 {
-  "filtered_of_types": [
-    2,
-    3,
-    10,
-    13
-  ],
+  "allowed_of_versions": {
+    "1.0": {
+          "rejected_of_types": [
+            2,
+            3,
+            10,
+            13,
+            16,
+            17
+         ]
+    },
+    "1.3": {
+          "rejected_of_types": [
+            2,
+            3,
+            10,
+            13
+         ]
+    }
+  },
   "flowMod_logs": {
     "filter_1": {
       "match": {

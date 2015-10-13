@@ -67,7 +67,7 @@ def get_params(argv):
             usage(argv[0])
 
     if len(sanitizer_file) == 0:
-        sanitizer = {'filtered_of_types': [], 'flowMod_logs': {}}
+        sanitizer = {'allowed_of_versions': {}, 'flowMod_logs': {}}
     else:
         sanitizer = read_sanitizer(sanitizer_file)
     return print_options, input_filter, sanitizer, dev, captured_file

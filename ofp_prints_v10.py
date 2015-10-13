@@ -10,6 +10,14 @@ def eth_addr(a):
     return mac
 
 
+def datapath_id(a):
+    dpid = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (ord(a[0]), ord(a[1]),
+                                                        ord(a[2]), ord(a[3]),
+                                                        ord(a[4]), ord(a[5]),
+                                                        ord(a[6]), ord(a[7]))
+    return dpid
+
+
 def print_headers(print_options, date, getlen, caplen, eth, ip, tcp):
     if print_options['min'] == 1:
         print_minimal(date, getlen, ip, tcp)
@@ -72,12 +80,80 @@ def print_openflow_header(of):
 
 
 def print_of_hello(of_xid):
-    print str(of_xid) + ' OpenFlow Hello'
+    print '%s OpenFlow Hello' % of_xid
 
 
 def print_of_error(of_xid, nameCode, typeCode):
     print str(of_xid) + ' OpenFlow Error - Type: ' + colored(nameCode, 'red') + \
         ' Code: ' + colored(typeCode, 'red')
+
+
+def print_of_feature_req(of_xid):
+    print '%s OpenFlow Feature Request' % of_xid
+
+
+def print_of_getconfig_req(of_xid):
+    print '%s OpenFlow GetConfig Request' % of_xid
+
+
+def print_of_feature_res(of_xid, f_res):
+    print '%s OpenFlow Feature Reply' % of_xid
+    dpid = datapath_id(f_res['datapath_id'])
+    print ('%s FeatureRes - datapath_id: %s n_buffers: %s n_tbls: %s, pad: %s'
+           % (of_xid, colored(dpid, 'green'), f_res['n_buffers'], f_res['n_tbls'],
+           f_res['pad']))
+
+
+def print_of_feature_res_caps_and_actions(of_xid, caps, actions):
+    print ('%s FeatureRes - Capabilities:' % of_xid),
+    for i in caps:
+        print ofp_dissector_v10.get_feature_res_capabilities(i),
+    print
+    print ('%s FeatureRes - Actions:' % of_xid),
+    for i in actions:
+        print ofp_dissector_v10.get_feature_res_actions(i),
+    print
+
+
+def print_of_feature_res_ports(of_xid, ports):
+    print ('%s FeatureRes - port_id: %s hw_addr: %s name: %s' % (of_xid,
+           colored(ports['port_id'], 'green'), colored(ports['hw_addr'], 'green'),
+           colored(ports['name'], 'green')))
+    print ('%s FeatureRes - config:' % of_xid),
+    for i in ports['config']:
+        print ofp_dissector_v10.get_phy_config(i),
+    else:
+        print '0',
+    print
+    print ('%s FeatureRes - state:' % of_xid),
+    for i in ports['state']:
+        print ofp_dissector_v10.get_phy_state(i),
+    else:
+        print '0',
+    print
+    print ('%s FeatureRes - curr:' % of_xid),
+    for i in ports['curr']:
+        print ofp_dissector_v10.get_phy_feature(i),
+    else:
+        print '0',
+    print
+    print ('%s FeatureRes - advertised:' % of_xid),
+    for i in ports['advertised']:
+        print ofp_dissector_v10.get_phy_feature(i),
+    else:
+        print '0',
+    print
+    print ('%s FeatureRes - supported:' % of_xid),
+    for i in ports['supported']:
+        print ofp_dissector_v10.get_phy_feature(i),
+    else:
+        print '0',
+    print
+    print ('%s FeatureRes - peer:' % of_xid),
+    for i in ports['peer']:
+        print ofp_dissector_v10.get_phy_feature(i),
+    else:
+        print '0'
 
 
 def print_ofp_match(xid, ofmatch):
@@ -254,4 +330,136 @@ def print_of_BarrierReply(of_xid):
 
 def print_of_vendor(of_vendor, of_xid):
     vendor = ofp_dissector_v10.get_ofp_vendor(of_vendor)
-    print str(of_xid) + ' OpenFlow Vendor : ' + vendor
+    print ('%s OpenFlow Vendor: %s'  % (of_xid, vendor))
+
+
+def print_ofp_statReqDesc(of_xid, stat_type):
+    print ('%s StatReq Type: Description(%s)' % (of_xid, stat_type))
+
+
+def print_ofp_statReqFlowAggregate(of_xid, stat_type, of_match, table_id, pad,
+                                   out_port):
+    if stat_type == 1:
+        type_name = 'Flow'
+    else:
+        type_name = 'Aggregate'
+
+    print ('%s StatReq Type: %s(%s)' % (of_xid, type_name, stat_type))
+    print_ofp_match(of_xid, of_match)
+    print ('%s StatReq Table_id: %s Pad: %d Out_Port: %s' % (of_xid, table_id,
+           pad, out_port))
+
+
+def print_ofp_statReqTable(of_xid, stat_type):
+    print ('%s StatReq Type: Table(%s)' % (of_xid, stat_type))
+
+
+def print_ofp_statReqPort(of_xid, stat_type, port_number, pad):
+    print ('%s StatReq Type: Port(%s): Port_Number: %s Pad: %s' % (of_xid,
+           stat_type, colored(port_number, 'green'), pad))
+
+
+def print_ofp_statReqQueue(of_xid, stat_type, port_number, pad, queue_id):
+    print ('%s StatReq Type: Queue(%s): Port_Number: %s Pad: %s Queue_id: %s' %
+           (of_xid, stat_type, colored(port_number, 'green'), pad, queue_id))
+
+
+def print_ofp_statReqVendor(of_xid, stat_type, vendor_id):
+    print ('%s StatReq Type: Vendor(%s): Vendor_ID: %s' % (of_xid, stat_type,
+           vendor_id))
+
+
+def print_ofp_statResDesc(of_xid, stat_type, mfr_desc, hw_desc, sw_desc,
+                          serial_num, dp_desc):
+    print ('%s StatRes Type: Description(%s)' % (of_xid, stat_type))
+    print ('%s StatRes mfr_desc: %s' % (of_xid, mfr_desc))
+    print ('%s StatRes hw_desc: %s' % (of_xid, hw_desc))
+    print ('%s StatRes sw_desc: %s' % (of_xid, sw_desc))
+    print ('%s StatRes serial_num: %s' % (of_xid, serial_num))
+    print ('%s StatRes dp_desc: %s' % (of_xid, dp_desc))
+
+
+def print_ofp_statResFlow(of_xid, stat_type, match, res_flow):
+    print ('%s StatRes Type: Flow(%s)' % (of_xid, stat_type))
+    print ('%s StatRes Length: %s Table_id: %s Pad: %s ' %
+           (of_xid, res_flow['length'], res_flow['table_id'], res_flow['pad']))
+    print ('%s StatRes' % of_xid),
+    print_ofp_match('', match)
+    print ('%s StatRes duration_sec: %s, duration_nsec: %s, priority: %s,'
+           ' idle_timeout: %s, hard_timeout: %s, pad: %s, cookie: %s,'
+           ' packet_count: %s, byte_count: %s' % (of_xid,
+           res_flow['duration_sec'], res_flow['duration_nsec'],
+           res_flow['priority'], res_flow['idle_timeout'],
+           res_flow['hard_timeout'], res_flow['pad'],
+           res_flow['cookie'],
+           res_flow['packet_count'], res_flow['byte_count']))
+
+
+def print_ofp_statResAggregate(of_xid, stat_type, res_flow):
+    print ('%s StatRes Type: Aggregate(%s)' % (of_xid, stat_type))
+    print ('%s StatRes packet_count: %s, byte_count: %s flow_count: %s pad: %s' %
+           (of_xid, res_flow['packet_count'], res_flow['byte_count'],
+            res_flow['flow_count'], res_flow['pad']))
+
+
+def print_ofp_statResTable(of_xid, stat_type, res_flow):
+    print ('%s StatRes Type: Table(%s)' % (of_xid, stat_type))
+    print ('%s StatRes table_id: %s, pad: %s, name: "%s", wildcards: %s, '
+           'max_entries: %s, active_count: %s, lookup_count: %s, '
+           'matched_count: %s' % (of_xid, res_flow['table_id'], res_flow['pad'],
+           res_flow['name'], hex(res_flow['wildcards']), res_flow['max_entries'],
+           res_flow['active_count'], res_flow['lookup_count'],
+           res_flow['matched_count']))
+
+
+def print_ofp_statResPort(of_xid, stat_type, res_flow):
+    print ('%s StatRes Type: Port(%s)' % (of_xid, stat_type))
+    print ('%s StatRes port_number: %s rx_packets: %s rx_bytes: %s rx_errors: %s'
+           ' rx_crc_err: %s rx_dropped: %s rx_over_err: %s rx_frame_err: %s\n'
+           '%s StatRes port_number: %s tx_packets: %s tx_bytes: %s tx_errors: %s'
+           ' tx_dropped: %s collisions: %s pad: %s'
+           % (of_xid, colored(res_flow['port_number'], 'red'), res_flow['rx_packets'],
+           res_flow['rx_bytes'], res_flow['rx_errors'], res_flow['rx_crc_err'],
+           res_flow['rx_dropped'], res_flow['rx_over_err'],
+           res_flow['rx_frame_err'], of_xid, colored(res_flow['port_number'], 'red'),
+           res_flow['tx_packets'], res_flow['tx_bytes'], res_flow['tx_errors'],
+           res_flow['tx_dropped'], res_flow['collisions'], res_flow['pad']))
+
+
+def print_ofp_statResQueue(of_xid, stat_type, res_flow):
+    print ('%s StatRes Type: Queue(%s)' % (of_xid, stat_type))
+    print ('%s StatRes queue_id: %s length: %s pad: %s'
+           ' tx_bytes: %s tx_packets: %s tx_errors: %s' %
+           (of_xid, res_flow['queue_id'], res_flow['length'], res_flow['pad'],
+            res_flow['tx_bytes'], res_flow['tx_packets'], res_flow['tx_errors']))
+
+
+def print_ofp_statResVendor(of_xid, stat_type, res_flow):
+    print ('%s StatRes Type: Vendor(%s)' % (of_xid, stat_type))
+    print ('%s StatRes vendor_id: %s' % (of_xid, res_flow['vendor_id']))
+
+
+def print_ofp_statResVendorData(of_xid, data):
+    print '%s StatRes Vendor Data: %s' % (of_xid, data)
+
+
+def print_ofp_getConfigRes(of_xid, flag, miss):
+    print ('%s OpenFlow GetConfigRes - Flag: %s Miss_send_len: %s' % (of_xid, flag, miss))
+
+
+def print_ofp_setConfig(of_xid, flag, miss):
+    print ('%s OpenFlow SetConfig - Flag: %s Miss_send_len: %s' % (of_xid, flag, miss))
+
+
+def print_echoreq(of_xid):
+    print ('%s OpenFlow Echo Request' % (of_xid))
+
+
+def print_echores(of_xid):
+    print ('%s OpenFlow Echo Reply' % (of_xid))
+
+
+def print_portStatus(of_xid, reason, pad):
+    print ('%s OpenFlow PortStatus - Reason: %s Pad: %s' % (of_xid, reason, pad))
+
+

@@ -72,11 +72,13 @@ def parse_Error(packet, h_size, of_xid):
 
 
 def parse_EchoReq(packet, h_size, of_xid):
-    return 0
+    ofp_prints_v10.print_echoreq(of_xid)
+    return 1
 
 
 def parse_EchoRes(packet, h_size, of_xid):
-    return 0
+    ofp_prints_v10.print_echores(of_xid)
+    return 1
 
 
 def _parse_nicira(packet, start, of_xid):
@@ -99,28 +101,120 @@ def parse_Vendor(packet, h_size, of_xid):
 
 
 def parse_FeatureReq(packet, h_size, of_xid):
-    return 0
+    ofp_prints_v10.print_of_feature_req(of_xid)
+    return 1
+
+
+def _parse_bitmask(bitmask, array):
+    size = len(array)
+    for i in range(0, size):
+        mask = 2**i
+        aux = bitmask & mask
+        if aux == 0:
+            array.remove(mask)
+    return array
+
+
+def _parse_capabilities(capabilities):
+    caps = [1, 2, 4, 8, 16, 32, 64, 128]
+    return _parse_bitmask(capabilities, caps)
+
+
+def _parse_actions(actions):
+    acts = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+    return _parse_bitmask(actions, acts)
+
+
+def _parse_phy_config(config):
+    confs = [1, 2, 4, 8, 16, 32, 64]
+    return _parse_bitmask(config, confs)
+
+
+def _parse_phy_state(state):
+    states = [1, 2, 4, 8, 16]
+    return _parse_bitmask(state, states)
+
+
+def _parse_phy_curr(values):
+    confs = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+    return _parse_bitmask(values, confs)
+
+
+def _parse_phy_ports(packet, of_xid):
+    phy = unpack('!H6s16sLLLLLL', packet)
+
+    port_id = ofp_dissector_v10.get_phy_port_id(phy[0])
+    hw_addr = ofp_prints_v10.eth_addr(phy[1])
+    config = _parse_phy_config(phy[3])
+    state = _parse_phy_state(phy[4])
+    curr = _parse_phy_curr(phy[5])
+    advertised = _parse_phy_curr(phy[6])
+    supported = _parse_phy_curr(phy[7])
+    peer = _parse_phy_curr(phy[8])
+
+    phy_ports = {'port_id': port_id,
+                 'hw_addr': hw_addr,
+                 'name': phy[2],
+                 'config': config,
+                 'state': state,
+                 'curr': curr,
+                 'advertised': advertised,
+                 'supported': supported,
+                 'peer': peer}
+    return phy_ports
 
 
 def parse_FeatureRes(packet, h_size, of_xid):
-    return 0
+    of_fres = packet[h_size:h_size+24]
+    ofrs = unpack('!8sLB3sLL', of_fres)
+    f_res = {'datapath_id': ofrs[0], 'n_buffers': ofrs[1], 'n_tbls': ofrs[2],
+             'pad': ofrs[3]}
+    ofp_prints_v10.print_of_feature_res(of_xid, f_res)
+
+    #'capabilities': ofrs[4], 'actions': ofrs[5]}
+    caps = []
+    caps = _parse_capabilities(ofrs[4])
+    actions = []
+    actions = _parse_actions(ofrs[5])
+    ofp_prints_v10.print_of_feature_res_caps_and_actions(of_xid, caps, actions)
+
+    # Ports description?
+    start = h_size + 24
+    while len(packet[start:]) > 0:
+        ports = _parse_phy_ports(packet[start:start+48], of_xid)
+        ofp_prints_v10.print_of_feature_res_ports(of_xid, ports)
+        start = start + 48
+
+    return 1
 
 
 def parse_GetConfigReq(packet, h_size, of_xid):
-    return 0
+    ofp_prints_v10.print_of_getconfig_req(of_xid)
+    return 1
+
+
+def _parse_SetGetConfig(packet, h_size):
+    pkt_raw = packet[h_size:h_size+4]
+    pkt_list =unpack('!HH', pkt_raw)
+    flag = ofp_dissector_v10.get_configres_flags(pkt_list[0])
+    miss_send_len = pkt_list[1]
+    return flag, miss_send_len
 
 
 def parse_GetConfigRes(packet, h_size, of_xid):
-    return 0
+    flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
+    ofp_prints_v10.print_ofp_getConfigRes(of_xid, flag, miss_send_len)
+    return 1
 
 
 def parse_SetConfig(packet, h_size, of_xid):
-    return 0
+    flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
+    fp_prints_v10.print_ofp_setConfig(of_xid, flag, miss_send_len)
+    return 1
 
 
 def parse_PacketIn(packet, h_size, of_xid):
-    # It won't be created
-    return 1
+    return 0
 
 
 def parse_FlowRemoved(packet, h_size, of_xid):
@@ -129,7 +223,7 @@ def parse_FlowRemoved(packet, h_size, of_xid):
     ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
 
     of_rem_body = packet[h_size+40:h_size+40+40]
-    ofrem = unpack('!8sHBBLLHBB8s8s', of_rem_body)
+    ofrem = unpack('!8sHBBLLHBBQQ', of_rem_body)
     ofrem_cookie = ofrem[0] if not len(ofrem[0]) else 0
     ofrem_priority = ofrem[1]
     ofrem_reason = ofrem[2]
@@ -154,12 +248,18 @@ def parse_FlowRemoved(packet, h_size, of_xid):
 
 
 def parse_PortStatus(packet, h_size, of_xid):
-    return 0
+    port_raw = packet[h_size:h_size+8]
+    port = unpack('!B7s', port_raw)
+    reason = ofp_dissector_v10.get_portStatus_reason(port[0])
+    pad = port[1]
+    ofp_prints_v10.print_portStatus(of_xid, reason, pad)
+    ports = _parse_phy_ports(packet[h_size+8:h_size+64], of_xid)
+    ofp_prints_v10.print_of_feature_res_ports(of_xid, ports)
+    return 1
 
 
 def parse_PacketOut(packet, h_size, of_xid):
-    # It won't be created
-    return 1
+    return 0
 
 
 def process_dst_subnet(wcard):
@@ -185,7 +285,7 @@ def _process_wildcard(wcard):
                 32: 'nw_prot',
                 64: 'tp_src',
                 128: 'tp_dst',
-                1048576: 'pcp',
+                1048576: 'dl_vlan_pcp',
                 2097152: 'nw_tos'}
 
     return wildcard.get(wcard)
@@ -206,7 +306,7 @@ def _parse_OFMatch(packet, h_size):
     etype = hex(ofm[7])
 
     ofmatch = {'wildcards': ofm[0], 'in_port': ofm[1], 'dl_src': dl_src,
-               'dl_dst': dl_dst, 'dl_vlan': ofm[4], 'pcp': ofm[5],
+               'dl_dst': dl_dst, 'dl_vlan': ofm[4], 'dl_vlan_pcp': ofm[5],
                'dl_type': etype, 'nw_tos': ofm[8], 'nw_prot': ofm[9],
                'nw_src': nw_src, 'nw_dst': nw_dst, 'tp_src': ofm[13],
                'tp_dst': ofm[14]}
@@ -251,6 +351,42 @@ def _parse_OFBody(packet, h_size):
               'buffer_id': ofmod[5], 'out_port': ofmod[6],
               'flags': ofmod[7]}
     return ofbody
+
+
+def _parse_OFAction(of_xid, packet, start):
+    '''
+        Actions
+    '''
+    # Actions: Header = 4 , plus each possible action
+    # Payload varies:
+    #  4 for types 0,1,2,6,7,8,9,a,ffff
+    #  0 for type 3
+    #  12 for types 4,5,b
+    action_header = 4
+    while (1):
+        ofp_action = packet[start:start + action_header]
+        if len(ofp_action) > 0:
+            # Get type and length
+            ofa = unpack('!HH', ofp_action)
+            ofa_type = ofa[0]
+            ofa_length = ofa[1]
+
+            start = start + action_header
+            if ofa_type == 4 or ofa_type == 5 or ofa_type == int('b', 16):
+                total_length = 12
+                ofa_action_payload = packet[start:start + 12]
+            else:
+                total_length = 4
+                ofa_action_payload = packet[start:start + 4]
+
+            ofa_temp = ofp_prints_v10.print_ofp_action(of_xid, ofa_type,
+                                                       ofa_length,
+                                                       ofa_action_payload)
+            # Next packet would start at..
+            start = start + total_length
+        else:
+            break
+    return
 
 
 def parse_FlowMod(packet, h_size, of_xid, print_options):
@@ -315,11 +451,211 @@ def parse_PortMod(packet, h_size, of_xid):
 
 
 def parse_StatsReq(packet, h_size, of_xid):
-    return 0
+    '''
+        Process the StatsReq
+    '''
+    # Get type = 16bits
+    # Get flags = 16bits
+    of_stat_req = packet[h_size:h_size+4]
+    ofstat = unpack('!HH', of_stat_req)
+    stat_type = ofstat[0]
+    flags = ofstat[1]
+    start = h_size+4
+
+    # 7 Types available
+    if stat_type == 0:
+        # Description
+        # No extra fields
+        ofp_prints_v10.print_ofp_statReqDesc(of_xid, stat_type)
+
+    elif stat_type == 1 or stat_type == 2:
+        # Flow(1) or Aggregate(2)
+        # Fields: match(40), table_id(8), pad(8), out_port(16)
+        of_match = _parse_OFMatch(packet, start)
+        # 44 Bytes (40B from Match, 4 from header)
+        of_stat_req_other = packet[start+40:start+40+4]
+        ofstat = unpack('!BBH', of_stat_req)
+        table_id = ofstat[0]
+        pad = ofstat[1]
+        out_port = ofstat[2]
+        ofp_prints_v10.print_ofp_statReqFlowAggregate(of_xid, stat_type,
+                                                      of_match, table_id, pad,
+                                                      out_port)
+    elif stat_type == 3:
+        # Table
+        # No extra fields
+        ofp_prints_v10.print_ofp_statReqTable(of_xid, stat_type)
+
+    elif stat_type == 4:
+        # Port
+        # Fields: port_number(16), pad(48)
+        of_stat_req = packet[start:start+8]
+        ofstat = unpack('!H6s', of_stat_req)
+        port_number = ofstat[0]
+        pad = ofstat[1]
+        ofp_prints_v10.print_ofp_statReqPort(of_xid, stat_type, port_number, pad)
+
+    elif stat_type == 5:
+        # Queue
+        # Fields: port_number(16), pad(16), queue_id(32)
+        of_stat_req = packet[start:start+8]
+        ofstat = unpack('!HHL', of_stat_req)
+        port_number = ofstat[0]
+        pad = ofstat[1]
+        queue_id = ofstat[2]
+        ofp_prints_v10.print_ofp_statReqQueue(of_xid, stat_type, port_number,
+                                              pad, queue_id)
+    elif stat_type == 65535:
+        # Vendor
+        # Fields: vendor_id(32) + data
+        of_stat_req = packet[start:start+4]
+        ofstat = unpack('!L', of_stat_req)
+        vendor_id = ofstat[0]
+        ofp_prints_v10.print_ofp_statReqVendor(of_xid, stat_type, vendor_id)
+
+    else:
+        print ('%s StatReq: Unknown Type: %s' % (of_xid, stat_type))
+        return 0
+    return 1
 
 
 def parse_StatsRes(packet, h_size, of_xid):
-    return 0
+    '''
+        Process StatReq
+    '''
+    # Get type = 16bits
+    # Get flags = 16bits
+    of_stat_req = packet[h_size:h_size+4]
+    ofstat = unpack('!HH', of_stat_req)
+    stat_type = ofstat[0]
+    flags = ofstat[1]
+    start = h_size+4
+
+    # 7 Types available
+    if stat_type == 0:
+        # Description
+        # Fields: mfr_desc(2048), hw_desc(2048), sw_desc(2048), serial_num(256),
+        #  dp_desc(2048)
+        desc_raw = packet[start:start+1056]
+        desc = unpack('!256s256s256s32s256s', desc_raw)
+        mfr_desc = desc[0]
+        hw_desc = desc[1]
+        sw_desc = desc[2]
+        serial_num = desc[3]
+        dp_desc = desc[4]
+        ofp_prints_v10.print_ofp_statResDesc(of_xid, stat_type, mfr_desc,
+                                             hw_desc, sw_desc, serial_num,
+                                             dp_desc)
+
+    elif stat_type == 1:
+        # Flow(1)
+        # Fields: length(16), table_id(8), pad(8), match(40), duration_sec(32),
+        #  duration_nsec(32), priority(16), idle_timeout(16), hard_timeout(16),
+        #  pad(48), cookie(64), packet_count(64), byte_count(64), actions[]
+        count = len(packet[h_size:]) - 4
+        while (count > 0):
+            flow_raw = packet[start:start+4]
+            flow = unpack('!HBB', flow_raw)
+            res_flow = {'length': flow[0], 'table_id': flow[1], 'pad': flow[2]}
+            of_match = _parse_OFMatch(packet, start+4)
+            flow_raw = packet[start+44:start+44+44]
+            flow = unpack('!LLHHH6sQQQ', flow_raw)
+            res_flow.update({'duration_sec': flow[0], 'duration_nsec': flow[1],
+                             'priority': flow[2], 'idle_timeout': flow[3],
+                             'hard_timeout': flow[4], 'pad2': flow[5],
+                             'cookie': flow[6], 'packet_count': flow[7],
+                             'byte_count': flow[8]})
+
+            ofp_prints_v10.print_ofp_statResFlow(of_xid, stat_type, of_match,
+                                                 res_flow)
+            #_parse_OFAction(of_xid, packet, start)
+            count = count - int(res_flow['length'])
+            start = start + int(res_flow['length'])
+
+    elif stat_type == 2:
+        # Aggregate(2)
+        # Fields: packet_count(64), byte_count(64), flow_count(32), pad(32)
+        flow_raw = packet[start:start+24]
+        flow = unpack('!QQLL', flow_raw)
+        res_flow = {'packet_count': flow[0], 'byte_count': flow[1],
+                    'flow_count': flow[2], 'pad': flow[3]}
+        ofp_prints_v10.print_ofp_statResAggregate(of_xid, stat_type, res_flow)
+
+    elif stat_type == 3:
+        # Table
+        # Fields: table_id(8), pad(24), name(256), wildcards(32),
+        #  max_entries(32), active_count(32), lookup_count(64),
+        #  matched_count(64)
+        flow_raw = packet[start:start+64]
+        flow = unpack('!B3s32sLLLQQ', flow_raw)
+        res_flow = {'table_id': flow[0], 'pad': flow[1], 'name': flow[2],
+                    'wildcards': flow[3], 'max_entries': flow[4],
+                    'active_count': flow[5], 'lookup_count': flow[6],
+                    'matched_count': flow[7]}
+        ofp_prints_v10.print_ofp_statResTable(of_xid, stat_type, res_flow)
+
+    elif stat_type == 4:
+        # Port
+        # Fields: port_number(16), pad(48), rx_packets(64), tx_packets(64),
+        #  rx_bytes(64), tx_bytes(64), rx_dropped(64), tx_dropped(64),
+        #  rx_errors(64), tx_errors(64), rx_frame_err(64), rx_over_err(64),
+        #  rx_crc_err(64), collisions(64)
+        count = len(packet[h_size:]) - 4
+        while (count > 0):
+            flow_raw = packet[start:start+104]
+            flow = unpack('!H6sQQQQQQQQQQQQ', flow_raw)
+            res_flow = {'port_number': flow[0], 'pad': flow[1],
+                        'rx_packets': flow[2], 'tx_packets': flow[3],
+                        'rx_bytes': flow[4], 'tx_bytes': flow[5],
+                        'rx_dropped': flow[6], 'tx_dropped': flow[7],
+                        'rx_errors': flow[8], 'tx_errors': flow[9],
+                        'rx_frame_err': flow[10], 'rx_over_err':flow[11],
+                        'rx_crc_err':flow[12], 'collisions':flow[13]}
+            ofp_prints_v10.print_ofp_statResPort(of_xid, stat_type, res_flow)
+
+            count = count - 104
+            start = start + 104
+
+    elif stat_type == 5:
+        # Queue
+        # Fields: length(16), pad(16), queue_id(32), tx_bytes(64),
+        #  tx_packets(64), tx_errors(64)
+        count = len(packet[h_size:]) - 4
+        while (count > 0):
+            flow_raw = packet[start:start+32]
+            flow = unpack('!HHLQQQ', flow_raw)
+            res_flow = {'length': flow[0], 'pad': flow[1], 'queue_id': flow[2],
+                        'tx_bytes': flow[3], 'tx_packets': flow[4],
+                        'tx_errors': flow[5]}
+            ofp_prints_v10.print_ofp_statResQueue(of_xid, stat_type, res_flow)
+            count = count - 32
+            start = start + 32
+        else:
+            print ('%s StatRes Type: Queue(%s)' % (of_xid, stat_type))
+            print ('%s No Queues' % (of_xid))
+
+    elif stat_type == 65535:
+        # Vendor
+        # Fields: vendor_id(32), data(?)
+        flow_raw = packet[start:start+4]
+        flow = unpack('!L', flow_raw)
+        res_flow = {'vendor_id': flow[0]}
+        ofp_prints_v10.print_ofp_statResVendor(of_xid, stat_type, res_flow)
+
+        start = start + 4
+        data = []
+        count = len(packet[h_size:])
+        while (start < count):
+           flow_raw = packet[start:start+1]
+           flow = unpack('!B', flow_raw)
+           data.append(str(flow[0]))
+           start = start + 1
+        ofp_prints_v10.print_ofp_statResVendorData(of_xid, ''.join(data))
+
+    else:
+        print ('%s StatRes: Unknown Type: %s' % (of_xid, stat_type))
+        return 0
+    return 1
 
 
 def parse_BarrierReq(packet, h_size, of_xid):
