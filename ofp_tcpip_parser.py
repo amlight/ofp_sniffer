@@ -18,17 +18,20 @@ def get_ethernet_frame(packet):
 
 def get_ethernet_vlan(packet):
     vlan_length = 2
-    vlan_p = packet[:vlan_length]
-    prio = vlan_p >> 13
-    cfi = (vlan_p & 0x1000) >> 12
-    vid = vlan_p & 0xfff
+    vlan_pq = packet[:vlan_length]
+    vlan_p = unpack('!H', vlan_pq)
+    prio = vlan_p[0] >> 13
+    cfi = (vlan_p[0] & 0x1000) >> 12
+    vid = vlan_p[0] & 0xfff
     vlan = {'prio': prio, 'cfi': cfi, 'vid': vid}
+    print vlan
     return vlan
 
 
 def get_next_etype(packet):
     etype_length = 2
-    return unpack('!H', packet)
+    et = packet[:etype_length]
+    return unpack('!H', et)[0]
 
 def get_ip_packet(packet, eth_length):
     '''
@@ -113,27 +116,32 @@ def get_openflow_header(packet, start):
 
 def get_lldp(packet):
     # Chassis
-    chassis_raw = packet[:9]
-    chassis = unpack('!HB6s', chassis_raw)
+    chassis_raw = packet[:3]
+    chassis = unpack('!HB', chassis_raw)
     c_type = chassis[0] >> 9
     c_length = chassis[0] & 0xFF
     c_subtype = chassis[1]
-    c_id = chassis[2]
+    length = c_length - 1
+    chassis_raw = packet[3:3+length]
+    string = '!%ss' % length
+    chassis = unpack(string, chassis_raw)
+    c_id = chassis[0]
+    start = 3 + length
     # Port
-    port_raw = packet[9:14]
+    port_raw = packet[start:start+5]
     port = unpack('!HBH', port_raw)
     p_type = port[0] >> 9
     p_length = port[0] & 0xFF
     p_subtype = port[1]
     p_id = port[2]
     # TTL
-    ttl_raw = packet[14:18]
+    ttl_raw = packet[start+5:start+9]
     ttl = unpack('!HH', ttl_raw)
     t_type = ttl[0] >> 9
     t_length = ttl[0] & 0xFF
     t_ttl = ttl[1]
     # END
-    end_raw = packet[18:20]
+    end_raw = packet[start+9:start+11]
     end = unpack('!H', end_raw)
     e_type = end[0] >> 9
     e_length = end[0] & 0xFF

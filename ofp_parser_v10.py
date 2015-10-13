@@ -222,7 +222,7 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
     etype = '0x0000'
     vlan = {}
     # VLAN or not
-    if eth['protocol'] == 8100:
+    if eth['protocol'] in [129]:
         vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
         start = start + 2
         # If VLAN exists, there is a next eth['protocol'] with value 0xcc88
@@ -230,10 +230,10 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
         start = start + 2
     # LLDP
     lldp = {}
-    if hex(eth['protocol']) == '0xcc88' or etype == 'cc88':
+    if etype in [35020]:
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
-    return eth, vlan, lldp
-
+        return eth, vlan, lldp
+    return eth, vlan, {}
 
 def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
     ofp_prints_v10.print_ofp_packetIn(of_xid, packetIn)
@@ -254,11 +254,14 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
 
     eth, vlan, lldp = _parse_ethernet_lldp_PacketInOut(packet, h_size + 10)
 
+    if len(lldp) == 0:
+        return 1
+
     if (len(sanitizer['packetIn_filter']) > 0):
         if (sanitizer['packetIn_filter']['switch_dpid'] == lldp['c_id']):
             if ((sanitizer['packetIn_filter']['in_port'] == "any") or
                (sanitizer['packetIn_filter']['in_port'] == str(packetIn['in_port']))):
-                _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+               _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
     else:
         _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
     return 1
@@ -315,14 +318,14 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer):
     start = start + 14
     etype = '0x0000'
     # VLAN or not
-    if eth['protocol'] == 8100:
+    if eth['protocol'] in [129]:
         vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
         ofp_prints_v10.print_packetInOut_vlan(of_xid, vlan)
         start = start + 2
         # If VLAN exists, there is a next eth['protocol'] with value 0xcc88
         etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
         start = start + 2
-    if hex(eth['protocol']) == '0xcc88' or etype == 'cc88':
+    if etype in [35020]:
         #LLDP TLV
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
         ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)

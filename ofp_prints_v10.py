@@ -56,7 +56,7 @@ def print_layer2(eth):
 
 
 def print_vlan(vlan):
-    print 'Prio: %s CFI: %s VID: %s' % (vlan['prio'], vlan['cfi'], vlan['vid'])
+    print 'Prio: %s CFI: %s VID: %s' % (vlan['prio'], vlan['cfi'], red(vlan['vid']))
 
 
 def print_layer3(ip):
@@ -454,7 +454,7 @@ def print_packetInOut_layer2(of_xid, eth):
 
 
 def print_packetInOut_vlan(of_xid, vlan):
-    print ('%s Ethernet: ' % vlan),
+    print ('%s Ethernet: ' % of_xid),
     print_vlan(vlan)
 
 
