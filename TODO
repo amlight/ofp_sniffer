@@ -1,0 +1,33 @@
+TODO List:
+
+Current Support:
+
+- Dissects the following OpenFlow 1.0 Message Types:
+- Filters per OpenFlow message type
+
+Version 0.2:
+
+- Fix Actions handling from PacketIn/Out and StatsRes
+- Add PortMod, QueueReq, QueueRes
+- Test with NICIRA and Brocade
+- Fix PEP8 (upload to VM)
+
+- Dissects all OpenFlow 1.0 message types
+- Reads from Libpcap files
+- PacketIn and PacketOut filters
+
+Version 0.3:
+
+- Topology Validator
+- Labels outputs depending of Match and Action
+- Full OpenVSwitch/NICIRA dissector
+- Dissects all OpenFlow 1.3 message types
+- Outputs as text and libcap to different files
+
+Version 0.4:
+
+- Reads SSL/TLS sessions
+- Integrate with FlowSpace Firewall
+- Make TAR.GZ available (with Makefile)
+- Create RPM and DEB packages
+

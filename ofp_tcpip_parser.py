@@ -16,6 +16,20 @@ def get_ethernet_frame(packet):
     return eth_frame
 
 
+def get_ethernet_vlan(packet):
+    vlan_length = 2
+    vlan_p = packet[:vlan_length]
+    prio = vlan_p >> 13
+    cfi = (vlan_p & 0x1000) >> 12
+    vid = vlan_p & 0xfff
+    vlan = {'prio': prio, 'cfi': cfi, 'vid': vid}
+    return vlan
+
+
+def get_next_etype(packet):
+    etype_length = 2
+    return unpack('!H', packet)
+
 def get_ip_packet(packet, eth_length):
     '''
         Returns IP Header fields
@@ -97,5 +111,35 @@ def get_openflow_header(packet, start):
         return of_header
 
 
-def get_lldp():
-    return
+def get_lldp(packet):
+    # Chassis
+    chassis_raw = packet[:9]
+    chassis = unpack('!HB6s', chassis_raw)
+    c_type = chassis[0] >> 9
+    c_length = chassis[0] & 0xFF
+    c_subtype = chassis[1]
+    c_id = chassis[2]
+    # Port
+    port_raw = packet[9:14]
+    port = unpack('!HBH', port_raw)
+    p_type = port[0] >> 9
+    p_length = port[0] & 0xFF
+    p_subtype = port[1]
+    p_id = port[2]
+    # TTL
+    ttl_raw = packet[14:18]
+    ttl = unpack('!HH', ttl_raw)
+    t_type = ttl[0] >> 9
+    t_length = ttl[0] & 0xFF
+    t_ttl = ttl[1]
+    # END
+    end_raw = packet[18:20]
+    end = unpack('!H', end_raw)
+    e_type = end[0] >> 9
+    e_length = end[0] & 0xFF
+    lldp = {'c_type': c_type, 'c_length': c_length, 'c_subtype': c_subtype,
+            'c_id': c_id, 'p_type': p_type, 'p_length': p_length,
+            'p_subtype': p_subtype, 'p_id': p_id, 't_type': t_type,
+            't_length': t_length, 't_ttl': t_ttl, 'e_type': e_type,
+            'e_length': e_length}
+    return lldp

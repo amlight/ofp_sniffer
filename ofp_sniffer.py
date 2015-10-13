@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 
+'''
+    This code acts as an OpenFlow troubleshoot toolkit: it acts as a sniffer,
+    a topology validator and as an OpenFlow message checker, to make sure the
+    ONF standards are being followed.
+
+    Despite of ONF standards, this code also supports OpenVSwitch/NICIRA
+    OpenFlow type.
+
+    More info on how to use it: www.sdn.amlight.net
+
+    Current version: 0.2
+
+    Author: Jeronimo Bezerra <jab@amlight.net>
+
+'''
+
 import datetime
 import pcapy
 import sys
@@ -8,17 +24,7 @@ from ofp_parser_v10 import process_ofp_type
 from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
     get_tcp_stream, get_openflow_header
 import ofp_cli
-
-
-def get_of_version(num_ver):
-    version_name = {0: "EXP",
-                    1: "1.0",
-                    2: "1.1",
-                    3: "1.2",
-                    4: "1.3",
-                    5: "1.4",
-                    6: "1.5"}
-    return version_name[num_ver]
+import ofp_dissector_v10
 
 
 def main(argv):
@@ -59,7 +65,7 @@ def sanitizer_filters(of_header, date, getlen, caplen, header_size,
         return 0
 
     # OF Versions supported through json file (-F)
-    name_version = get_of_version(of_header['version'])
+    name_version = ofp_dissector_v10.get_ofp_version(of_header['version'])
     supported_versions = []
     for version in sanitizer['allowed_of_versions']:
         supported_versions.append(version)
@@ -112,8 +118,8 @@ def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
 
         # If -F was passed...
         if len(sanitizer['allowed_of_versions']) != 0:
-            result = sanitizer_filters(of_header, date, getlen, caplen, header_size,
-                                   eth, ip, tcp, sanitizer)
+            result = sanitizer_filters(of_header, date, getlen, caplen,
+                                       header_size, eth, ip, tcp, sanitizer)
             if result == 0:
                 return
 
@@ -131,20 +137,21 @@ def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
         print_options['device_ip'] = ip['d_addr']
         print_options['device_port'] = tcp['dest_port']
 
-        # If OpenFlow version is 1
+        # If OpenFlow version is 1.0
         if of_header['version'] == int('1', 16):
             # Process and Print OF body
             # OF_Header lenght = 8
             start = start + 8
             this_packet = packet[start:start+of_header['length'] - 8]
             if not process_ofp_type(of_header['type'], this_packet, 0,
-                                    of_header['xid'], print_options):
+                                    of_header['xid'], print_options, sanitizer):
                 print ('%s OpenFlow OFP_Type %s not dissected \n' %
                        (of_header['xid'], of_header['type']))
                 return
             else:
                 # Get next packet
                 start = start + (of_header['length'] - 8)
+        # If OpenFlow version is 1.3
         elif of_header['version'] == int('4', 16):
             print 'Coming soon...'
             return

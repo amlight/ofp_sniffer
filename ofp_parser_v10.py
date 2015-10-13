@@ -3,9 +3,10 @@ import ofp_dissector_v10
 import ofp_prints_v10
 import socket
 import struct
+import ofp_tcpip_parser
 
 
-def process_ofp_type(of_type, packet, h_size, of_xid, print_options):
+def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
     if of_type == 0:
         result = parse_Hello(packet, h_size, of_xid)
     elif of_type == 1:
@@ -27,13 +28,13 @@ def process_ofp_type(of_type, packet, h_size, of_xid, print_options):
     elif of_type == 9:
         result = parse_SetConfig(packet, h_size, of_xid)
     elif of_type == 10:
-        result = parse_PacketIn(packet, h_size, of_xid)
+        result = parse_PacketIn(packet, h_size, of_xid, sanitizer)
     elif of_type == 11:
         result = parse_FlowRemoved(packet, h_size, of_xid)
     elif of_type == 12:
         result = parse_PortStatus(packet, h_size, of_xid)
     elif of_type == 13:
-        result = parse_PacketOut(packet, h_size, of_xid)
+        result = parse_PacketOut(packet, h_size, of_xid, sanitizer)
     elif of_type == 14:
         result = parse_FlowMod(packet, h_size, of_xid, print_options)
     elif of_type == 15:
@@ -81,6 +82,7 @@ def parse_EchoRes(packet, h_size, of_xid):
     return 1
 
 
+# Dissect NICIRA/OVS
 def _parse_nicira(packet, start, of_xid):
     print ('%s OpenFlow Vendor Data: ' % of_xid),
     while len(packet[start:start+4]) > 0:
@@ -209,12 +211,57 @@ def parse_GetConfigRes(packet, h_size, of_xid):
 
 def parse_SetConfig(packet, h_size, of_xid):
     flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
-    fp_prints_v10.print_ofp_setConfig(of_xid, flag, miss_send_len)
+    ofp_prints_v10.print_ofp_setConfig(of_xid, flag, miss_send_len)
     return 1
 
 
-def parse_PacketIn(packet, h_size, of_xid):
-    return 0
+def _parse_ethernet_lldp_PacketInOut(packet, start):
+    # Ethernet
+    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14])
+    start = start + 14
+    etype = '0x0000'
+    vlan = {}
+    # VLAN or not
+    if eth['protocol'] == 8100:
+        vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
+        start = start + 2
+        # If VLAN exists, there is a next eth['protocol'] with value 0xcc88
+        etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
+        start = start + 2
+    # LLDP
+    lldp = {}
+    if hex(eth['protocol']) == '0xcc88' or etype == 'cc88':
+        lldp = ofp_tcpip_parser.get_lldp(packet[start:])
+    return eth, vlan, lldp
+
+
+def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
+    ofp_prints_v10.print_ofp_packetIn(of_xid, packetIn)
+    ofp_prints_v10.print_packetInOut_layer2(of_xid, eth)
+    if len(vlan) != 0:
+        ofp_prints_v10.print_packetInOut_vlan(of_xid, vlan)
+    if len(lldp) != 0:
+            ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
+
+
+def parse_PacketIn(packet, h_size, of_xid, sanitizer):
+    # buffer_id(32), total_len(16), in_port(16), reason(8), pad(8)
+    pkt_raw = packet[h_size:h_size+10]
+    p_in = unpack('!LHHBB', pkt_raw)
+    reason = ofp_dissector_v10.get_packetIn_reason(p_in[3])
+    packetIn = {'buffer_id': p_in[0], 'total_len': p_in[1], 'in_port': p_in[2],
+                'reason': reason, 'pad': p_in[4]}
+
+    eth, vlan, lldp = _parse_ethernet_lldp_PacketInOut(packet, h_size + 10)
+
+    if (len(sanitizer['packetIn_filter']) > 0):
+        if (sanitizer['packetIn_filter']['switch_dpid'] == lldp['c_id']):
+            if ((sanitizer['packetIn_filter']['in_port'] == "any") or
+               (sanitizer['packetIn_filter']['in_port'] == str(packetIn['in_port']))):
+                _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    else:
+        _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    return 1
 
 
 def parse_FlowRemoved(packet, h_size, of_xid):
@@ -258,8 +305,39 @@ def parse_PortStatus(packet, h_size, of_xid):
     return 1
 
 
-def parse_PacketOut(packet, h_size, of_xid):
-    return 0
+# Actions need to be handled
+def parse_PacketOut(packet, h_size, of_xid, sanitizer):
+    # buffer_id(32), in_port(16), actions_len(16)
+    pkt_raw = packet[h_size:h_size+8]
+    p_out = unpack('!LHH', pkt_raw)
+    actions_len = p_out[2]
+    packetOut = {'buffer_id': p_out[0], 'in_port': p_out[1],
+                 'actions_len': actions_len}
+
+    ofp_prints_v10.print_ofp_packetOut(of_xid, packetOut)
+    # Process actions: actions_len has to be used
+    #while (actions_len > 0):
+    _parse_OFAction(of_xid, packet[h_size+8:h_size+8+packetOut['actions_len']], 0)
+    # Ethernet
+    start = h_size + 8 + packetOut['actions_len']
+    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14])
+    ofp_prints_v10.print_packetInOut_layer2(of_xid, eth)
+    start = start + 14
+    etype = '0x0000'
+    # VLAN or not
+    if eth['protocol'] == 8100:
+        vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
+        ofp_prints_v10.print_packetInOut_vlan(of_xid, vlan)
+        start = start + 2
+        # If VLAN exists, there is a next eth['protocol'] with value 0xcc88
+        etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
+        start = start + 2
+    if hex(eth['protocol']) == '0xcc88' or etype == 'cc88':
+        #LLDP TLV
+        lldp = ofp_tcpip_parser.get_lldp(packet[start:])
+        ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
+
+    return 1
 
 
 def process_dst_subnet(wcard):
@@ -344,16 +422,72 @@ def _parse_OFBody(packet, h_size):
     of_mod_body = packet[h_size+40:h_size+40+24]
     ofmod = unpack('!8sHHHHLHH', of_mod_body)
     ofmod_cookie = ofmod[0] if not len(ofmod[0]) else 0
+    ofmod_cookie = '0x' + format(ofmod_cookie, '02x')
+    ofmod_buffer_id = '0x' + format(ofmod[5], '02x')
 
     ofbody = {'cookie': ofmod_cookie, 'command': ofmod[1],
               'idle_timeout': ofmod[2], 'hard_timeout': ofmod[3],
               'priority': ofmod[4], 'buffer_id': ofmod[5],
-              'buffer_id': ofmod[5], 'out_port': ofmod[6],
+              'buffer_id': ofmod_buffer_id, 'out_port': ofmod[6],
               'flags': ofmod[7]}
     return ofbody
 
 
-def _parse_OFAction(of_xid, packet, start):
+def get_action(action_type, length, payload):
+    # 0 - OUTPUT. Returns port and max_length
+    if action_type == 0:
+        type_0 = unpack('!HH', payload)
+        return type_0[0], type_0[1]
+    # 1 - SetVLANID. Returns VID and pad
+    elif action_type == 1:
+        type_1 = unpack('!HH', payload)
+        return type_1[0], type_1[1]
+    # 2 - SetVLANPCP
+    elif action_type == 2:
+        type_2 = unpack('!B3s', payload)
+        return type_2[0], type_2[1]
+    # 3 - StripVLAN
+    elif action_type == 3:
+        pass
+    # 4 - SetDLSrc
+    elif action_type == 4:
+        type_4 = unpack('6s6s', payload)
+        return type_4[0], type_4[1]
+    # 5 - SetDLDst
+    elif action_type == 5:
+        type_5 = unpack('6s6s', payload)
+        return type_5[0], type_5[1]
+    # 6 - SetNWSrc
+    elif action_type == 6:
+     type_6 = unpack('L', payload)
+     return type_6[0]
+    # 7 - SetNWDst
+    elif action_type == 7:
+     type_7 = unpack('L', payload)
+     return type_7[0]
+    # 8 - SetNWTos
+    elif action_type == 8:
+     type_8 = unpack('B3s', payload)
+     return type_8[0], type_8[1]
+    # 9 - SetTPSrc
+    elif action_type == 9:
+     type_9 = unpack('HH', payload)
+     return type_9[0], type_9[1]
+    # a - SetTPDst
+    elif action_type == int('a', 16):
+     type_a = unpack('HH', payload)
+     return type_a[0], type_a[1]
+    # b - Enqueue
+    elif action_type == int('b', 16):
+     type_b = unpack('H6sL', payload)
+     return type_b[0], type_b[1], type_b[2]
+    # ffff - Vendor
+    elif action_type == int('ffff', 16):
+     type_f = unpack('L', payload)
+     return type_f[0]
+
+
+def  _parse_OFAction(of_xid, packet, start):
     '''
         Actions
     '''
@@ -519,6 +653,7 @@ def parse_StatsReq(packet, h_size, of_xid):
     return 1
 
 
+### Actions need to be handled
 def parse_StatsRes(packet, h_size, of_xid):
     '''
         Process StatReq

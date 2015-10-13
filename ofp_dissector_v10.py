@@ -1,22 +1,24 @@
-from struct import unpack
+'''
+    This is the OpenFlow 1.0 dictionary/dissector
+    Here messages, types and codes are converted to names
+'''
 
 
 def get_ofp_version(version):
-    of_version = {0: 'Experimental',
-                  1: '1.0',
-                  2: '1.1',
-                  3: '1.2',
-                  4: '1.3',
-                  5: '1.4',
-                  6: '1.5'}
+    of_versions = {0: 'Experimental',
+                   1: '1.0',
+                   2: '1.1',
+                   3: '1.2',
+                   4: '1.3',
+                   5: '1.4',
+                   6: '1.5'}
+    try:
+        return of_versions[version]
+    except:
+        return 'Unknown(%s)' % version
 
-    if version not in range(0, 6):
-        return 'Unknown'
 
-    return of_version[version]
-
-
-def get_ofp_type(type):
+def get_ofp_type(of_type):
     of_types = {0: 'Hello',
                 1: 'Error',
                 2: 'EchoReq',
@@ -39,97 +41,80 @@ def get_ofp_type(type):
                 19: 'BarrierRes',
                 20: 'QueueGetConfigReq',
                 21: 'QueueGetConfigRes'}
-
-    if type not in range(0, 21):
-                return 'Other'
-
-    return of_types[type]
+    try:
+        return of_types[of_type]
+    except:
+        return 'UnknownType(%s)' % of_type
 
 
 def get_ofp_error(error_type, code):
+    errors_types = {}
+    codes = {}
+
+    # Starts with an Error
+    errors_types[error_type] = 'UnknownType(%s)' % error_type
+    codes[code] = 'UnknownCode(%s)' % code
+
+    # Error Types
+    if error_type in range(0, 6):
+        errors_types = {0: 'HelloFailed(0)',
+                        1: 'BadRequest(1)',
+                        2: 'BadAction(2)',
+                        3: 'FlowMod Failed(3)',
+                        4: 'PortMod Failed(4)',
+                        5: 'QueueOpFailed(5)'}
+
+    # Error Codes per Error Type
     if error_type == 0:
-        if code == 0:
-            return 'HelloFailed', 'Incompatible'
-        elif code == 1:
-            return 'HelloFailed', 'EPerm'
-        else:
-            return 'HelloFailed', 'UnknownCode'
+        if code in range(0, 2):
+            codes = {0: 'Incompatible(0)',
+                     1: 'EPerm(1)'}
+
     elif error_type == 1:
-        if code == 0:
-            return 'BadRequest', 'BadVersion'
-        elif code == 1:
-            return 'BadRequest', 'BadType'
-        elif code == 2:
-            return 'BadRequest', 'BadStat'
-        elif code == 3:
-            return 'BadRequest', 'BadVendor'
-        elif code == 4:
-            return 'BadRequest', 'BadSubtype'
-        elif code == 5:
-            return 'BadRequest', 'EPerm'
-        elif code == 6:
-            return 'BadRequest', 'BadLength'
-        elif code == 7:
-            return 'BadRequest', 'BufferEmpty'
-        elif code == 8:
-            return 'BadRequest', 'BufferUnknown'
-        else:
-            return 'BadRequest', 'UnknownCode'
+        if code in range(0, 9):
+            codes = {0: 'BadVersion(0)',
+                     1: 'BadType(1)',
+                     2: 'BadStat(2)',
+                     3: 'BadVendor(3)',
+                     4: 'BadSubtype(4)',
+                     5: 'EPerm(5)',
+                     6: 'BadLength(6)',
+                     7: 'BufferEmpty(7)',
+                     8: 'BufferUnknown(8)'}
+
     elif error_type == 2:
-        if code == 0:
-            return 'Bad Action', 'BadType'
-        elif code == 2:
-            return 'Bad Action', 'BadLength'
-        elif code == 3:
-            return 'Bad Action', 'BadVendor'
-        elif code == 4:
-            return 'Bad Action', 'BadVendorType'
-        elif code == 5:
-            return 'Bad Action', 'BadOutPort'
-        elif code == 6:
-            return 'Bad Action', 'BadArgument'
-        elif code == 7:
-            return 'Bad Action', 'EPerm'
-        elif code == 8:
-            return 'Bad Action', 'TooMany'
-        elif code == 9:
-            return 'Bad Action', 'BadQueue'
-        else:
-            return 'Bad Action', 'UnknownCode'
+        if code == 0 or code in range(2, 10):
+            codes = {0: 'BadType',
+                     2: 'BadLength',
+                     3: 'BadVendor',
+                     4: 'BadVendorType',
+                     5: 'BadOutPort',
+                     6: 'BadArgument',
+                     7: 'EPerm',
+                     8: 'TooMany',
+                     9: 'BadQueue'}
+
     elif error_type == 3:
-        if code == 0:
-            return 'FlowMod Failed', 'AllTablesFull'
-        elif code == 2:
-            return 'FlowMod Failed', 'Overlap'
-        elif code == 3:
-            return 'FlowMod Failed', 'EPerm'
-        elif code == 4:
-            return 'FlowMod Failed', 'BadEmergTimeout'
-        elif code == 5:
-            return 'FlowMod Failed', 'BadCommand'
-        elif code == 6:
-            return 'FlowMod Failed', 'Unsupported'
-        else:
-            return 'FlowMod Failed', 'UnknownCode'
+        if code == 0 or code in range(2, 7):
+            codes = {0: 'AllTablesFull(0)',
+                     2: 'Overlap(2)',
+                     3: 'EPerm(3)',
+                     4: 'BadEmergTimeout(4)',
+                     5: 'BadCommand(5)',
+                     6: 'Unsupported(6)'}
+
     elif error_type == 4:
-        if code == 0:
-            return 'PortMod Failed', 'BadPort'
-        elif code == 1:
-            return 'PortMod Failed', 'BadHwAddr'
-        else:
-            return 'PortMod Failed', 'UnknownCode'
+        if code in range(0, 2):
+            codes = {0: 'BadPort(0)',
+                     1: 'BadHwAddr(1)'}
+
     elif error_type == 5:
-        if code == 0:
-            return 'QueueOpFailed', 'BadPort'
-        elif code == 1:
-            return 'QueueOpFailed', 'BadQueue'
-        elif code == 2:
-            return 'QueueOpFailed', 'EPerm'
-        else:
-            return 'QueueOpFailed', 'UnknownCode(' + str(code) + ')'
-    else:
-        return (('UnknownType(' + str(error_type) + ')'),
-                ('UnknownCode(' + str(code) + ')'))
+        if code in range(0, 3):
+            codes = {0: 'BadPort(0)',
+                     1: 'BadQueue(1)',
+                     2: 'EPerm(2)'}
+
+    return errors_types[error_type], codes[code]
 
 
 def get_ofp_vendor(vendor_id):
@@ -141,83 +126,25 @@ def get_ofp_vendor(vendor_id):
 
 
 def get_ofp_command(command):
-    if command == 0:
-        return 'Add(0)'
-    elif command == 1:
-        return 'Modify(1)'
-    elif command == 2:
-        return 'ModifyStrict(2)'
-    elif command == 3:
-        return 'Delete(3)'
-    elif command == 4:
-        return 'DeleteStrict(4)'
-    else:
-        return 'Unknown Command(' + str(command) + ')'
+    commands = {0: 'Add(0)',
+                1: 'Modify(1)',
+                2: 'ModifyStrict(2)',
+                3: 'Delete(3)',
+                4: 'DeleteStrict(4)'}
+    try:
+        return commands[command]
+    except:
+        return 'UnknownCommand(%s)' % command
 
 
 def get_ofp_flags(flag):
-    if flag == 1:
-        return 'SendFlowRem(1)'
-    elif flag == 2:
-        return 'CheckOverLap(2)'
-    elif flag == 3:
-        return 'Emerg(3)'
-    else:
-        return 'Unknown Flag(' + str(flag) + ')'
-
-
-def get_action(action_type, length, payload):
-    # 0 - OUTPUT. Returns port and max_length
-    if action_type == 0:
-        type_0 = unpack('!HH', payload)
-        return type_0[0], type_0[1]
-    # 1 - SetVLANID. Returns VID and pad
-    elif action_type == 1:
-        type_1 = unpack('!HH', payload)
-        return type_1[0], type_1[1]
-    # 2 - SetVLANPCP
-    elif action_type == 2:
-        type_2 = unpack('!B3s', payload)
-        return type_2[0], type_2[1]
-    # 3 - StripVLAN
-    elif action_type == 3:
-        pass
-    # 4 - SetDLSrc
-    elif action_type == 4:
-        type_4 = unpack('6s6s', payload)
-        return type_4[0], type_4[1]
-    # 5 - SetDLDst
-    elif action_type == 5:
-        type_5 = unpack('6s6s', payload)
-        return type_5[0], type_5[1]
-    # 6 - SetNWSrc
-    elif action_type == 6:
-        type_6 = unpack('L', payload)
-        return type_6[0]
-    # 7 - SetNWDst
-    elif action_type == 7:
-        type_7 = unpack('L', payload)
-        return type_7[0]
-    # 8 - SetNWTos
-    elif action_type == 8:
-        type_8 = unpack('B3s', payload)
-        return type_8[0], type_8[1]
-    # 9 - SetTPSrc
-    elif action_type == 9:
-        type_9 = unpack('HH', payload)
-        return type_9[0], type_9[1]
-    # a - SetTPDst
-    elif action_type == int('a', 16):
-        type_a = unpack('HH', payload)
-        return type_a[0], type_a[1]
-    # b - Enqueue
-    elif action_type == int('b', 16):
-        type_b = unpack('H6sL', payload)
-        return type_b[0], type_b[1], type_b[2]
-    # ffff - Vendor
-    elif action_type == int('ffff', 16):
-        type_f = unpack('L', payload)
-        return type_f[0]
+    flags = {1: 'SendFlowRem(1)',
+             2: 'CheckOverLap(2)',
+             3: 'Emerg(3)'}
+    try:
+        return flags[flag]
+    except:
+        return 'UnknownFlag(%s)' % flag
 
 
 def get_flow_removed_reason(reason):
@@ -306,6 +233,7 @@ def get_phy_state(p_state):
     except:
         return 'UnknownState(%s)' % p_state
 
+
 def get_phy_feature(p_feature):
     ftr = {1: '10MB_HD(0x1)',
            2: '10MB_FD(0x2)',
@@ -327,9 +255,9 @@ def get_phy_feature(p_feature):
 
 def get_configres_flags(flag):
     flags = {0: 'FRAG_NORMAL(0)',
-           1: 'FRAG_DROP(1)',
-           2: 'FRAG_REASM(2)',
-           3: 'FRAG_MASK(3)'}
+             1: 'FRAG_DROP(1)',
+             2: 'FRAG_REASM(2)',
+             3: 'FRAG_MASK(3)'}
     try:
         return flags[flag]
     except:
@@ -340,6 +268,15 @@ def get_portStatus_reason(reason):
     reasons = {0: 'OFPPR_ADD(0)',
                1: 'OFPPR_DELETE(1)',
                2: 'OFPPR_MODIFY(2)'}
+    try:
+        return reasons[reason]
+    except:
+        return 'UnknownReason(%s)' % reason
+
+
+def get_packetIn_reason(reason):
+    reasons = {0: 'OFPR_NO_MATCH(0)',
+               1: 'OFPR_ACTION(1)'}
     try:
         return reasons[reason]
     except:

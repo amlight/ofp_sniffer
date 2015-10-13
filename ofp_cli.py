@@ -3,21 +3,25 @@ import getopt
 import json
 
 
+VERSION = '0.2'
+
+
 def usage(file):
     """ This funcion prints the Usage in case of errors or help needed.
         Always ends after printing this lines below.
     """
-    print 'Usage: \n' + str(file) + ' [-p min|full] [-f pcap_filter]' + \
-        ' [-F filter_file] [-i dev] [-r pcap_file] '
-    print '\t -p [min|full] or --print=[min|full]: print min or full' + \
-        ' packet headers. Default: min'
-    print '\t -f pcap_filter or --pcap-filter=pcap_filter : add a libpcap' +\
-        ' filter'
-    print '\t -F sanitizer_file.json or --sanitizer-file=sanitizer_file.json'
-    print '\t -i interface or --interface=interface. Default: eth0'
-    print '\t -r captured.pcap or --src-file=captured.pcap'
-    print '\t -o or --print-ovs : print using ovs-ofctl add-flows format'
-    print '\t -h or --help'
+    print (('Usage: \n %s [-p min|full] [-f pcap_filter] [-F filter_file]'
+            ' [-i dev] [-r pcap_file]\n'
+            '\t -p [min|full] or --print=[min|full]: print min or full'
+            ' packet headers. Default: min\n'
+            '\t -f pcap_filter or --pcap-filter=pcap_filter : add a libpcap'
+            ' filter\n'
+            '\t -F sanitizer_file.json or --sanitizer-file=sanitizer_file.json\n'
+            '\t -i interface or --interface=interface. Default: eth0\n'
+            '\t -r captured.pcap or --src-file=captured.pcap\n'
+            '\t -o or --print-ovs : print using ovs-ofctl format\n'
+            '\t -h or --help : prints this guidance\n'
+            '\t -v or --version : prints version\n') % file)
     sys.exit(0)
 
 
@@ -29,9 +33,9 @@ def read_sanitizer(sanitizer_file):
 
 def get_params(argv):
     # Handle all input params
-    letters = 'f:F:i:r:p:oh'
+    letters = 'f:F:i:r:p:ohv'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
-                'src-file=', 'print-ovs', 'help']
+                'src-file=', 'print-ovs', 'help', 'version']
 
     # Default Values
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
@@ -63,11 +67,18 @@ def get_params(argv):
             usage(argv[0])
         elif option in ['-o', '--print-ovs']:
             print_options['ovs'] = 1
+        elif option in ['-v', '--version']:
+            print 'OpenFlow Sniffer version %s' % VERSION
+            sys.exit(0)
         else:
             usage(argv[0])
 
     if len(sanitizer_file) == 0:
-        sanitizer = {'allowed_of_versions': {}, 'flowMod_logs': {}}
+        sanitizer = {'allowed_of_versions': {},
+                     'packetInOut_filter': {},
+                     'flowMod_logs': {},
+                     'packetIn_filter': {}}
     else:
         sanitizer = read_sanitizer(sanitizer_file)
+
     return print_options, input_filter, sanitizer, dev, captured_file
