@@ -271,26 +271,16 @@ def parse_FlowRemoved(packet, h_size, of_xid):
 
     of_rem_body = packet[h_size+40:h_size+40+40]
     ofrem = unpack('!8sHBBLLHBBQQ', of_rem_body)
-    ofrem_cookie = ofrem[0] if not len(ofrem[0]) else 0
-    ofrem_priority = ofrem[1]
-    ofrem_reason = ofrem[2]
-    ofrem_pad = ofrem[3]
-    ofrem_duration_sec = ofrem[4]
-    ofrem_duration_nsec = ofrem[5]
-    ofrem_idle_timeout = ofrem[6]
-    ofrem_pad2 = ofrem[7]
-    ofrem_pad3 = ofrem[8]
-    ofrem_packet_count = ofrem[9]
-    ofrem_byte_count = ofrem[10]
+    cookie = ofrem[0] if not len(ofrem[0]) else 0
+    cookie = '0x' + format(cookie, '02x')
+    reason = ofp_dissector_v10.get_flow_removed_reason(ofrem[2])
 
-    ofp_prints_v10.print_ofp_flow_removed(of_xid, ofrem_cookie, ofrem_priority,
-                                          ofrem_reason, ofrem_pad,
-                                          ofrem_duration_sec,
-                                          ofrem_duration_nsec,
-                                          ofrem_idle_timeout,
-                                          ofrem_pad2, ofrem_pad3,
-                                          ofrem_packet_count,
-                                          ofrem_byte_count)
+    ofrem = {'cookie': cookie, 'priority': ofrem[1], 'reason': reason,
+             'pad': ofrem[3], 'duration_sec': ofrem[4], 'duration_nsec': ofrem[5],
+             'idle_timeout': ofrem[6], 'pad2': ofrem[7], 'pad3': ofrem[8],
+             'packet_count': ofrem[9], 'byte_count': ofrem[10]}
+
+    ofp_prints_v10.print_ofp_flow_removed(of_xid, ofrem)
     return 1
 
 
@@ -451,40 +441,40 @@ def get_action(action_type, length, payload):
         pass
     # 4 - SetDLSrc
     elif action_type == 4:
-        type_4 = unpack('6s6s', payload)
+        type_4 = unpack('!6s6s', payload)
         return type_4[0], type_4[1]
     # 5 - SetDLDst
     elif action_type == 5:
-        type_5 = unpack('6s6s', payload)
+        type_5 = unpack('!6s6s', payload)
         return type_5[0], type_5[1]
     # 6 - SetNWSrc
     elif action_type == 6:
-     type_6 = unpack('L', payload)
-     return type_6[0]
+        type_6 = unpack('!L', payload)
+        return get_ip_from_long(type_6[0])
     # 7 - SetNWDst
     elif action_type == 7:
-     type_7 = unpack('L', payload)
-     return type_7[0]
+        type_7 = unpack('!L', payload)
+        return get_ip_from_long(type_7[0])
     # 8 - SetNWTos
     elif action_type == 8:
-     type_8 = unpack('B3s', payload)
-     return type_8[0], type_8[1]
+        type_8 = unpack('!B3s', payload)
+        return type_8[0], type_8[1]
     # 9 - SetTPSrc
     elif action_type == 9:
-     type_9 = unpack('HH', payload)
-     return type_9[0], type_9[1]
+        type_9 = unpack('!HH', payload)
+        return type_9[0], type_9[1]
     # a - SetTPDst
     elif action_type == int('a', 16):
-     type_a = unpack('HH', payload)
-     return type_a[0], type_a[1]
+        type_a = unpack('!HH', payload)
+        return type_a[0], type_a[1]
     # b - Enqueue
     elif action_type == int('b', 16):
-     type_b = unpack('H6sL', payload)
-     return type_b[0], type_b[1], type_b[2]
+        type_b = unpack('!H6sL', payload)
+        return type_b[0], type_b[1], type_b[2]
     # ffff - Vendor
     elif action_type == int('ffff', 16):
-     type_f = unpack('L', payload)
-     return type_f[0]
+        type_f = unpack('!L', payload)
+        return type_f[0]
 
 
 def  _parse_OFAction(of_xid, packet, start):
