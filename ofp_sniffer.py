@@ -33,8 +33,13 @@ def main(argv):
     '''
     print_options, infilter, sanitizer, dev, capfile = ofp_cli.get_params(argv)
     try:
-        print "Sniffing device " + dev
-        cap = pcapy.open_live(dev, 65536, 1, 0)
+        if len(capfile) > 0:
+            print "Using file %s " % capfile
+            cap = pcapy.open_offline(capfile)
+        else:
+            print "Sniffing device %s" % dev
+            cap = pcapy.open_live(dev, 65536, 1, 0)
+
         main_filter = " port 6633 "
         cap.setfilter(main_filter + infilter)
 
