@@ -190,11 +190,11 @@ def print_ofp_body(xid, ofbody):
 
 
 def print_ofp_flow_removed(xid, ofrem):
-    string = ('%s OpenFlow Body - Cookie: %s  Priority: %s Pad: %s '
+    string = ('%s OpenFlow Body - Cookie: %s Priority: %s Reason: %s Pad: %s '
               'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2/Pad3: %s/%s'
               ' Packet Count: %s Byte Count: %s')
 
-    print string % (xid, ofrem['cookie'], ofrem['priority'], ofrem['reason'],
+    print string % (xid, ofrem['cookie'], ofrem['priority'], red(ofrem['reason']),
                     ofrem['pad'], ofrem['duration_sec'], ofrem['duration_nsec'],
                     ofrem['idle_timeout'], ofrem['pad2'], ofrem['pad3'],
                     ofrem['packet_count'], ofrem['byte_count'])
