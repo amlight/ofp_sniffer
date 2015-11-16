@@ -1,17 +1,23 @@
 from termcolor import colored
 import ofp_dissector_v10
 from ofp_parser_v10 import get_action
-
+import ofp_cli # NO_COLOR variable
 
 def red(string):
+    if ofp_cli.NO_COLOR == True:
+        return string
     return colored(string, 'red')
 
 
 def green(string):
+    if ofp_cli.NO_COLOR == True:
+        return string
     return colored(string, 'green')
 
 
 def blue(string):
+    if ofp_cli.NO_COLOR == True:
+        return string
     return colored(string, 'blue')
 
 

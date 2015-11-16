@@ -4,6 +4,7 @@ import json
 
 
 VERSION = '0.2'
+NO_COLOR = False
 
 
 def usage(file):
@@ -21,6 +22,7 @@ def usage(file):
             '\t -r captured.pcap or --src-file=captured.pcap\n'
             '\t -o or --print-ovs : print using ovs-ofctl format\n'
             '\t -h or --help : prints this guidance\n'
+            '\t -c or --no-colors: removes colors\n'
             '\t -v or --version : prints version\n') % file)
     sys.exit(0)
 
@@ -33,9 +35,9 @@ def read_sanitizer(sanitizer_file):
 
 def get_params(argv):
     # Handle all input params
-    letters = 'f:F:i:r:p:ohv'
+    letters = 'f:F:i:r:p:ohvc'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
-                'src-file=', 'print-ovs', 'help', 'version']
+                'src-file=', 'print-ovs', 'help', 'version', 'no-colors']
 
     # Default Values
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
@@ -70,6 +72,9 @@ def get_params(argv):
         elif option in ['-v', '--version']:
             print 'OpenFlow Sniffer version %s' % VERSION
             sys.exit(0)
+        elif option in ['-c', '--no-colors']:
+            global NO_COLOR
+            NO_COLOR = True
         else:
             usage(argv[0])
 

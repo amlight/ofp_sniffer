@@ -24,7 +24,6 @@ def get_ethernet_vlan(packet):
     cfi = (vlan_p[0] & 0x1000) >> 12
     vid = vlan_p[0] & 0xfff
     vlan = {'prio': prio, 'cfi': cfi, 'vid': vid}
-    print vlan
     return vlan
 
 
