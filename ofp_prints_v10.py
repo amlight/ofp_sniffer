@@ -58,7 +58,7 @@ def print_layer1(date, getlen, caplen):
 def print_layer2(eth):
     print ('Destination MAC: %s Source MAC: %s Protocol: %s' %
            (eth_addr(eth['dst_mac']), eth_addr(eth['src_mac']),
-            hex(eth['protocol'])))
+            red(hex(eth['protocol']))))
 
 
 def print_vlan(vlan):

@@ -5,8 +5,8 @@
             2,
             3,
             10,
-            16,
             13,
+            16,
             17
          ]
     },
@@ -20,7 +20,7 @@
     }
   },
   "packetIn_filter": {
-    "switch_dpid": "dpid:5",
+    "switch_dpid": "any",
     "in_port": "any" 
   },
   "packetOut_filter": {

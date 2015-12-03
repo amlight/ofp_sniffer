@@ -231,9 +231,22 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
     # LLDP
     lldp = {}
     if etype in [35020]:
+        print 'a'
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
-        return eth, vlan, lldp
-    return eth, vlan, {}
+        return eth, vlan, lldp, 0
+    return eth, vlan, {}, (start + 2)
+
+
+def _parse_other_types(packet, start, eth):
+    # OESS FVD
+    if eth['protocol'] in [33333]:
+       print 'OESS FVD'
+    # ONOS Discovery
+    elif eth['protocol'] in [35138]:
+       print 'ONOS Discovery'
+    else:
+       print 'Unknown Ethertype'
+    
 
 def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
     ofp_prints_v10.print_ofp_packetIn(of_xid, packetIn)
@@ -252,10 +265,15 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
     packetIn = {'buffer_id': p_in[0], 'total_len': p_in[1], 'in_port': p_in[2],
                 'reason': reason, 'pad': p_in[4]}
 
-    eth, vlan, lldp = _parse_ethernet_lldp_PacketInOut(packet, h_size + 10)
+    eth, vlan, lldp, offset = _parse_ethernet_lldp_PacketInOut(packet, h_size + 10)
 
     if len(lldp) == 0:
-        return 1
+        if len(sanitizer['packetIn_filter']) > 0 and sanitizer['packetIn_filter']['switch_dpid'] != "any":
+            return 1
+	else:
+            _print_packetIn(of_xid, packetIn, eth, vlan, {})
+            _parse_other_types(packet, offset, eth)
+	return 1 
 
     if (len(sanitizer['packetIn_filter']) > 0):
         if (sanitizer['packetIn_filter']['switch_dpid'] == lldp['c_id']):
