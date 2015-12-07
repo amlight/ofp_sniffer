@@ -3,9 +3,6 @@ import socket
 
 
 def get_ethernet_frame(packet, host_order=0):
-    '''
-        Returns src_mac, dst_mac and protocol from packet
-    '''
     # Ethernet Header has 14 bytes
     eth_length = 14
     eth_header = packet[:eth_length]
@@ -88,10 +85,6 @@ def get_tcp_stream(packet, header_size):
                   'flag_rst': flag_rst, 'flag_syn': flag_syn,
                   'flag_fyn': flag_fyn}
     return tcp_stream
-
-
-def get_udp_datagram():
-    return
 
 
 def get_openflow_header(packet, start):

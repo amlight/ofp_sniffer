@@ -1,6 +1,7 @@
 '''
     This is the OpenFlow 1.0 dictionary/dissector
     Here messages, types and codes are converted to names
+
 '''
 
 
@@ -188,7 +189,7 @@ def get_feature_res_actions(action):
     try:
         return actions[action]
     except:
-        return 'UnknownAction(%s)'% action
+        return 'UnknownAction(%s)' % action
 
 
 def get_phy_port_id(p_id):

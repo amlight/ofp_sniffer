@@ -198,10 +198,11 @@ def print_ofp_flow_removed(xid, ofrem):
               'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2/Pad3: %s/%s'
               ' Packet Count: %s Byte Count: %s')
 
-    print string % (xid, ofrem['cookie'], ofrem['priority'], red(ofrem['reason']),
-                    ofrem['pad'], ofrem['duration_sec'], ofrem['duration_nsec'],
-                    ofrem['idle_timeout'], ofrem['pad2'], ofrem['pad3'],
-                    ofrem['packet_count'], ofrem['byte_count'])
+    print string % (xid, ofrem['cookie'], ofrem['priority'],
+                    red(ofrem['reason']), ofrem['pad'], ofrem['duration_sec'],
+                    ofrem['duration_nsec'], ofrem['idle_timeout'],
+                    ofrem['pad2'], ofrem['pad3'], ofrem['packet_count'],
+                    ofrem['byte_count'])
 
 
 def print_ofp_action(xid, action_type, length, payload):
@@ -209,7 +210,8 @@ def print_ofp_action(xid, action_type, length, payload):
         port, max_len = get_action(action_type, length, payload)
 
         port = str('CONTROLLER(65533)' if port == 65533 else port)
-        print ('%s OpenFlow Action - Type: %s Length: %s Port: %s Max Length: %s' %
+        print ('%s OpenFlow Action - Type: %s Length: %s Port: %s '
+               'Max Length: %s' %
                (xid, green('OUTPUT'), length, green(port), max_len))
         return 'output:' + port
 
@@ -233,13 +235,15 @@ def print_ofp_action(xid, action_type, length, payload):
     elif action_type == 4:
         setDLSrc, pad = get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetDLSrc: %s Pad: %s' %
-               (xid, green('SetDLSrc'), length, green(str(eth_addr(setDLSrc))), pad))
+               (xid, green('SetDLSrc'), length, green(str(eth_addr(setDLSrc))),
+                pad))
         return 'mod_dl_src:' + str(eth_addr(setDLSrc))
 
     elif action_type == 5:
         setDLDst, pad = get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetDLDst: %s Pad: %s' %
-               (xid, green('SetDLDst'), length, green(str(eth_addr(setDLDst))), pad))
+               (xid, green('SetDLDst'), length, green(str(eth_addr(setDLDst))),
+                pad))
         return 'mod_dl_dst:' + str(eth_addr(setDLDst))
 
     elif action_type == 6:
@@ -276,8 +280,8 @@ def print_ofp_action(xid, action_type, length, payload):
         port, pad, queue_id = get_action(action_type, length, payload)
         print (('%s OpenFlow Action - Type: %s Length: %s Enqueue: %s Pad: %s'
                 ' Queue: %s') %
-                 (xid, green('Enqueue'), length, green(str(port)), pad,
-                  green(str(queue_id))))
+               (xid, green('Enqueue'), length, green(str(port)), pad,
+                green(str(queue_id))))
         return 'set_queue:' + str(queue_id)
 
     elif action_type == int('ffff', 16):
@@ -325,7 +329,7 @@ def print_of_BarrierReply(of_xid):
 
 def print_of_vendor(of_vendor, of_xid):
     vendor = ofp_dissector_v10.get_ofp_vendor(of_vendor)
-    print ('%s OpenFlow Vendor: %s'  % (of_xid, vendor))
+    print ('%s OpenFlow Vendor: %s' % (of_xid, vendor))
 
 
 def print_ofp_statReqDesc(of_xid, stat_type):
@@ -382,17 +386,18 @@ def print_ofp_statResFlow(of_xid, stat_type, match, res_flow):
     print_ofp_match('', match)
     print ('%s StatRes duration_sec: %s, duration_nsec: %s, priority: %s,'
            ' idle_timeout: %s, hard_timeout: %s, pad: %s, cookie: %s,'
-           ' packet_count: %s, byte_count: %s' % (of_xid,
-           res_flow['duration_sec'], res_flow['duration_nsec'],
-           res_flow['priority'], res_flow['idle_timeout'],
-           res_flow['hard_timeout'], res_flow['pad'],
-           res_flow['cookie'],
-           res_flow['packet_count'], res_flow['byte_count']))
+           ' packet_count: %s, byte_count: %s' %
+           (of_xid, res_flow['duration_sec'], res_flow['duration_nsec'],
+            res_flow['priority'], res_flow['idle_timeout'],
+            res_flow['hard_timeout'], res_flow['pad'],
+            res_flow['cookie'],
+            res_flow['packet_count'], res_flow['byte_count']))
 
 
 def print_ofp_statResAggregate(of_xid, stat_type, res_flow):
     print ('%s StatRes Type: Aggregate(%s)' % (of_xid, stat_type))
-    print ('%s StatRes packet_count: %s, byte_count: %s flow_count: %s pad: %s' %
+    print ('%s StatRes packet_count: %s, byte_count: %s flow_count: %s '
+           'pad: %s' %
            (of_xid, res_flow['packet_count'], res_flow['byte_count'],
             res_flow['flow_count'], res_flow['pad']))
 
@@ -401,24 +406,25 @@ def print_ofp_statResTable(of_xid, stat_type, res_flow):
     print ('%s StatRes Type: Table(%s)' % (of_xid, stat_type))
     print ('%s StatRes table_id: %s, pad: %s, name: "%s", wildcards: %s, '
            'max_entries: %s, active_count: %s, lookup_count: %s, '
-           'matched_count: %s' % (of_xid, res_flow['table_id'], res_flow['pad'],
-           res_flow['name'], hex(res_flow['wildcards']), res_flow['max_entries'],
-           res_flow['active_count'], res_flow['lookup_count'],
-           res_flow['matched_count']))
+           'matched_count: %s' %
+           (of_xid, res_flow['table_id'], res_flow['pad'],
+            res_flow['name'], hex(res_flow['wildcards']),
+            res_flow['max_entries'], res_flow['active_count'],
+            res_flow['lookup_count'], res_flow['matched_count']))
 
 
 def print_ofp_statResPort(of_xid, stat_type, res_flow):
     print ('%s StatRes Type: Port(%s)' % (of_xid, stat_type))
-    print ('%s StatRes port_number: %s rx_packets: %s rx_bytes: %s rx_errors: %s'
+    print ('%s StatRes port_no: %s rx_packets: %s rx_bytes: %s rx_errors: %s'
            ' rx_crc_err: %s rx_dropped: %s rx_over_err: %s rx_frame_err: %s\n'
-           '%s StatRes port_number: %s tx_packets: %s tx_bytes: %s tx_errors: %s'
-           ' tx_dropped: %s collisions: %s pad: %s'
-           % (of_xid, red(res_flow['port_number']), res_flow['rx_packets'],
-           res_flow['rx_bytes'], res_flow['rx_errors'], res_flow['rx_crc_err'],
-           res_flow['rx_dropped'], res_flow['rx_over_err'],
-           res_flow['rx_frame_err'], of_xid, red(res_flow['port_number']),
-           res_flow['tx_packets'], res_flow['tx_bytes'], res_flow['tx_errors'],
-           res_flow['tx_dropped'], res_flow['collisions'], res_flow['pad']))
+           '%s StatRes port_no: %s tx_packets: %s tx_bytes: %s tx_errors: %s'
+           ' tx_dropped: %s collisions: %s pad: %s' %
+           (of_xid, red(res_flow['port_number']), res_flow['rx_packets'],
+            res_flow['rx_bytes'], res_flow['rx_errors'], res_flow['rx_crc_err'],
+            res_flow['rx_dropped'], res_flow['rx_over_err'],
+            res_flow['rx_frame_err'], of_xid, red(res_flow['port_number']),
+            res_flow['tx_packets'], res_flow['tx_bytes'], res_flow['tx_errors'],
+            res_flow['tx_dropped'], res_flow['collisions'], res_flow['pad']))
 
 
 def print_ofp_statResQueue(of_xid, stat_type, res_flow):
@@ -426,7 +432,8 @@ def print_ofp_statResQueue(of_xid, stat_type, res_flow):
     print ('%s StatRes queue_id: %s length: %s pad: %s'
            ' tx_bytes: %s tx_packets: %s tx_errors: %s' %
            (of_xid, res_flow['queue_id'], res_flow['length'], res_flow['pad'],
-            res_flow['tx_bytes'], res_flow['tx_packets'], res_flow['tx_errors']))
+            res_flow['tx_bytes'], res_flow['tx_packets'],
+            res_flow['tx_errors']))
 
 
 def print_ofp_statResVendor(of_xid, stat_type, res_flow):
@@ -439,11 +446,13 @@ def print_ofp_statResVendorData(of_xid, data):
 
 
 def print_ofp_getConfigRes(of_xid, flag, miss):
-    print ('%s OpenFlow GetConfigRes - Flag: %s Miss_send_len: %s' % (of_xid, flag, miss))
+    print ('%s OpenFlow GetConfigRes - Flag: %s Miss_send_len: %s' %
+           (of_xid, flag, miss))
 
 
 def print_ofp_setConfig(of_xid, flag, miss):
-    print ('%s OpenFlow SetConfig - Flag: %s Miss_send_len: %s' % (of_xid, flag, miss))
+    print ('%s OpenFlow SetConfig - Flag: %s Miss_send_len: %s' %
+           (of_xid, flag, miss))
 
 
 def print_echoreq(of_xid):
@@ -455,7 +464,8 @@ def print_echores(of_xid):
 
 
 def print_portStatus(of_xid, reason, pad):
-    print ('%s OpenFlow PortStatus - Reason: %s Pad: %s' % (of_xid, reason, pad))
+    print ('%s OpenFlow PortStatus - Reason: %s Pad: %s' %
+           (of_xid, reason, pad))
 
 
 def print_packetInOut_layer2(of_xid, eth):
@@ -469,23 +479,27 @@ def print_packetInOut_vlan(of_xid, vlan):
 
 
 def print_ofp_packetIn(of_xid, packetIn):
-    print ('%s PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s pad: %s' %
+    print ('%s PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
+           'pad: %s' %
            (of_xid, hex(packetIn['buffer_id']), packetIn['total_len'],
-            green(packetIn['in_port']), green(packetIn['reason']), packetIn['pad']))
+            green(packetIn['in_port']), green(packetIn['reason']),
+            packetIn['pad']))
 
 
 def print_packetInOut_lldp(of_xid, lldp):
-    print lldp
     print ('%s LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
            '%s LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'
            '%s LLDP: TTL(%s) Length: %s Seconds: %s\n'
-           '%s LLDP: END(%s) Length: %s' % (of_xid, lldp['c_type'], lldp['c_length'],
-            lldp['c_subtype'], green(lldp['c_id']), of_xid, lldp['p_type'], lldp['p_length'],
-            lldp['p_subtype'], green(lldp['p_id']), of_xid, lldp['t_type'], lldp['t_length'],
-            lldp['t_ttl'], of_xid, lldp['e_type'], lldp['e_length']))
+           '%s LLDP: END(%s) Length: %s' %
+           (of_xid, lldp['c_type'], lldp['c_length'], lldp['c_subtype'],
+            green(lldp['c_id']), of_xid, lldp['p_type'], lldp['p_length'],
+            lldp['p_subtype'], green(lldp['p_id']), of_xid, lldp['t_type'],
+            lldp['t_length'], lldp['t_ttl'], of_xid, lldp['e_type'],
+            lldp['e_length']))
 
 
 def print_ofp_packetOut(of_xid, packetOut):
     print ('%s PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
            (of_xid, hex(packetOut['buffer_id']),
-            green(ofp_dissector_v10.get_phy_port_id(packetOut['in_port'])), packetOut['actions_len']))
+            green(ofp_dissector_v10.get_phy_port_id(packetOut['in_port'])),
+            packetOut['actions_len']))

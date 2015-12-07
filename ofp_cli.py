@@ -17,13 +17,14 @@ def usage(file):
             ' packet headers. Default: min\n'
             '\t -f pcap_filter or --pcap-filter=pcap_filter : add a libpcap'
             ' filter\n'
-            '\t -F sanitizer_file.json or --sanitizer-file=sanitizer_file.json\n'
+            '\t -F sanitizer_file.json or --sanitizer-file=sanitizerfile.json\n'
             '\t -i interface or --interface=interface. Default: eth0\n'
             '\t -r captured.pcap or --src-file=captured.pcap\n'
             '\t -o or --print-ovs : print using ovs-ofctl format\n'
             '\t -h or --help : prints this guidance\n'
             '\t -c or --no-colors: removes colors\n'
             '\t -v or --version : prints version\n') % file)
+
     sys.exit(0)
 
 

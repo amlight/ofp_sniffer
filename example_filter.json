@@ -1,4 +1,11 @@
 {
+  "mapping" : {
+    "dpid1": "mia1",
+    "dpid2": "mia2",
+    "dpid3": "brz", 
+    "dpid4": "andes1",
+    "dpid5": "andes2"
+  },
   "allowed_of_versions": {
     "1.0": {
           "rejected_of_types": [

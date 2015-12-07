@@ -275,11 +275,11 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
     # If we have filters (-F)
     filters = sanitizer['packetIn_filter']
     if len(filters) > 0:
-        if filters['switch_dpid'] != "any":
+        if filters['switch_dpid'] == "any":
             _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-        else:
-            if (filters['switch_dpid'] == lldp['c_id'] or
-               filters['in_port'] == "any"):
+        elif filters['switch_dpid'] == lldp['c_id']:
+            if (filters['in_port'] == "any" or
+               filters['in_port'] == lldp['in_port']):
                 _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
     else:
         _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
@@ -530,9 +530,8 @@ def _parse_OFAction(of_xid, packet, start):
                 total_length = 4
                 ofa_action_payload = packet[start:start + 4]
 
-            ofa_temp = ofp_prints_v10.print_ofp_action(of_xid, ofa_type,
-                                                       ofa_length,
-                                                       ofa_action_payload)
+            ofp_prints_v10.print_ofp_action(of_xid, ofa_type, ofa_length,
+                                            ofa_action_payload)
             # Next packet would start at..
             start = start + total_length
         else:
@@ -610,7 +609,8 @@ def parse_StatsReq(packet, h_size, of_xid):
     of_stat_req = packet[h_size:h_size+4]
     ofstat = unpack('!HH', of_stat_req)
     stat_type = ofstat[0]
-    flags = ofstat[1]
+    # Why am I not using the FLAGs?
+    # flags = ofstat[1]
     start = h_size+4
 
     # 7 Types available
@@ -624,7 +624,8 @@ def parse_StatsReq(packet, h_size, of_xid):
         # Fields: match(40), table_id(8), pad(8), out_port(16)
         of_match = _parse_OFMatch(packet, start)
         # 44 Bytes (40B from Match, 4 from header)
-        of_stat_req_other = packet[start+40:start+40+4]
+        # CHECK: What is this of_stat_req_other? Removed _other
+        of_stat_req = packet[start+40:start+40+4]
         ofstat = unpack('!BBH', of_stat_req)
         table_id = ofstat[0]
         pad = ofstat[1]
@@ -644,7 +645,8 @@ def parse_StatsReq(packet, h_size, of_xid):
         ofstat = unpack('!H6s', of_stat_req)
         port_number = ofstat[0]
         pad = ofstat[1]
-        ofp_prints_v10.print_ofp_statReqPort(of_xid, stat_type, port_number, pad)
+        ofp_prints_v10.print_ofp_statReqPort(of_xid, stat_type, port_number,
+                                             pad)
 
     elif stat_type == 5:
         # Queue
@@ -680,7 +682,8 @@ def parse_StatsRes(packet, h_size, of_xid):
     of_stat_req = packet[h_size:h_size+4]
     ofstat = unpack('!HH', of_stat_req)
     stat_type = ofstat[0]
-    flags = ofstat[1]
+    # CHECK: Again, why am I not using the flags?
+    # flags = ofstat[1]
     start = h_size+4
 
     # 7 Types available

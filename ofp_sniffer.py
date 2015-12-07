@@ -63,8 +63,7 @@ def sanitizer_filters(of_header, date, getlen, caplen, header_size,
         If -F was provided, use filters specified
     '''
     if (of_header['version'] == -1):
-        print ('h_size : %s - caplen: %s - remaining_bypes %s' %
-               (header_size, caplen, remaining_bytes))
+        print ('h_size : %s - caplen: %s ' % (header_size, caplen))
         print_headers(1, date, getlen, caplen, eth, ip, tcp)
         print 'OpenFlow header not complete. Ignoring packet.'
         return 0
@@ -171,7 +170,6 @@ def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
             return
 
         print
-
 
 if __name__ == "__main__":
     main(sys.argv)
