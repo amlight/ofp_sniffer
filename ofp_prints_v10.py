@@ -464,7 +464,7 @@ def print_packetInOut_layer2(of_xid, eth):
 
 
 def print_packetInOut_vlan(of_xid, vlan):
-    print ('%s Ethernet: ' % of_xid),
+    print ('%s Ethernet:' % of_xid),
     print_vlan(vlan)
 
 
@@ -475,6 +475,7 @@ def print_ofp_packetIn(of_xid, packetIn):
 
 
 def print_packetInOut_lldp(of_xid, lldp):
+    print lldp
     print ('%s LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
            '%s LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'
            '%s LLDP: TTL(%s) Length: %s Seconds: %s\n'

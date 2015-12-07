@@ -222,10 +222,10 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
     etype = '0x0000'
     vlan = {}
     # VLAN or not
-    if eth['protocol'] in [129]:
+    if eth['protocol'] in [33024]:
         vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
         start = start + 2
-        # If VLAN exists, there is a next eth['protocol'] with value 0x88cc
+        # If VLAN exists, there is a next eth['protocol']
         etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
         start = start + 2
     else:
@@ -235,18 +235,17 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
     if etype in [35020, 35138]:
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
         return eth, vlan, lldp, 0
+    eth['protocol'] = etype
     return eth, vlan, {}, (start + 2)
 
 
 def _parse_other_types(packet, start, eth):
     # OESS FVD
-    if eth['protocol'] in [33333]:
+    if eth['protocol'] in [34998]:
         print 'OESS FVD'
     # ONOS Discovery
-    elif eth['protocol'] in [35138]:
-        print 'BBDP: ONOS Discovery'
     else:
-        print 'Unknown Ethertype'
+        print 'Unknown Ethertype %s' % eth['protocol']
 
 
 def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
@@ -283,7 +282,7 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
                filters['in_port'] == "any"):
                 _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
     else:
-        _print_packetIn(of_xid, packetIn, eth, vlan, {})
+        _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
 
     return 1
 
@@ -341,16 +340,16 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer):
     start = start + 14
     etype = '0x0000'
     # VLAN or not
-    if eth['protocol'] in [129]:
+    if eth['protocol'] in [33024]:
         vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
         ofp_prints_v10.print_packetInOut_vlan(of_xid, vlan)
         start = start + 2
-        # If VLAN exists, there is a next eth['protocol'] with value 0xcc88
+        # If VLAN exists, there is a next eth['protocol']
         etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
         start = start + 2
     else:
         etype = eth['protocol']
-    if etype in [35020]:
+    if etype in [35020, 35138]:
         # LLDP TLV
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
         ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
