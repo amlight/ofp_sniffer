@@ -173,7 +173,7 @@ def parse_FeatureRes(packet, h_size, of_xid):
              'pad': ofrs[3]}
     ofp_prints_v10.print_of_feature_res(of_xid, f_res)
 
-    #'capabilities': ofrs[4], 'actions': ofrs[5]}
+    # 'capabilities': ofrs[4], 'actions': ofrs[5]}
     caps = []
     caps = _parse_capabilities(ofrs[4])
     actions = []
@@ -197,7 +197,7 @@ def parse_GetConfigReq(packet, h_size, of_xid):
 
 def _parse_SetGetConfig(packet, h_size):
     pkt_raw = packet[h_size:h_size+4]
-    pkt_list =unpack('!HH', pkt_raw)
+    pkt_list = unpack('!HH', pkt_raw)
     flag = ofp_dissector_v10.get_configres_flags(pkt_list[0])
     miss_send_len = pkt_list[1]
     return flag, miss_send_len
@@ -217,7 +217,7 @@ def parse_SetConfig(packet, h_size, of_xid):
 
 def _parse_ethernet_lldp_PacketInOut(packet, start):
     # Ethernet
-    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14])
+    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14], 1)
     start = start + 14
     etype = '0x0000'
     vlan = {}
@@ -225,13 +225,14 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
     if eth['protocol'] in [129]:
         vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
         start = start + 2
-        # If VLAN exists, there is a next eth['protocol'] with value 0xcc88
+        # If VLAN exists, there is a next eth['protocol'] with value 0x88cc
         etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
         start = start + 2
+    else:
+        etype = eth['protocol']
     # LLDP
     lldp = {}
-    if etype in [35020]:
-        print 'a'
+    if etype in [35020, 35138]:
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
         return eth, vlan, lldp, 0
     return eth, vlan, {}, (start + 2)
@@ -240,13 +241,13 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
 def _parse_other_types(packet, start, eth):
     # OESS FVD
     if eth['protocol'] in [33333]:
-       print 'OESS FVD'
+        print 'OESS FVD'
     # ONOS Discovery
     elif eth['protocol'] in [35138]:
-       print 'ONOS Discovery'
+        print 'BBDP: ONOS Discovery'
     else:
-       print 'Unknown Ethertype'
-    
+        print 'Unknown Ethertype'
+
 
 def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
     ofp_prints_v10.print_ofp_packetIn(of_xid, packetIn)
@@ -254,7 +255,7 @@ def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
     if len(vlan) != 0:
         ofp_prints_v10.print_packetInOut_vlan(of_xid, vlan)
     if len(lldp) != 0:
-            ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
+        ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
 
 
 def parse_PacketIn(packet, h_size, of_xid, sanitizer):
@@ -265,23 +266,25 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
     packetIn = {'buffer_id': p_in[0], 'total_len': p_in[1], 'in_port': p_in[2],
                 'reason': reason, 'pad': p_in[4]}
 
-    eth, vlan, lldp, offset = _parse_ethernet_lldp_PacketInOut(packet, h_size + 10)
-
+    eth, vlan, lldp, offset = _parse_ethernet_lldp_PacketInOut(packet,
+                                                               h_size + 10)
     if len(lldp) == 0:
-        if len(sanitizer['packetIn_filter']) > 0 and sanitizer['packetIn_filter']['switch_dpid'] != "any":
-            return 1
-	else:
-            _print_packetIn(of_xid, packetIn, eth, vlan, {})
-            _parse_other_types(packet, offset, eth)
-	return 1 
+        _print_packetIn(of_xid, packetIn, eth, vlan, {})
+        _parse_other_types(packet, offset, eth)
+        return 1
 
-    if (len(sanitizer['packetIn_filter']) > 0):
-        if (sanitizer['packetIn_filter']['switch_dpid'] == lldp['c_id']):
-            if ((sanitizer['packetIn_filter']['in_port'] == "any") or
-               (sanitizer['packetIn_filter']['in_port'] == str(packetIn['in_port']))):
-               _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    # If we have filters (-F)
+    filters = sanitizer['packetIn_filter']
+    if len(filters) > 0:
+        if filters['switch_dpid'] != "any":
+            _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+        else:
+            if (filters['switch_dpid'] == lldp['c_id'] or
+               filters['in_port'] == "any"):
+                _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
     else:
-        _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+        _print_packetIn(of_xid, packetIn, eth, vlan, {})
+
     return 1
 
 
@@ -297,8 +300,9 @@ def parse_FlowRemoved(packet, h_size, of_xid):
     reason = ofp_dissector_v10.get_flow_removed_reason(ofrem[2])
 
     ofrem = {'cookie': cookie, 'priority': ofrem[1], 'reason': reason,
-             'pad': ofrem[3], 'duration_sec': ofrem[4], 'duration_nsec': ofrem[5],
-             'idle_timeout': ofrem[6], 'pad2': ofrem[7], 'pad3': ofrem[8],
+             'pad': ofrem[3], 'duration_sec': ofrem[4],
+             'duration_nsec': ofrem[5], 'idle_timeout': ofrem[6],
+             'pad2': ofrem[7], 'pad3': ofrem[8],
              'packet_count': ofrem[9], 'byte_count': ofrem[10]}
 
     ofp_prints_v10.print_ofp_flow_removed(of_xid, ofrem)
@@ -327,11 +331,12 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer):
 
     ofp_prints_v10.print_ofp_packetOut(of_xid, packetOut)
     # Process actions: actions_len has to be used
-    #while (actions_len > 0):
-    _parse_OFAction(of_xid, packet[h_size+8:h_size+8+packetOut['actions_len']], 0)
+    # while (actions_len > 0):
+    start = h_size + 8
+    _parse_OFAction(of_xid, packet[start:start+packetOut['actions_len']], 0)
     # Ethernet
     start = h_size + 8 + packetOut['actions_len']
-    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14])
+    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14], 1)
     ofp_prints_v10.print_packetInOut_layer2(of_xid, eth)
     start = start + 14
     etype = '0x0000'
@@ -343,8 +348,10 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer):
         # If VLAN exists, there is a next eth['protocol'] with value 0xcc88
         etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
         start = start + 2
+    else:
+        etype = eth['protocol']
     if etype in [35020]:
-        #LLDP TLV
+        # LLDP TLV
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
         ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
 
@@ -498,7 +505,7 @@ def get_action(action_type, length, payload):
         return type_f[0]
 
 
-def  _parse_OFAction(of_xid, packet, start):
+def _parse_OFAction(of_xid, packet, start):
     '''
         Actions
     '''
@@ -664,7 +671,7 @@ def parse_StatsReq(packet, h_size, of_xid):
     return 1
 
 
-### Actions need to be handled
+# Actions need to be handled
 def parse_StatsRes(packet, h_size, of_xid):
     '''
         Process StatReq
@@ -714,7 +721,7 @@ def parse_StatsRes(packet, h_size, of_xid):
 
             ofp_prints_v10.print_ofp_statResFlow(of_xid, stat_type, of_match,
                                                  res_flow)
-            #_parse_OFAction(of_xid, packet, start)
+            # _parse_OFAction(of_xid, packet, start)
             count = count - int(res_flow['length'])
             start = start + int(res_flow['length'])
 
@@ -755,8 +762,8 @@ def parse_StatsRes(packet, h_size, of_xid):
                         'rx_bytes': flow[4], 'tx_bytes': flow[5],
                         'rx_dropped': flow[6], 'tx_dropped': flow[7],
                         'rx_errors': flow[8], 'tx_errors': flow[9],
-                        'rx_frame_err': flow[10], 'rx_over_err':flow[11],
-                        'rx_crc_err':flow[12], 'collisions':flow[13]}
+                        'rx_frame_err': flow[10], 'rx_over_err': flow[11],
+                        'rx_crc_err': flow[12], 'collisions': flow[13]}
             ofp_prints_v10.print_ofp_statResPort(of_xid, stat_type, res_flow)
 
             count = count - 104
@@ -792,10 +799,10 @@ def parse_StatsRes(packet, h_size, of_xid):
         data = []
         count = len(packet[h_size:])
         while (start < count):
-           flow_raw = packet[start:start+1]
-           flow = unpack('!B', flow_raw)
-           data.append(str(flow[0]))
-           start = start + 1
+            flow_raw = packet[start:start+1]
+            flow = unpack('!B', flow_raw)
+            data.append(str(flow[0]))
+            start = start + 1
         ofp_prints_v10.print_ofp_statResVendorData(of_xid, ''.join(data))
 
     else:

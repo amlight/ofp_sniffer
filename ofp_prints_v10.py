@@ -1,22 +1,23 @@
 from termcolor import colored
 import ofp_dissector_v10
 from ofp_parser_v10 import get_action
-import ofp_cli # NO_COLOR variable
+import ofp_cli  # NO_COLOR variable
+
 
 def red(string):
-    if ofp_cli.NO_COLOR == True:
+    if ofp_cli.NO_COLOR is True:
         return string
     return colored(string, 'red')
 
 
 def green(string):
-    if ofp_cli.NO_COLOR == True:
+    if ofp_cli.NO_COLOR is True:
         return string
     return colored(string, 'green')
 
 
 def blue(string):
-    if ofp_cli.NO_COLOR == True:
+    if ofp_cli.NO_COLOR is True:
         return string
     return colored(string, 'blue')
 
@@ -52,7 +53,8 @@ def print_minimal(date, getlen, ip, tcp):
 
 
 def print_layer1(date, getlen, caplen):
-    print '%s: captured %d bytes, truncated to %d bytes' % (date, getlen, caplen)
+    print ('%s: captured %d bytes, truncated to %d bytes' %
+           (date, getlen, caplen))
 
 
 def print_layer2(eth):
@@ -62,7 +64,8 @@ def print_layer2(eth):
 
 
 def print_vlan(vlan):
-    print 'Prio: %s CFI: %s VID: %s' % (vlan['prio'], vlan['cfi'], red(vlan['vid']))
+    print ('Prio: %s CFI: %s VID: %s' %
+           (vlan['prio'], vlan['cfi'], red(vlan['vid'])))
 
 
 def print_layer3(ip):
@@ -100,7 +103,8 @@ def print_of_hello(of_xid):
 
 
 def print_of_error(of_xid, nameCode, typeCode):
-    print '%s OpenFlow Error - Type: %s Code: %s' % (of_xid, red(nameCode), red(typeCode))
+    print ('%s OpenFlow Error - Type: %s Code: %s' %
+           (of_xid, red(nameCode), red(typeCode)))
 
 
 def print_of_feature_req(of_xid):
@@ -116,7 +120,7 @@ def print_of_feature_res(of_xid, f_res):
     dpid = datapath_id(f_res['datapath_id'])
     print ('%s FeatureRes - datapath_id: %s n_buffers: %s n_tbls: %s, pad: %s'
            % (of_xid, green(dpid), f_res['n_buffers'], f_res['n_tbls'],
-           f_res['pad']))
+              f_res['pad']))
 
 
 def print_of_feature_res_caps_and_actions(of_xid, caps, actions):
@@ -180,7 +184,7 @@ def print_ofp_match(xid, ofmatch):
 
 def print_ofp_body(xid, ofbody):
     string = ('%s OpenFlow Body - Cookie: %s Command: %s Idle/Hard Timeouts: '
-             '%s/%s Priority: %s Buffer ID: %s Out Port: %s Flags: %s')
+              '%s/%s Priority: %s Buffer ID: %s Out Port: %s Flags: %s')
     command = green(ofp_dissector_v10.get_ofp_command(ofbody['command']))
     flags = green(ofp_dissector_v10.get_ofp_flags(ofbody['flags']))
 
@@ -272,8 +276,8 @@ def print_ofp_action(xid, action_type, length, payload):
         port, pad, queue_id = get_action(action_type, length, payload)
         print (('%s OpenFlow Action - Type: %s Length: %s Enqueue: %s Pad: %s'
                 ' Queue: %s') %
-                (xid, green('Enqueue'), length, green(str(port)), pad,
-                 green(str(queue_id))))
+                 (xid, green('Enqueue'), length, green(str(port)), pad,
+                  green(str(queue_id))))
         return 'set_queue:' + str(queue_id)
 
     elif action_type == int('ffff', 16):
@@ -471,8 +475,8 @@ def print_ofp_packetIn(of_xid, packetIn):
 
 
 def print_packetInOut_lldp(of_xid, lldp):
-    print ('%s LLDP: Chassis Type: %s Length: %s SubType: %s ID: %s\n'
-           '%s LLDP: Port Type: %s Length: %s SubType: %s ID: %s\n'
+    print ('%s LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
+           '%s LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'
            '%s LLDP: TTL(%s) Length: %s Seconds: %s\n'
            '%s LLDP: END(%s) Length: %s' % (of_xid, lldp['c_type'], lldp['c_length'],
             lldp['c_subtype'], green(lldp['c_id']), of_xid, lldp['p_type'], lldp['p_length'],

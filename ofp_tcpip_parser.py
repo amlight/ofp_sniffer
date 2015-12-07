@@ -2,7 +2,7 @@ from struct import unpack
 import socket
 
 
-def get_ethernet_frame(packet):
+def get_ethernet_frame(packet, host_order=0):
     '''
         Returns src_mac, dst_mac and protocol from packet
     '''
@@ -10,7 +10,10 @@ def get_ethernet_frame(packet):
     eth_length = 14
     eth_header = packet[:eth_length]
     dst_mac, src_mac, prot = unpack('!6s6sH', eth_header)
-    eth_protocol = socket.ntohs(prot)
+    if not host_order:
+        eth_protocol = socket.ntohs(prot)
+    else:
+        eth_protocol = prot
     eth_frame = {'src_mac': src_mac, 'dst_mac': dst_mac,
                  'protocol': eth_protocol, 'length': eth_length}
     return eth_frame
@@ -31,6 +34,7 @@ def get_next_etype(packet):
     etype_length = 2
     et = packet[:etype_length]
     return unpack('!H', et)[0]
+
 
 def get_ip_packet(packet, eth_length):
     '''
@@ -115,38 +119,78 @@ def get_openflow_header(packet, start):
 
 def get_lldp(packet):
     # Chassis
+    # TLV (1) + Length = 2 bytes | Sub-type = 1 Byte
     chassis_raw = packet[:3]
     chassis = unpack('!HB', chassis_raw)
     c_type = chassis[0] >> 9
     c_length = chassis[0] & 0xFF
     c_subtype = chassis[1]
     length = c_length - 1
+    # Get C_ID
     chassis_raw = packet[3:3+length]
     string = '!%ss' % length
     chassis = unpack(string, chassis_raw)
     c_id = chassis[0]
+
     start = 3 + length
+
     # Port
-    port_raw = packet[start:start+5]
-    port = unpack('!HBH', port_raw)
+    # TLV (2) + Length = 2 Bytes | Port_id = 1 Byte
+    port_raw = packet[start:start+3]
+    port = unpack('!HB', port_raw)
     p_type = port[0] >> 9
     p_length = port[0] & 0xFF
     p_subtype = port[1]
-    p_id = port[2]
+    length = p_length - 1
+    # Get P_ID
+    port_raw = packet[start+3:start+3+length]
+    string = '!%ss' % length
+    port = unpack(string, port_raw)
+    p_id = port[0]
+
+    start = start + 3 + length
+
     # TTL
-    ttl_raw = packet[start+5:start+9]
+    ttl_raw = packet[start:start+4]
     ttl = unpack('!HH', ttl_raw)
     t_type = ttl[0] >> 9
     t_length = ttl[0] & 0xFF
     t_ttl = ttl[1]
+
+    start = start + 4
+    # Loop to get User-Specific TLVs
+    while len(packet[start:]) > 0:
+        next_raw = packet[start:start+2]
+        nraw = unpack('!H', next_raw)
+        n_type = nraw[0] >> 9
+        n_length = nraw[0] & 0xFF
+        length = n_length - 4
+        if n_type == 0:
+            break
+        elif n_type == 127:
+            # We only want TLV 127, OUI a42305 (ONOS)
+            # Then we will look for Subtype 2 and get the content
+            # Skip the OUI - 3 bytes
+            subtype_raw = packet[start+5:start+6]
+            subtype = unpack('!B', subtype_raw)
+            start = start + 6
+            if subtype[0] == 2:
+                content_raw = packet[start:start+length]
+                string = '!%ss' % length
+                content = unpack(string, content_raw)
+                c_id = content[0]
+        start = start + length
+
     # END
-    end_raw = packet[start+9:start+11]
+    end_raw = packet[start:start+2]
     end = unpack('!H', end_raw)
     e_type = end[0] >> 9
     e_length = end[0] & 0xFF
+
     lldp = {'c_type': c_type, 'c_length': c_length, 'c_subtype': c_subtype,
             'c_id': c_id, 'p_type': p_type, 'p_length': p_length,
             'p_subtype': p_subtype, 'p_id': p_id, 't_type': t_type,
             't_length': t_length, 't_ttl': t_ttl, 'e_type': e_type,
             'e_length': e_length}
+
     return lldp
