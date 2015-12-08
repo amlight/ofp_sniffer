@@ -29,8 +29,16 @@ def usage(file):
 
 
 def read_sanitizer(sanitizer_file):
-    jfile = open(sanitizer_file, 'ro')
-    json_content = json.loads(jfile.read())
+    try:
+        jfile = open(sanitizer_file, 'ro')
+        json_content = json.loads(jfile.read())
+    except:
+        msg = 'Error Opening the sanitizer file\n'
+        msg += 'Please check your JSON file. Maybe the permission is wrong'
+        msg += ' or the JSON syntax is incorrect. Try the following:\n'
+        msg += 'cat %s | python -m json.tool'
+        print msg % sanitizer_file
+        sys.exit(0)
     return (json_content)
 
 

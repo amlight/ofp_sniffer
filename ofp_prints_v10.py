@@ -22,6 +22,12 @@ def blue(string):
     return colored(string, 'blue')
 
 
+def yellow(string):
+    if ofp_cli.NO_COLOR is True:
+        return string
+    return colored(string, 'yellow')
+
+
 def eth_addr(a):
     mac = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (ord(a[0]), ord(a[1]), ord(a[2]),
                                              ord(a[3]), ord(a[4]), ord(a[5]))
@@ -95,7 +101,7 @@ def print_openflow_header(of):
         name_type = '%s' % (of['type'])
 
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
-           (name_version, name_type, of['length'], red(of['xid'])))
+           (name_version, yellow(name_type), of['length'], red(of['xid'])))
 
 
 def print_of_hello(of_xid):

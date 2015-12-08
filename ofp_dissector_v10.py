@@ -1,7 +1,6 @@
 '''
     This is the OpenFlow 1.0 dictionary/dissector
     Here messages, types and codes are converted to names
-
 '''
 
 
@@ -84,16 +83,16 @@ def get_ofp_error(error_type, code):
                      8: 'BufferUnknown(8)'}
 
     elif error_type == 2:
-        if code == 0 or code in range(2, 10):
+        if code in range(0, 9):
             codes = {0: 'BadType',
-                     2: 'BadLength',
-                     3: 'BadVendor',
-                     4: 'BadVendorType',
-                     5: 'BadOutPort',
-                     6: 'BadArgument',
-                     7: 'EPerm',
-                     8: 'TooMany',
-                     9: 'BadQueue'}
+                     1: 'BadLength',
+                     2: 'BadVendor',
+                     3: 'BadVendorType',
+                     4: 'BadOutPort',
+                     5: 'BadArgument',
+                     6: 'EPerm',
+                     7: 'TooMany',
+                     8: 'BadQueue'}
 
     elif error_type == 3:
         if code == 0 or code in range(2, 7):

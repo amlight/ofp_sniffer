@@ -4,6 +4,7 @@ import ofp_prints_v10
 import socket
 import struct
 import ofp_tcpip_parser
+import ofp_vendors_v10
 
 
 def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
@@ -56,11 +57,13 @@ def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
     return result
 
 
+# *************** Hello *****************
 def parse_Hello(packet, h_size, of_xid):
     ofp_prints_v10.print_of_hello(of_xid)
     return 1
 
 
+# ************** Error *****************
 def parse_Error(packet, h_size, of_xid):
     of_error = packet[h_size:h_size+4]
     ofe = unpack('!HH', of_error)
@@ -72,41 +75,38 @@ def parse_Error(packet, h_size, of_xid):
     return 1
 
 
+# ************ EchoReq *****************
 def parse_EchoReq(packet, h_size, of_xid):
     ofp_prints_v10.print_echoreq(of_xid)
     return 1
 
 
+# ************ EchoRes *****************
 def parse_EchoRes(packet, h_size, of_xid):
     ofp_prints_v10.print_echores(of_xid)
     return 1
 
 
-# Dissect NICIRA/OVS
-def _parse_nicira(packet, start, of_xid):
-    print ('%s OpenFlow Vendor Data: ' % of_xid),
-    while len(packet[start:start+4]) > 0:
-        ofv_subtype = unpack('!L', packet[start:start+4])
-        print ('%s ' % ofv_subtype[0]),
-        start = start + 4
-
-
+# ************ Vendor ******************
 def parse_Vendor(packet, h_size, of_xid):
     of_vendor = packet[h_size:h_size+4]
     ofv = unpack('!L', of_vendor)
     ofp_prints_v10.print_of_vendor(ofv[0], of_xid)
 
+    # If code 8992 = NICIRA
     if ofv[0] == 8992:
-        _parse_nicira(packet, h_size+4, of_xid)
+        ofp_vendors_v10.parse_nicira(packet, h_size+4, of_xid)
     print
     return 1
 
 
+# *********** FeatureReq ***************
 def parse_FeatureReq(packet, h_size, of_xid):
     ofp_prints_v10.print_of_feature_req(of_xid)
     return 1
 
 
+# *********** FeatureRes ***************
 def _parse_bitmask(bitmask, array):
     size = len(array)
     for i in range(0, size):
@@ -190,11 +190,13 @@ def parse_FeatureRes(packet, h_size, of_xid):
     return 1
 
 
+# ***************** GetConfigReq *********************
 def parse_GetConfigReq(packet, h_size, of_xid):
     ofp_prints_v10.print_of_getconfig_req(of_xid)
     return 1
 
 
+# ***************** GetConfigRes ********************
 def _parse_SetGetConfig(packet, h_size):
     pkt_raw = packet[h_size:h_size+4]
     pkt_list = unpack('!HH', pkt_raw)
@@ -209,12 +211,14 @@ def parse_GetConfigRes(packet, h_size, of_xid):
     return 1
 
 
+# ******************* SetConfig **********************
 def parse_SetConfig(packet, h_size, of_xid):
     flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
     ofp_prints_v10.print_ofp_setConfig(of_xid, flag, miss_send_len)
     return 1
 
 
+# ****************** PacketIn ************************
 def _parse_ethernet_lldp_PacketInOut(packet, start):
     # Ethernet
     eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14], 1)
@@ -243,7 +247,6 @@ def _parse_other_types(packet, start, eth):
     # OESS FVD
     if eth['protocol'] in [34998]:
         print 'OESS FVD'
-    # ONOS Discovery
     else:
         print 'Unknown Ethertype %s' % eth['protocol']
 
@@ -287,8 +290,8 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
     return 1
 
 
+# ******************** FlowRemoved ***************************
 def parse_FlowRemoved(packet, h_size, of_xid):
-
     ofmatch = _parse_OFMatch(packet, h_size)
     ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
 
@@ -308,6 +311,7 @@ def parse_FlowRemoved(packet, h_size, of_xid):
     return 1
 
 
+# ******************* PortStatus *****************************
 def parse_PortStatus(packet, h_size, of_xid):
     port_raw = packet[h_size:h_size+8]
     port = unpack('!B7s', port_raw)
@@ -319,6 +323,7 @@ def parse_PortStatus(packet, h_size, of_xid):
     return 1
 
 
+# ******************* PacketOut *****************************
 # Actions need to be handled
 def parse_PacketOut(packet, h_size, of_xid, sanitizer):
     # buffer_id(32), in_port(16), actions_len(16)
@@ -357,6 +362,7 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer):
     return 1
 
 
+# ********************* FlowMod ***************************
 def process_dst_subnet(wcard):
     OFPFW_NW_DST_SHIFT = 14
     OFPFW_NW_DST_MASK = 1032192
@@ -406,8 +412,11 @@ def _parse_OFMatch(packet, h_size):
                'nw_src': nw_src, 'nw_dst': nw_dst, 'tp_src': ofm[13],
                'tp_dst': ofm[14]}
 
-    if wildcard == ((1 << 22) - 1):
-        ofmatch = {}
+    if wildcard >= ((1 << 22) - 1):
+        ofmatch = {'wildcards': '4194303'}
+        return ofmatch
+    elif wildcard == 0:
+        ofmatch = {'wildcards': '0'}
         return ofmatch
     else:
         src_netmask = process_src_subnet(wildcard)
@@ -596,10 +605,12 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
     return 1
 
 
+# ********************* PortMod ****************************
 def parse_PortMod(packet, h_size, of_xid):
     return 0
 
 
+# ******************** StatReq ****************************
 def parse_StatsReq(packet, h_size, of_xid):
     '''
         Process the StatsReq
@@ -609,7 +620,7 @@ def parse_StatsReq(packet, h_size, of_xid):
     of_stat_req = packet[h_size:h_size+4]
     ofstat = unpack('!HH', of_stat_req)
     stat_type = ofstat[0]
-    # Why am I not using the FLAGs?
+    # FLags were not defined yet. Ignoring.
     # flags = ofstat[1]
     start = h_size+4
 
@@ -624,7 +635,6 @@ def parse_StatsReq(packet, h_size, of_xid):
         # Fields: match(40), table_id(8), pad(8), out_port(16)
         of_match = _parse_OFMatch(packet, start)
         # 44 Bytes (40B from Match, 4 from header)
-        # CHECK: What is this of_stat_req_other? Removed _other
         of_stat_req = packet[start+40:start+40+4]
         ofstat = unpack('!BBH', of_stat_req)
         table_id = ofstat[0]
@@ -672,17 +682,14 @@ def parse_StatsReq(packet, h_size, of_xid):
     return 1
 
 
+# *********************** StatsRes ****************************
 # Actions need to be handled
 def parse_StatsRes(packet, h_size, of_xid):
-    '''
-        Process StatReq
-    '''
     # Get type = 16bits
     # Get flags = 16bits
     of_stat_req = packet[h_size:h_size+4]
     ofstat = unpack('!HH', of_stat_req)
     stat_type = ofstat[0]
-    # CHECK: Again, why am I not using the flags?
     # flags = ofstat[1]
     start = h_size+4
 
@@ -813,19 +820,23 @@ def parse_StatsRes(packet, h_size, of_xid):
     return 1
 
 
+# ********************** BarrierReq ***********************
 def parse_BarrierReq(packet, h_size, of_xid):
     ofp_prints_v10.print_of_BarrierReq(of_xid)
     return 1
 
 
+# ********************** BarrierRes ***********************
 def parse_BarrierRes(packet, h_size, of_xid):
     ofp_prints_v10.print_of_BarrierReply(of_xid)
     return 1
 
 
+# ******************* QueueGetConfigReq *******************
 def parse_QueueGetConfigReq(packet, h_size, of_xid):
     return 0
 
 
+# ****************** QueueGetConfigRes ********************
 def parse_QueueGetConfigRes(packet, h_size, of_xid):
     return 0
