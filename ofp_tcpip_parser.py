@@ -33,6 +33,17 @@ def get_next_etype(packet):
     return unpack('!H', et)[0]
 
 
+def get_arp(packet):
+    arp_raw = packet[:28]
+    arp = unpack('!LLBBL6sL6sL', arp_raw)
+    src_ip = socket.inet_ntoa(arp[5])
+    dst_ip = socket.inet_ntoa(arp[7])
+    arp_frame = {'hw_type': arp[0], 'prot_type': arp[1], 'hw_len': arp[2],
+                 'prot_len': arp[3], 'src_mac': arp[4], 'src_ip': src_ip,
+                 'dst_mac': arp[6], 'dst_ip': dst_ip}
+    return arp_frame
+
+
 def get_ip_packet(packet, eth_length):
     '''
         Returns IP Header fields
@@ -116,6 +127,8 @@ def get_lldp(packet):
     chassis_raw = packet[:3]
     chassis = unpack('!HB', chassis_raw)
     c_type = chassis[0] >> 9
+    if c_type is not 1:
+        return {}
     c_length = chassis[0] & 0xFF
     c_subtype = chassis[1]
     length = c_length - 1
@@ -132,6 +145,8 @@ def get_lldp(packet):
     port_raw = packet[start:start+3]
     port = unpack('!HB', port_raw)
     p_type = port[0] >> 9
+    if p_type is not 2:
+        return {}
     p_length = port[0] & 0xFF
     p_subtype = port[1]
     length = p_length - 1
@@ -147,6 +162,8 @@ def get_lldp(packet):
     ttl_raw = packet[start:start+4]
     ttl = unpack('!HH', ttl_raw)
     t_type = ttl[0] >> 9
+    if t_type is not 3:
+        return {}
     t_length = ttl[0] & 0xFF
     t_ttl = ttl[1]
 

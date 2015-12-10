@@ -64,7 +64,7 @@ def print_layer1(date, getlen, caplen):
 
 
 def print_layer2(eth):
-    print ('Destination MAC: %s Source MAC: %s Protocol: %s' %
+    print ('Ethernet: Destination MAC: %s Source MAC: %s Protocol: %s' %
            (eth_addr(eth['dst_mac']), eth_addr(eth['src_mac']),
             red(hex(eth['protocol']))))
 
@@ -72,6 +72,14 @@ def print_layer2(eth):
 def print_vlan(vlan):
     print ('Prio: %s CFI: %s VID: %s' %
            (vlan['prio'], vlan['cfi'], red(vlan['vid'])))
+
+
+def print_arp(arp):
+    print ('ARP: Hardware Type: %s Protocol Type: %s '
+           'HW Length: %s Prot Length: %s'
+           'Source MAC: %s Source IP: %s Destination MAC: %s Destination IP: %s'
+           % (arp['hw_type'], arp['prot_type'], arp['hw_len'], arp['prot_len'],
+               arp['src_mac'], arp['src_ip'], arp['dst_mac'], arp['dst_ip']))
 
 
 def print_layer3(ip):

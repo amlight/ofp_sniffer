@@ -238,17 +238,29 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
     lldp = {}
     if etype in [35020, 35138]:
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
-        return eth, vlan, lldp, 0
+        return eth, vlan, lldp, start
     eth['protocol'] = etype
-    return eth, vlan, {}, (start + 2)
+    return eth, vlan, {}, start
 
 
 def _parse_other_types(packet, start, eth):
     # OESS FVD
     if eth['protocol'] in [34998]:
         print 'OESS FVD'
+    elif eth['protocol'] in [35020]:
+        # If it gets here, means that the LLDP packet is MalFormed
+        print 'LLDP Packet MalFormed'
+    elif eth['protocol'] in [2048]:
+        ip = ofp_tcpip_parser.get_ip_packet(packet, start)
+        ofp_prints_v10.print_layer3(ip)
+        if ip['protocol'] is 6:
+            tcp = ofp_tcpip_parser.get_tcp_stream(packet, start + ip['length'])
+            ofp_prints_v10.print_tcp(tcp)
+    elif eth['protocol'] is [2050]:
+        arp = ofp_tcpip_parser.get_arp(packet[start:])
+        ofp_prints_v10.print_arp(arp)
     else:
-        print 'Unknown Ethertype %s' % eth['protocol']
+        print 'Ethertype %s not dissected' % hex(eth['protocol'])
 
 
 def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
@@ -272,7 +284,7 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
                                                                h_size + 10)
     if len(lldp) == 0:
         _print_packetIn(of_xid, packetIn, eth, vlan, {})
-        _parse_other_types(packet, offset, eth)
+        _parse_other_types(packet[offset:], 0, eth)
         return 1
 
     # If we have filters (-F)
@@ -357,7 +369,10 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer):
     if etype in [35020, 35138]:
         # LLDP TLV
         lldp = ofp_tcpip_parser.get_lldp(packet[start:])
-        ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
+        if len(lldp) is 0:
+            print 'LLDP Packet MalFormed'
+        else:
+            ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
 
     return 1
 

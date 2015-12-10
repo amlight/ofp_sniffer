@@ -138,7 +138,8 @@ def get_ofp_command(command):
 
 
 def get_ofp_flags(flag):
-    flags = {1: 'SendFlowRem(1)',
+    flags = {0: 'NoFlagSet(0)',
+             1: 'SendFlowRem(1)',
              2: 'CheckOverLap(2)',
              3: 'Emerg(3)'}
     try:
