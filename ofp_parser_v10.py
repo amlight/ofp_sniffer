@@ -256,7 +256,7 @@ def _parse_other_types(packet, start, eth):
         if ip['protocol'] is 6:
             tcp = ofp_tcpip_parser.get_tcp_stream(packet, start + ip['length'])
             ofp_prints_v10.print_tcp(tcp)
-    elif eth['protocol'] is [2050]:
+    elif eth['protocol'] in [2054]:
         arp = ofp_tcpip_parser.get_arp(packet[start:])
         ofp_prints_v10.print_arp(arp)
     else:

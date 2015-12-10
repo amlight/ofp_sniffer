@@ -1,6 +1,6 @@
 from termcolor import colored
 import ofp_dissector_v10
-from ofp_parser_v10 import get_action
+from ofp_parser_v10 import get_action, get_ip_from_long
 import ofp_cli  # NO_COLOR variable
 
 
@@ -76,11 +76,13 @@ def print_vlan(vlan):
 
 def print_arp(arp):
     print ('ARP: Hardware Type: %s Protocol Type: %s '
-           'HW Length: %s Prot Length: %s'
-           'Source MAC: %s Source IP: %s Destination MAC: %s Destination IP: %s'
+           'HW Length: %s Prot Length: %s Opcode: %s '
+           '\nARP: Source MAC: %s Source IP: %s Destination MAC: %s '
+           'Destination IP: %s'
            % (arp['hw_type'], arp['prot_type'], arp['hw_len'], arp['prot_len'],
-               arp['src_mac'], arp['src_ip'], arp['dst_mac'], arp['dst_ip']))
-
++              arp['opcode'],
++              eth_addr(arp['src_mac']), get_ip_from_long(arp['src_ip']),
++              eth_addr(arp['dst_mac']), get_ip_from_long(arp['dst_ip'])))
 
 def print_layer3(ip):
     print (('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '

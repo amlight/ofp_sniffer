@@ -35,12 +35,12 @@ def get_next_etype(packet):
 
 def get_arp(packet):
     arp_raw = packet[:28]
-    arp = unpack('!LLBBL6sL6sL', arp_raw)
-    src_ip = socket.inet_ntoa(arp[5])
-    dst_ip = socket.inet_ntoa(arp[7])
+    arp = unpack('!HHBBH6sL6sL', arp_raw)
+    src_ip = arp[6]
+    dst_ip = arp[8]
     arp_frame = {'hw_type': arp[0], 'prot_type': arp[1], 'hw_len': arp[2],
-                 'prot_len': arp[3], 'src_mac': arp[4], 'src_ip': src_ip,
-                 'dst_mac': arp[6], 'dst_ip': dst_ip}
+                 'prot_len': arp[3], 'opcode': arp[4], 'src_mac': arp[5],
+                 'src_ip': src_ip, 'dst_mac': arp[7], 'dst_ip': dst_ip}
     return arp_frame
 
 
