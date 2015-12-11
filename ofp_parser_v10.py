@@ -622,7 +622,14 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
 
 # ********************* PortMod ****************************
 def parse_PortMod(packet, h_size, of_xid):
-    return 0
+    # port(16), hw_addr(48), config(32), mask(32), advertise(32), pad(32)
+    pmod_raw = packet[h_size:h_size+24]
+    pmod = unpack('!H6sLLLL', pmod_raw)
+    portMod = {'port': pmod[0], 'hw_addr': pmod[1], 'config': pmod[2],
+               'mask': pmod[3], 'advertise': pmod[4], 'pad': pmod[5]}
+
+    ofp_prints_v10.printPortMod(of_xid, portMod)
+    return 1
 
 
 # ******************** StatReq ****************************

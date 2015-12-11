@@ -80,9 +80,10 @@ def print_arp(arp):
            '\nARP: Source MAC: %s Source IP: %s Destination MAC: %s '
            'Destination IP: %s'
            % (arp['hw_type'], arp['prot_type'], arp['hw_len'], arp['prot_len'],
-+              arp['opcode'],
-+              eth_addr(arp['src_mac']), get_ip_from_long(arp['src_ip']),
-+              eth_addr(arp['dst_mac']), get_ip_from_long(arp['dst_ip'])))
+              arp['opcode'],
+              eth_addr(arp['src_mac']), get_ip_from_long(arp['src_ip']),
+              eth_addr(arp['dst_mac']), get_ip_from_long(arp['dst_ip'])))
+
 
 def print_layer3(ip):
     print (('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '
@@ -333,6 +334,14 @@ def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command, prio):
             (actions if ovs_command != 'del-flows' else '')))
 
     return
+
+
+def print_PortMod(of_xid, portMod):
+    print ('%s PortMod Port: %s HW Addr %s Config: %s Mask: %s '
+           'Advertise %s Pad: %s' %
+           (of_xid, portMod['port'], eth_addr(portMod['hw_addr']),
+            portMod['config'], portMod['mask'], portMod['advertise'],
+            portMod['pad']))
 
 
 def print_of_BarrierReq(of_xid):
