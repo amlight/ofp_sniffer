@@ -625,10 +625,14 @@ def parse_PortMod(packet, h_size, of_xid):
     # port(16), hw_addr(48), config(32), mask(32), advertise(32), pad(32)
     pmod_raw = packet[h_size:h_size+24]
     pmod = unpack('!H6sLLLL', pmod_raw)
-    portMod = {'port': pmod[0], 'hw_addr': pmod[1], 'config': pmod[2],
-               'mask': pmod[3], 'advertise': pmod[4], 'pad': pmod[5]}
 
-    ofp_prints_v10.printPortMod(of_xid, portMod)
+    config = _parse_phy_config(pmod[2])
+    mask = _parse_phy_config(pmod[3])
+    advertise = _parse_phy_curr(pmod[4])
+    portMod = {'port': pmod[0], 'hw_addr': pmod[1], 'config': config,
+               'mask': mask, 'advertise': advertise, 'pad': pmod[5]}
+
+    ofp_prints_v10.print_PortMod(of_xid, portMod)
     return 1
 
 

@@ -151,45 +151,58 @@ def print_of_feature_res_caps_and_actions(of_xid, caps, actions):
     print
 
 
+def _dont_print_0(printed):
+    if printed is False:
+        print '0',
+    return False
+
+
 def print_of_feature_res_ports(of_xid, ports):
     print ('%s FeatureRes - port_id: %s hw_addr: %s name: %s' % (of_xid,
            green(ports['port_id']), green(ports['hw_addr']),
            green(ports['name'])))
     print ('%s FeatureRes - config:' % of_xid),
+    printed = False
     for i in ports['config']:
         print ofp_dissector_v10.get_phy_config(i),
+        printed = True
     else:
-        print '0',
+        printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - state:' % of_xid),
     for i in ports['state']:
         print ofp_dissector_v10.get_phy_state(i),
+        printed = True
     else:
-        print '0',
+        printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - curr:' % of_xid),
     for i in ports['curr']:
         print ofp_dissector_v10.get_phy_feature(i),
+        printed = True
     else:
-        print '0',
+        printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - advertised:' % of_xid),
     for i in ports['advertised']:
         print ofp_dissector_v10.get_phy_feature(i),
+        printed = True
     else:
-        print '0',
+        printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - supported:' % of_xid),
     for i in ports['supported']:
         print ofp_dissector_v10.get_phy_feature(i),
+        printed = True
     else:
-        print '0',
+        printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - peer:' % of_xid),
     for i in ports['peer']:
         print ofp_dissector_v10.get_phy_feature(i),
+        printed = True
     else:
-        print '0'
+        printed = _dont_print_0(printed)
 
 
 def print_ofp_match(xid, ofmatch):
@@ -332,16 +345,27 @@ def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command, prio):
     print ('ovs-ofctl %s tcp:%s:%s "priority=%s %s %s"' %
            (ovs_command, switch_ip, switch_port, prio, matches,
             (actions if ovs_command != 'del-flows' else '')))
-
     return
 
 
+def _print_portMod_config_mask(of_xid, array, name):
+    print ('%s PortMod %s:' % (of_xid, name)),
+    printed = False
+    for i in array[name]:
+        print ofp_dissector_v10.get_phy_config(i),
+        printed = True
+    else:
+        printed = _dont_print_0(printed)
+    print
+
+
 def print_PortMod(of_xid, portMod):
-    print ('%s PortMod Port: %s HW Addr %s Config: %s Mask: %s '
-           'Advertise %s Pad: %s' %
+    print ('%s PortMod Port: %s HW Addr %s Pad: %s' %
            (of_xid, portMod['port'], eth_addr(portMod['hw_addr']),
-            portMod['config'], portMod['mask'], portMod['advertise'],
             portMod['pad']))
+    _print_portMod_config_mask(of_xid, portMod, 'config')
+    _print_portMod_config_mask(of_xid, portMod, 'mask')
+    _print_portMod_config_mask(of_xid, portMod, 'advertise')
 
 
 def print_of_BarrierReq(of_xid):
