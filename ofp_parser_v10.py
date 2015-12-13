@@ -528,7 +528,7 @@ def get_action(action_type, length, payload):
         return type_f[0]
 
 
-def _parse_OFAction(of_xid, packet, start, ofactions = []):
+def _parse_OFAction(of_xid, packet, start, ofactions=[]):
     '''
         Actions
     '''
@@ -737,7 +737,11 @@ def parse_StatsRes(packet, h_size, of_xid):
 
             ofp_prints_v10.print_ofp_statResFlow(of_xid, stat_type, of_match,
                                                  res_flow)
-            _parse_OFAction(of_xid, packet, start + 88)
+            # Process Actions[]
+            end = res_flow['length'] - (4 + 40 + 44)
+            actions = packet[start+88:start+88+end]
+            _parse_OFAction(of_xid, actions, 0)
+
             count = count - int(res_flow['length'])
             start = start + int(res_flow['length'])
 

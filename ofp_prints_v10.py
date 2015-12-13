@@ -203,6 +203,7 @@ def print_of_feature_res_ports(of_xid, ports):
         printed = True
     else:
         printed = _dont_print_0(printed)
+    print
 
 
 def print_ofp_match(xid, ofmatch):
