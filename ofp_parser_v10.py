@@ -528,7 +528,7 @@ def get_action(action_type, length, payload):
         return type_f[0]
 
 
-def _parse_OFAction(of_xid, packet, start):
+def _parse_OFAction(of_xid, packet, start, ofactions = []):
     '''
         Actions
     '''
@@ -554,13 +554,19 @@ def _parse_OFAction(of_xid, packet, start):
                 total_length = 4
                 ofa_action_payload = packet[start:start + 4]
 
-            ofp_prints_v10.print_ofp_action(of_xid, ofa_type, ofa_length,
-                                            ofa_action_payload)
+            ofa_temp = ofp_prints_v10.print_ofp_action(of_xid, ofa_type,
+                                                       ofa_length,
+                                                       ofa_action_payload)
+
+            # Print OVS format
+            ofactions.append(ofa_temp)
+            ofactions.append(',')
             # Next packet would start at..
             start = start + total_length
         else:
             break
-    return
+
+    return ofactions
 
 
 def parse_FlowMod(packet, h_size, of_xid, print_options):
@@ -586,33 +592,8 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
     #  0 for type 3
     #  12 for types 4,5,b
     start = h_size+64
-    action_header = 4
-    while (1):
-        ofp_action = packet[start:start + action_header]
-        if len(ofp_action) > 0:
-            # Get type and length
-            ofa = unpack('!HH', ofp_action)
-            ofa_type = ofa[0]
-            ofa_length = ofa[1]
 
-            start = start + action_header
-            if ofa_type == 4 or ofa_type == 5 or ofa_type == int('b', 16):
-                total_length = 12
-                ofa_action_payload = packet[start:start + 12]
-            else:
-                total_length = 4
-                ofa_action_payload = packet[start:start + 4]
-
-            ofa_temp = ofp_prints_v10.print_ofp_action(of_xid, ofa_type,
-                                                       ofa_length,
-                                                       ofa_action_payload)
-            # Print OVS format
-            ofactions.append(ofa_temp)
-            ofactions.append(',')
-            # Next packet would start at..
-            start = start + total_length
-        else:
-            break
+    ofactions = _parse_OFAction(of_xid, packet, start, ofactions)
 
     if print_options['ovs'] == 1:
         ofp_prints_v10.print_ofp_ovs(print_options, ofmatch, ofactions,
@@ -756,7 +737,7 @@ def parse_StatsRes(packet, h_size, of_xid):
 
             ofp_prints_v10.print_ofp_statResFlow(of_xid, stat_type, of_match,
                                                  res_flow)
-            # _parse_OFAction(of_xid, packet, start)
+            _parse_OFAction(of_xid, packet, start + 88)
             count = count - int(res_flow['length'])
             start = start + int(res_flow['length'])
 

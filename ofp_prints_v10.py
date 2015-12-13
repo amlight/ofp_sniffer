@@ -206,7 +206,10 @@ def print_of_feature_res_ports(of_xid, ports):
 
 
 def print_ofp_match(xid, ofmatch):
-    print ('%s OpenFlow Match -' % (xid)),
+    if xid == '':
+        print 'OpenFlow Match -',
+    else:
+        print ('%s OpenFlow Match -' % (xid)),
     for K in ofmatch:
         print ("%s: %s" % (K, green(ofmatch[K]))),
     print
