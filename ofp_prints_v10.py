@@ -555,3 +555,17 @@ def print_ofp_packetOut(of_xid, packetOut):
            (of_xid, hex(packetOut['buffer_id']),
             green(ofp_dissector_v10.get_phy_port_id(packetOut['in_port'])),
             packetOut['actions_len']))
+
+def print_queueReq(of_xid, queueConfReq):
+    print ('%s QueueGetConfigReq Port: %s Pad: %s' %
+           (of_xid, queueConfReq['port'], queueConfReq['pad']))
+
+
+def print_queueRes(of_xid, queueConfRes):
+    print ('%s QueueGetConfigRes Port: %s Pad: %s' %
+           (of_xid, queueConfRes['port'], queueConfRes['pad']))
+
+
+def print_queueRes_properties(of_xid, properties):
+    print ('%s ' %
+           (of_xid))

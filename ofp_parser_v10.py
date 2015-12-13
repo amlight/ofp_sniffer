@@ -841,9 +841,37 @@ def parse_BarrierRes(packet, h_size, of_xid):
 
 # ******************* QueueGetConfigReq *******************
 def parse_QueueGetConfigReq(packet, h_size, of_xid):
-    return 0
+    queue_raw = packet[h_size:h_size+4]
+    queue = unpack('!HH', queue_raw)
+    queueConfReq = {'port': queue[0], 'pad': queue[1]}
+    ofp_prints_v10.print_queueReq(of_xid, queueConfReq)
+    return 1
 
 
 # ****************** QueueGetConfigRes ********************
 def parse_QueueGetConfigRes(packet, h_size, of_xid):
-    return 0
+    queue_raw = packet[h_size:h_size+8]
+    queue = unpack('!H6s', queue_raw)
+    queueConfRes = {'port': queue[0], 'pad': queue[1]}
+
+    # Queues
+    # queue_id(32), length(16), pad(16)
+    queue_raw = packet[h_size+8:h_size+8+8]
+    queue = unpack('!LHH', queue_raw)
+    queues = {'queue_id': queue[0], 'length': queue[1], 'pad': queue[2]}
+
+    ofp_prints_v10.print_queueRes(of_xid, queueConfRes, queues)
+    # Look of properties
+    # property(16), length(16), pad(32)
+    start = h_size + 16
+    while (len(packet[start:]) > 0):
+        prop_raw = packet[start:start+8]
+        prop = unpack('!HHL', prop_raw)
+        prop_type = prop[0]
+        prop_length = prop[1]
+        prop_pad = prop[2]
+        # rate(16), pad(48)
+        # How many rates we have? Each has 8 Bytes
+        properties = {'type': prop_type, 'length': prop_length, 'pad': prop_pad}
+        ofp_prints_v10.print_queueRes_properties(of_xid, properties)
+    return 1
