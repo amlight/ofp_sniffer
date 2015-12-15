@@ -23,11 +23,12 @@ def get_ethertype(etype):
               34925: 'IPv6',
               34887: 'MPLS',
               35020: 'LLDP',
-              35138: 'BBDP'}
+              35138: 'BBDP',
+              34998: 'PRIVATE'}
     try:
         return '%s(%s)' % (etypes[etype], hex(etype))
     except:
-        return etype
+        return hex(etype)
 
 
 def get_ethernet_vlan(packet):
@@ -50,13 +51,10 @@ def get_next_etype(packet):
 def get_arp(packet):
     arp_raw = packet[:28]
     arp = unpack('!HHBBH6sL6sL', arp_raw)
-    src_ip = arp[6]
-    dst_ip = arp[8]
     arp_frame = {'hw_type': arp[0], 'prot_type': arp[1], 'hw_len': arp[2],
                  'prot_len': arp[3], 'opcode': arp[4], 'src_mac': arp[5],
-                 'src_ip': src_ip, 'dst_mac': arp[7], 'dst_ip': dst_ip}
+                 'src_ip': arp[6], 'dst_mac': arp[7], 'dst_ip': arp[8]}
     return arp_frame
-
 
 def get_ip_packet(packet, eth_length):
     '''

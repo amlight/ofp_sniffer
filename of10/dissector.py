@@ -123,6 +123,13 @@ def get_ofp_command(command):
         return 'UnknownCommand(%s)' % command
 
 
+def get_vlan(vlan):
+    vlans = {65535: 'Untagged(0xFFFF)'}
+    try:
+        return vlans[vlan]
+    except:
+        return vlan
+
 def get_ofp_flags(flag):
     flags = {0: 'NoFlagSet(0)',
              1: 'SendFlowRem(1)',

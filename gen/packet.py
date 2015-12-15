@@ -79,14 +79,17 @@ class Packet:
             self.start += OF_HEADER_SIZE
             self.end = self.of_h['length'] - OF_HEADER_SIZE
             self.this_packet = self.packet[self.start:self.start+self.end]
+            # debug
+            # print self.of_h['type']
             if self.of_h['version'] is 1:
                 if not process_ofp_type(self):
                     of10.prints.print_type_unknown(self)
                     return
                 else:
+                    # Print packets
+                    self.print_packet()
                     self.start += (self.of_h['length'] - OF_HEADER_SIZE)
-        # remove this:
-        print
+        # print
 
     def prepare_printing(self, string, values):
         self.of_body[string] = values
@@ -100,6 +103,7 @@ class Packet:
                 of10.prints.print_body(self)
 #            elif self.of_h['version'] is 4:
 #                print of13.prints.print_body(self)
+            print
 
     def check_filters(self):
         # Was -F submitted?
