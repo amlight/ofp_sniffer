@@ -108,55 +108,55 @@ def _dont_print_0(printed):
     return False
 
 
-def print_of_feature_res_ports(pkt):
-    ports_array = pkt.of_body['print_of_feature_res_ports']
-    for ports in ports_array:
-        print ('FeatureRes - port_id: %s hw_addr: %s name: %s' % (
-               green(ports['port_id']), green(ports['hw_addr']),
-               green(ports['name'])))
-        print ('FeatureRes - config:'),
-        printed = False
-        for i in ports['config']:
-            print of10.dissector.get_phy_config(i),
-            printed = True
-        else:
-            printed = _dont_print_0(printed)
-        print
-        print ('FeatureRes - state:'),
-        for i in ports['state']:
-            print of10.dissector.get_phy_state(i),
-            printed = True
-        else:
-            printed = _dont_print_0(printed)
-        print
-        print ('FeatureRes - curr:'),
-        for i in ports['curr']:
-            print of10.dissector.get_phy_feature(i),
-            printed = True
-        else:
-            printed = _dont_print_0(printed)
-        print
-        print ('FeatureRes - advertised:'),
-        for i in ports['advertised']:
-            print of10.dissector.get_phy_feature(i),
-            printed = True
-        else:
-            printed = _dont_print_0(printed)
-        print
-        print ('FeatureRes - supported:'),
-        for i in ports['supported']:
-            print of10.dissector.get_phy_feature(i),
-            printed = True
-        else:
-            printed = _dont_print_0(printed)
-        print
-        print ('FeatureRes - peer:'),
-        for i in ports['peer']:
-            print of10.dissector.get_phy_feature(i),
-            printed = True
-        else:
-            printed = _dont_print_0(printed)
-        print
+def print_port_field(port, field):
+    port_id = '%s' % green(port['port_id'])
+    printed = False
+
+    print ('Port_id: %s - %s curr:' % (port_id, field)),
+    for i in port[field]:
+        print of10.dissector.get_phy_feature(i),
+        printed = True
+    else:
+        printed = _dont_print_0(printed)
+    print
+
+
+def print_ofp_phy_port(port):
+    port_id = '%s' % green(port['port_id'])
+
+    print ('Port_id: %s - hw_addr: %s name: %s' % (
+           port_id, green(port['hw_addr']), green(port['name'])))
+
+    print ('Port_id: %s - config:' % port_id),
+    printed = False
+    for i in port['config']:
+        print of10.dissector.get_phy_config(i),
+        printed = True
+    else:
+        printed = _dont_print_0(printed)
+    print
+
+    print ('Port_id: %s - state:' % port_id),
+    for i in port['state']:
+        print of10.dissector.get_phy_state(i),
+        printed = True
+    else:
+        printed = _dont_print_0(printed)
+    print
+
+    following_fields = ['curr', 'advertised', 'supported', 'peer']
+
+    for field in following_fields:
+        print_port_field(port, field)
+
+
+def print_of_ports(pkt):
+    ports = pkt.of_body['print_of_ports']
+    if type(ports) is not list:
+        print_ofp_phy_port(ports)
+    else:
+        for port in ports:
+            print_ofp_phy_port(port)
 
 
 def print_ofp_match(pkt):

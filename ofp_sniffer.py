@@ -26,18 +26,8 @@ def main(argv):
     '''
         This is the main function
     '''
-    print_options, infilter, sanitizer, dev, capfile = gen.cli.get_params(argv)
+    cap, print_options, sanitizer = gen.cli.get_params(argv)
     try:
-        if len(capfile) > 0:
-            print "Using file %s " % capfile
-            cap = pcapy.open_offline(capfile)
-        else:
-            print "Sniffing device %s" % dev
-            cap = pcapy.open_live(dev, 65536, 1, 0)
-
-        main_filter = " port 6633 "
-        cap.setfilter(main_filter + infilter)
-
         ctr = 1
         # start sniffing packets
         while(1):

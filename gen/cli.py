@@ -1,6 +1,7 @@
 import sys
 import getopt
 import json
+import pcapy
 
 
 VERSION = '0.3-dev'
@@ -41,6 +42,24 @@ def read_sanitizer(sanitizer_file):
         print msg % sanitizer_file
         sys.exit(0)
     return (json_content)
+
+
+def start_capture(capfile, infilter, dev):
+    try:
+        if len(capfile) > 0:
+            print "Using file %s " % capfile
+            cap = pcapy.open_offline(capfile)
+        else:
+            print "Sniffing device %s" % dev
+            cap = pcapy.open_live(dev, 65536, 1, 0)
+
+        main_filter = " port 6633 "
+        cap.setfilter(main_filter + infilter)
+        return cap
+
+    except Exception as exception:
+        print exception
+        return -1
 
 
 def get_params(argv):
@@ -100,4 +119,6 @@ def get_params(argv):
         print_options['filters'] = 1
         sanitizer = read_sanitizer(sanitizer_file)
 
-    return print_options, input_filter, sanitizer, dev, captured_file
+    cap = start_capture(captured_file, input_filter, dev)
+
+    return cap, print_options, sanitizer

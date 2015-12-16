@@ -193,7 +193,7 @@ def parse_FeatureRes(pkt):
         ports = _parse_phy_ports(pkt.packet[start:start+48])
         ports_array.append(ports)
         start = start + 48
-    pkt.prepare_printing('print_of_feature_res_ports', ports_array)
+    pkt.prepare_printing('print_of_ports', ports_array)
     return 1
 
 
@@ -338,7 +338,7 @@ def parse_PortStatus(pkt):
     pkt.prepare_printing('print_portStatus', p_status)
 
     ports = _parse_phy_ports(pkt.packet[8:64])
-    pkt.prepare_printing('print_of_feature_res_ports', ports)
+    pkt.prepare_printing('print_of_ports', ports)
     return 1
 
 

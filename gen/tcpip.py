@@ -204,12 +204,13 @@ def get_lldp(packet):
 
     start = start + 4
     # Loop to get User-Specific TLVs
-    while len(packet[start:]) > 0:
+    while len(packet[start:]) > 2:
         next_raw = packet[start:start+2]
         nraw = unpack('!H', next_raw)
         n_type = nraw[0] >> 9
         n_length = nraw[0] & 0xFF
         length = n_length - 4
+
         if n_type == 0:
             break
         elif n_type == 127:
@@ -224,7 +225,8 @@ def get_lldp(packet):
                 string = '!%ss' % length
                 content = unpack(string, content_raw)
                 c_id = content[0]
-        start = start + length
+
+        start = start + n_length + 2
 
     # END
     end_raw = packet[start:start+2]

@@ -22,7 +22,11 @@ def support_fsfw(pkt, lldp):
 
 
 def get_name_dpid(dpid):
-    return '%s' % name.get(dpid)
+    sw_name = name.get(dpid)
+    if sw_name is not None:
+        return sw_name
+
+    return 'OFswitch'
 
 
 def get_ip_name(ip, port):
