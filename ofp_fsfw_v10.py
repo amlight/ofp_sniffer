@@ -33,5 +33,6 @@ def get_ip_name(ip, port):
 
 def close():
     print '\n'
-    for i, j in NET.iteritems():
-        print i, j
+    # Future: send to a file to import faster
+    # for i, j in NET.iteritems():
+    #   print i, j

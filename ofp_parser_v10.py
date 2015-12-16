@@ -349,8 +349,7 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer, print_options):
                  'actions_len': actions_len}
 
     ofp_prints_v10.print_ofp_packetOut(of_xid, packetOut)
-    # Process actions: actions_len has to be used
-    # while (actions_len > 0):
+    # Actions
     start = h_size + 8
     _parse_OFAction(of_xid, packet[start:start+packetOut['actions_len']], 0)
     # Ethernet
