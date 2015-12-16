@@ -5,6 +5,7 @@ import socket
 import struct
 import ofp_tcpip_parser
 import ofp_vendors_v10
+import ofp_fsfw_v10
 
 
 def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
@@ -35,7 +36,8 @@ def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
     elif of_type == 12:
         result = parse_PortStatus(packet, h_size, of_xid)
     elif of_type == 13:
-        result = parse_PacketOut(packet, h_size, of_xid, sanitizer)
+        result = parse_PacketOut(packet, h_size, of_xid, sanitizer,
+                                 print_options)
     elif of_type == 14:
         result = parse_FlowMod(packet, h_size, of_xid, print_options)
     elif of_type == 15:
@@ -289,6 +291,7 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
 
     # If we have filters (-F)
     filters = sanitizer['packetIn_filter']
+
     if len(filters) > 0:
         if filters['switch_dpid'] == "any":
             _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
@@ -337,7 +340,7 @@ def parse_PortStatus(packet, h_size, of_xid):
 
 # ******************* PacketOut *****************************
 # Actions need to be handled
-def parse_PacketOut(packet, h_size, of_xid, sanitizer):
+def parse_PacketOut(packet, h_size, of_xid, sanitizer, print_options):
     # buffer_id(32), in_port(16), actions_len(16)
     pkt_raw = packet[h_size:h_size+8]
     p_out = unpack('!LHH', pkt_raw)
@@ -372,6 +375,8 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer):
         if len(lldp) is 0:
             print 'LLDP Packet MalFormed'
         else:
+            # Support for FSFW/Proxy
+            ofp_fsfw_v10.support_fsfw(print_options, lldp)
             ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
 
     return 1
@@ -858,24 +863,30 @@ def parse_QueueGetConfigRes(packet, h_size, of_xid):
     queue = unpack('!H6s', queue_raw)
     queueConfRes = {'port': queue[0], 'pad': queue[1]}
 
-    # Queues
-    # queue_id(32), length(16), pad(16)
-    queue_raw = packet[h_size+8:h_size+8+8]
-    queue = unpack('!LHH', queue_raw)
-    queues = {'queue_id': queue[0], 'length': queue[1], 'pad': queue[2]}
+    ofp_prints_v10.print_queueRes(of_xid, queueConfRes)
 
-    ofp_prints_v10.print_queueRes(of_xid, queueConfRes, queues)
-    # Look of properties
-    # property(16), length(16), pad(32)
-    start = h_size + 16
-    while (len(packet[start:]) > 0):
-        prop_raw = packet[start:start+8]
-        prop = unpack('!HHL', prop_raw)
-        prop_type = prop[0]
-        prop_length = prop[1]
-        prop_pad = prop[2]
-        # rate(16), pad(48)
-        # How many rates we have? Each has 8 Bytes
-        properties = {'type': prop_type, 'length': prop_length, 'pad': prop_pad}
-        ofp_prints_v10.print_queueRes_properties(of_xid, properties)
+    start = h_size + 8
+    while (packet[start:] > 0):
+        # Queues - it could be multiple
+        # queue_id(32), length(16), pad(16)
+        queue_raw = packet[start:start+8]
+        queue = unpack('!LHH', queue_raw)
+        queues = {'queue_id': queue[0], 'length': queue[1], 'pad': queue[2]}
+        ofp_prints_v10.print_queues(of_xid, queues)
+
+        q_start = start + 8
+
+        # Look of properties
+        # property(16), length(16), pad(32), rate(16), pad(48)
+        properties = packet[q_start:q_start+queues['length']-8]
+
+        while (len(properties[q_start:]) > 0):
+            prop_raw = packet[q_start:q_start+8]
+            prop = unpack('!HHLH6s', prop_raw)
+            properties = {'type': prop[0], 'length': prop[1],
+                          'pad': prop[2], 'rate': prop[3], 'pad2': prop[4]}
+            ofp_prints_v10.print_queueRes_properties(of_xid, properties)
+
+        start = start + queues['length']
+
     return 1

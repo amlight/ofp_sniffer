@@ -2,6 +2,7 @@ from termcolor import colored
 import ofp_dissector_v10
 from ofp_parser_v10 import get_action, get_ip_from_long
 import ofp_cli  # NO_COLOR variable
+import ofp_fsfw_v10
 
 
 def red(string):
@@ -26,6 +27,12 @@ def yellow(string):
     if ofp_cli.NO_COLOR is True:
         return string
     return colored(string, 'yellow')
+
+
+def cyan(string):
+    if ofp_cli.NO_COLOR is True:
+        return string
+    return colored(string, 'cyan')
 
 
 def eth_addr(a):
@@ -54,8 +61,15 @@ def print_headers(print_options, date, getlen, caplen, eth, ip, tcp):
 
 def print_minimal(date, getlen, ip, tcp):
     string = '%s %s:%s -> %s:%s Size: %s Bytes'
-    print string % (date, blue(ip['s_addr']), blue(tcp['source_port']),
-                    blue(ip['d_addr']), blue(tcp['dest_port']), getlen)
+
+    # source = ip['s_addr']
+    # dest = ip['d_addr']
+
+    source = ofp_fsfw_v10.get_ip_name(ip['s_addr'], tcp['source_port'])
+    dest = ofp_fsfw_v10.get_ip_name(ip['d_addr'], tcp['dest_port'])
+
+    print string % (date, blue(source), blue(tcp['source_port']),
+                    blue(dest), blue(tcp['dest_port']), getlen)
 
 
 def print_layer1(date, getlen, caplen):
@@ -557,6 +571,7 @@ def print_ofp_packetOut(of_xid, packetOut):
             green(ofp_dissector_v10.get_phy_port_id(packetOut['in_port'])),
             packetOut['actions_len']))
 
+
 def print_queueReq(of_xid, queueConfReq):
     print ('%s QueueGetConfigReq Port: %s Pad: %s' %
            (of_xid, queueConfReq['port'], queueConfReq['pad']))
@@ -567,6 +582,12 @@ def print_queueRes(of_xid, queueConfRes):
            (of_xid, queueConfRes['port'], queueConfRes['pad']))
 
 
+def print_queueRes_queues(of_xid, queues):
+    print ('%s Queue_ID: %s Length: %s Pad: %s' %
+           (of_xid, queues['queue_id'], queues['length'], queues['pad']))
+
+
 def print_queueRes_properties(of_xid, properties):
-    print ('%s ' %
-           (of_xid))
+    print ('%s Property: %s Length: %s Pad: %s Rate: %s Pad: %s' %
+           (of_xid, properties['type'], properties['length'], properties['pad'],
+            properties['rate'], properties['pad2']))

@@ -1,17 +1,17 @@
 {
   "mapping" : {
-    "dpid1": "mia1",
-    "dpid2": "mia2",
-    "dpid3": "brz", 
-    "dpid4": "andes1",
-    "dpid5": "andes2"
+    "cc4e249102000000": "andes2",
+    "cc4e249126000000": "andes1",
+    "cc4e244b11000000": "sol2",
+    "0024389406000000": "mct01",
+    "002438af17000000": "mct02"
   },
   "allowed_of_versions": {
     "1.0": {
           "rejected_of_types": [
             2,
             3,
-            10,            
+            10,
             13
          ]
     },
