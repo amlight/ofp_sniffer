@@ -62,14 +62,11 @@ def print_headers(print_options, date, getlen, caplen, eth, ip, tcp):
 def print_minimal(date, getlen, ip, tcp):
     string = '%s %s:%s -> %s:%s Size: %s Bytes'
 
-    # source = ip['s_addr']
-    # dest = ip['d_addr']
-
     source = ofp_fsfw_v10.get_ip_name(ip['s_addr'], tcp['source_port'])
     dest = ofp_fsfw_v10.get_ip_name(ip['d_addr'], tcp['dest_port'])
 
-    print string % (date, blue(source), blue(tcp['source_port']),
-                    blue(dest), blue(tcp['dest_port']), getlen)
+    print string % (date, cyan(source), cyan(tcp['source_port']),
+                    cyan(dest), cyan(tcp['dest_port']), getlen)
 
 
 def print_layer1(date, getlen, caplen):

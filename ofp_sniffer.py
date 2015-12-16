@@ -25,6 +25,7 @@ from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
     get_tcp_stream, get_openflow_header
 import ofp_cli
 import ofp_dissector_v10
+import ofp_fsfw_v10
 
 
 def main(argv):
@@ -50,6 +51,7 @@ def main(argv):
                          header.getlen(), header.getcaplen(),
                          print_options, sanitizer)
     except KeyboardInterrupt:
+        print ofp_fsfw_v10.close()
         print 'Exiting...'
         sys.exit(0)
     except Exception as exception:
