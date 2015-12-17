@@ -51,6 +51,7 @@ Required Python 2.7 (2.6 works but with issues)
 apt-get install python-pcapy or yum install pcapy 
 git clone https://github.com/jab1982/ofp_sniffer.git
 cd ofp_sniffer
+git checkout 0.2
 sudo ./ofp_sniffer.py
 ```
 ##################### Examples #########################
