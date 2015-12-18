@@ -1,11 +1,4 @@
 {
-  "mapping" : {
-    "cc4e249102000000": "andes2",
-    "cc4e249126000000": "andes1",
-    "cc4e244b11000000": "sol2",
-    "0024389406000000": "mct01",
-    "002438af17000000": "mct02"
-  },
   "allowed_of_versions": {
     "1.0": {
           "rejected_of_types": [

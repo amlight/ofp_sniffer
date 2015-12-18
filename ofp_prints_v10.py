@@ -254,7 +254,7 @@ def print_ofp_action(xid, action_type, length, payload):
     if action_type == 0:
         port, max_len = get_action(action_type, length, payload)
 
-        port = ofp_dissector_v10.get_get_phy_port_id(port)
+        port = ofp_dissector_v10.get_phy_port_id(port)
         print ('%s OpenFlow Action - Type: %s Length: %s Port: %s '
                'Max Length: %s' %
                (xid, green('OUTPUT'), length, green(port), max_len))
