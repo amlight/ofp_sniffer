@@ -1,5 +1,6 @@
 from termcolor import colored
 import ofp_dissector_v10
+import ofp_dissector_v13
 from ofp_parser_v10 import get_action, get_ip_from_long
 import ofp_cli  # NO_COLOR variable
 import ofp_fsfw_v10
@@ -118,6 +119,9 @@ def print_openflow_header(of):
     name_version = '%s(%s)' % (version, of['version'])
     if version == '1.0':
         name = ofp_dissector_v10.get_ofp_type(of['type'])
+        name_type = '%s(%s)' % (name, of['type'])
+    elif version == '1.3':
+        name = ofp_dissector_v13.get_ofp_type(of['type'])
         name_type = '%s(%s)' % (name, of['type'])
     else:
         name_type = '%s' % (of['type'])

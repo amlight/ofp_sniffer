@@ -26,6 +26,7 @@ from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
 import ofp_cli
 import ofp_dissector_v10
 import ofp_fsfw_v10
+from ofp_parser_v13 import process_ofp_type13
 
 
 def main(argv):
@@ -129,6 +130,10 @@ def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
             if result == 0:
                 return
 
+        # If not OpenFlow version 1.0 or 1.3 return
+        if of_header['version'] not in [1, 4]:
+            return
+
         # In case there are multiple flow_mods
         remaining_bytes = remaining_bytes - of_header['length']
 
@@ -143,27 +148,36 @@ def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
         print_options['device_ip'] = ip['d_addr']
         print_options['device_port'] = tcp['dest_port']
 
+        # Process and Print OF body
+        # OF_Header lenght = 8
+        start = start + 8
+        this_packet = packet[start:start+of_header['length'] - 8]
+
         # If OpenFlow version is 1.0
-        if of_header['version'] == int('1', 16):
-            # Process and Print OF body
-            # OF_Header lenght = 8
-            start = start + 8
-            this_packet = packet[start:start+of_header['length'] - 8]
+        if of_header['version'] is 1:
             if not process_ofp_type(of_header['type'], this_packet, 0,
                                     of_header['xid'], print_options, sanitizer):
-                print ('%s OpenFlow OFP_Type %s not dissected \n' %
+
+                print ('%s OpenFlow OFP_Type %s unknown \n' %
                        (of_header['xid'], of_header['type']))
                 return
             else:
                 # Get next packet
                 start = start + (of_header['length'] - 8)
+
         # If OpenFlow version is 1.3
-        elif of_header['version'] == int('4', 16):
-            print 'Coming soon...'
-            return
-        else:
-            print 'OpenFlow version %s not supported \n' % of_header['version']
-            return
+        elif of_header['version'] is 4:
+            # Process and Print OF body
+            # OF_Header lenght = 8
+            if not process_ofp_type13(of_header['type'], this_packet, 0,
+                                      of_header['xid'], print_options,
+                                      sanitizer):
+                print ('%s OpenFlow OFP_Type %s not dissected yet \n' %
+                       (of_header['xid'], of_header['type']))
+                return
+            else:
+                # Get next packet
+                start = start + (of_header['length'] - 8)
 
         # Do not process extra data from Hello and Error.
         # Maybe in the future.
