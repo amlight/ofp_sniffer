@@ -15,25 +15,24 @@
     Author: Jeronimo Bezerra <jab@amlight.net>
 
 '''
-
 import datetime
 import pcapy
 import sys
-from ofp_prints_v10 import print_headers, print_openflow_header
-from ofp_parser_v10 import process_ofp_type
-from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
+from gen.tcpip import get_ethernet_frame, get_ip_packet, \
     get_tcp_stream, get_openflow_header
-import ofp_cli
-import ofp_dissector_v10
-import ofp_fsfw_v10
-from ofp_parser_v13 import process_ofp_type13
+import gen.cli
+import gen.proxies
+from gen.prints import print_headers, print_openflow_header
+from of10.parser import process_ofp_type
+import of10.dissector
+from of13.parser import process_ofp_type13
 
 
 def main(argv):
     '''
         This is the main function
     '''
-    print_options, infilter, sanitizer, dev, capfile = ofp_cli.get_params(argv)
+    print_options, infilter, sanitizer, dev, capfile = gen.cli.get_params(argv)
     try:
         if len(capfile) > 0:
             print "Using file %s " % capfile
@@ -52,7 +51,7 @@ def main(argv):
                          header.getlen(), header.getcaplen(),
                          print_options, sanitizer)
     except KeyboardInterrupt:
-        print ofp_fsfw_v10.close()
+        print gen.proxies.close()
         print 'Exiting...'
         sys.exit(0)
     except Exception as exception:
@@ -72,7 +71,7 @@ def sanitizer_filters(of_header, date, getlen, caplen, header_size,
         return 0
 
     # OF Versions supported through json file (-F)
-    name_version = ofp_dissector_v10.get_ofp_version(of_header['version'])
+    name_version = of10.dissector.get_ofp_version(of_header['version'])
     supported_versions = []
     for version in sanitizer['allowed_of_versions']:
         supported_versions.append(version)

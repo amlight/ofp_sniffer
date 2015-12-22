@@ -1,6 +1,5 @@
 from struct import unpack
-# import ofp_dissector_v13
-import ofp_prints_v13
+import of13.prints
 # import socket
 
 
@@ -76,7 +75,7 @@ def process_ofp_type13(of_type, packet, h_size, of_xid, print_options,
 def parse_Hello(packet, h_size, of_xid):
 
     def process_bitmap(of_xid, bitmap):
-        ofp_prints_v13.print_hello_bitmap(of_xid, bitmap)
+        of13.prints.print_hello_bitmap(of_xid, bitmap)
 
     start = h_size
     count = 0
@@ -85,7 +84,7 @@ def parse_Hello(packet, h_size, of_xid):
         count += 1
         elem_raw = packet[start:start+4]
         el_type, el_length = unpack('!HH', elem_raw)
-        ofp_prints_v13.print_hello_elememnts(of_xid, el_type, el_length, count)
+        of13.prints.print_hello_elememnts(of_xid, el_type, el_length, count)
 
         bitmaps = packet[start+4:start+el_length]
         start_bit = 0
@@ -103,26 +102,26 @@ def parse_Hello(packet, h_size, of_xid):
 
 # ************** Error *****************
 def parse_Error(packet, h_size, of_xid):
-    # of_error = packet[h_size:h_size+4]
-    # ofe = unpack('!HH', of_error)
-    # ofe_type = ofe[0]
-    # ofe_code = ofe[1]
+    of_error = packet[h_size:h_size+4]
+    ofe = unpack('!HH', of_error)
+    ofe_type = ofe[0]
+    ofe_code = ofe[1]
 
-    #  nameCode, typeCode = ofp_dissector_v10.get_ofp_error(ofe_type, ofe_code)
-    #  ofp_prints_v10.print_of_error(of_xid, nameCode, typeCode)
-    return 0
+    nameCode, typeCode = of13.dissector.get_ofp_error(ofe_type, ofe_code)
+    of13.prints.print_of_error(of_xid, nameCode, typeCode)
+    return 1
 
 
 # ************ EchoReq *****************
 def parse_EchoReq(packet, h_size, of_xid):
-    # ofp_prints_v10.print_echoreq(of_xid)
-    return 0
+    of13.prints.print_echoreq(of_xid)
+    return 1
 
 
 # ************ EchoRes *****************
 def parse_EchoRes(packet, h_size, of_xid):
-    # ofp_prints_v10.print_echores(of_xid)
-    return 0
+    of13.prints.print_echores(of_xid)
+    return 1
 
 
 def parse_Experimenter(packet, h_size, of_xid):
@@ -190,11 +189,13 @@ def parse_MultipartRes(packet, h_size, of_xid):
 
 
 def parse_BarrierReq(packet, h_size, of_xid):
-    return 0
+    of13.prints.print_of_BarrierReq(of_xid)
+    return 1
 
 
 def parse_BarrierRes(packet, h_size, of_xid):
-    return 0
+    of13.prints.print_of_BarrierReply(of_xid)
+    return 1
 
 
 def parse_QueueGetConfigReq(packet, h_size, of_xid):

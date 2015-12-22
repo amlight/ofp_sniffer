@@ -1,11 +1,15 @@
+'''
+   Parser for OpenFlow 1.0
+'''
+
 from struct import unpack
-import ofp_dissector_v10
-import ofp_prints_v10
+import of10.dissector
+import of10.prints
 import socket
 import struct
-import ofp_tcpip_parser
-import ofp_vendors_v10
-import ofp_fsfw_v10
+import gen.tcpip
+import of10.vendors
+import gen.proxies
 
 
 def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
@@ -61,7 +65,7 @@ def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
 
 # *************** Hello *****************
 def parse_Hello(packet, h_size, of_xid):
-    ofp_prints_v10.print_of_hello(of_xid)
+    of10.prints.print_of_hello(of_xid)
     return 1
 
 
@@ -72,20 +76,20 @@ def parse_Error(packet, h_size, of_xid):
     ofe_type = ofe[0]
     ofe_code = ofe[1]
 
-    nameCode, typeCode = ofp_dissector_v10.get_ofp_error(ofe_type, ofe_code)
-    ofp_prints_v10.print_of_error(of_xid, nameCode, typeCode)
+    nameCode, typeCode = of10.dissector.get_ofp_error(ofe_type, ofe_code)
+    of10.prints.print_of_error(of_xid, nameCode, typeCode)
     return 1
 
 
 # ************ EchoReq *****************
 def parse_EchoReq(packet, h_size, of_xid):
-    ofp_prints_v10.print_echoreq(of_xid)
+    of10.prints.print_echoreq(of_xid)
     return 1
 
 
 # ************ EchoRes *****************
 def parse_EchoRes(packet, h_size, of_xid):
-    ofp_prints_v10.print_echores(of_xid)
+    of10.prints.print_echores(of_xid)
     return 1
 
 
@@ -93,18 +97,18 @@ def parse_EchoRes(packet, h_size, of_xid):
 def parse_Vendor(packet, h_size, of_xid):
     of_vendor = packet[h_size:h_size+4]
     ofv = unpack('!L', of_vendor)
-    ofp_prints_v10.print_of_vendor(ofv[0], of_xid)
+    of10.prints.print_of_vendor(ofv[0], of_xid)
 
     # If code 8992 = NICIRA
     if ofv[0] == 8992:
-        ofp_vendors_v10.parse_nicira(packet, h_size+4, of_xid)
+        of10.vendors.parse_nicira(packet, h_size+4, of_xid)
     print
     return 1
 
 
 # *********** FeatureReq ***************
 def parse_FeatureReq(packet, h_size, of_xid):
-    ofp_prints_v10.print_of_feature_req(of_xid)
+    of10.prints.print_of_feature_req(of_xid)
     return 1
 
 
@@ -147,8 +151,8 @@ def _parse_phy_curr(values):
 def _parse_phy_ports(packet, of_xid):
     phy = unpack('!H6s16sLLLLLL', packet)
 
-    port_id = ofp_dissector_v10.get_phy_port_id(phy[0])
-    hw_addr = ofp_prints_v10.eth_addr(phy[1])
+    port_id = of10.dissector.get_phy_port_id(phy[0])
+    hw_addr = of10.prints.eth_addr(phy[1])
     config = _parse_phy_config(phy[3])
     state = _parse_phy_state(phy[4])
     curr = _parse_phy_curr(phy[5])
@@ -173,20 +177,20 @@ def parse_FeatureRes(packet, h_size, of_xid):
     ofrs = unpack('!8sLB3sLL', of_fres)
     f_res = {'datapath_id': ofrs[0], 'n_buffers': ofrs[1], 'n_tbls': ofrs[2],
              'pad': ofrs[3]}
-    ofp_prints_v10.print_of_feature_res(of_xid, f_res)
+    of10.prints.print_of_feature_res(of_xid, f_res)
 
     # 'capabilities': ofrs[4], 'actions': ofrs[5]}
     caps = []
     caps = _parse_capabilities(ofrs[4])
     actions = []
     actions = _parse_actions(ofrs[5])
-    ofp_prints_v10.print_of_feature_res_caps_and_actions(of_xid, caps, actions)
+    of10.prints.print_of_feature_res_caps_and_actions(of_xid, caps, actions)
 
     # Ports description?
     start = h_size + 24
     while len(packet[start:]) > 0:
         ports = _parse_phy_ports(packet[start:start+48], of_xid)
-        ofp_prints_v10.print_of_feature_res_ports(of_xid, ports)
+        of10.prints.print_of_feature_res_ports(of_xid, ports)
         start = start + 48
 
     return 1
@@ -194,7 +198,7 @@ def parse_FeatureRes(packet, h_size, of_xid):
 
 # ***************** GetConfigReq *********************
 def parse_GetConfigReq(packet, h_size, of_xid):
-    ofp_prints_v10.print_of_getconfig_req(of_xid)
+    of10.prints.print_of_getconfig_req(of_xid)
     return 1
 
 
@@ -202,44 +206,44 @@ def parse_GetConfigReq(packet, h_size, of_xid):
 def _parse_SetGetConfig(packet, h_size):
     pkt_raw = packet[h_size:h_size+4]
     pkt_list = unpack('!HH', pkt_raw)
-    flag = ofp_dissector_v10.get_configres_flags(pkt_list[0])
+    flag = of10.dissector.get_configres_flags(pkt_list[0])
     miss_send_len = pkt_list[1]
     return flag, miss_send_len
 
 
 def parse_GetConfigRes(packet, h_size, of_xid):
     flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
-    ofp_prints_v10.print_ofp_getConfigRes(of_xid, flag, miss_send_len)
+    of10.prints.print_ofp_getConfigRes(of_xid, flag, miss_send_len)
     return 1
 
 
 # ******************* SetConfig **********************
 def parse_SetConfig(packet, h_size, of_xid):
     flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
-    ofp_prints_v10.print_ofp_setConfig(of_xid, flag, miss_send_len)
+    of10.prints.print_ofp_setConfig(of_xid, flag, miss_send_len)
     return 1
 
 
 # ****************** PacketIn ************************
 def _parse_ethernet_lldp_PacketInOut(packet, start):
     # Ethernet
-    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14], 1)
+    eth = gen.tcpip.get_ethernet_frame(packet[start:start+14], 1)
     start = start + 14
     etype = '0x0000'
     vlan = {}
     # VLAN or not
     if eth['protocol'] in [33024]:
-        vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
+        vlan = gen.tcpip.get_ethernet_vlan(packet[start:start+2])
         start = start + 2
         # If VLAN exists, there is a next eth['protocol']
-        etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
+        etype = gen.tcpip.get_next_etype(packet[start:start+2])
         start = start + 2
     else:
         etype = eth['protocol']
     # LLDP
     lldp = {}
     if etype in [35020, 35138]:
-        lldp = ofp_tcpip_parser.get_lldp(packet[start:])
+        lldp = gen.tcpip.get_lldp(packet[start:])
         return eth, vlan, lldp, start
     eth['protocol'] = etype
     return eth, vlan, {}, start
@@ -253,32 +257,32 @@ def _parse_other_types(packet, start, eth):
         # If it gets here, means that the LLDP packet is MalFormed
         print 'LLDP Packet MalFormed'
     elif eth['protocol'] in [2048]:
-        ip = ofp_tcpip_parser.get_ip_packet(packet, start)
-        ofp_prints_v10.print_layer3(ip)
+        ip = gen.tcpip.get_ip_packet(packet, start)
+        gen.prints.print_layer3(ip)
         if ip['protocol'] is 6:
-            tcp = ofp_tcpip_parser.get_tcp_stream(packet, start + ip['length'])
-            ofp_prints_v10.print_tcp(tcp)
+            tcp = gen.tcpip.get_tcp_stream(packet, start + ip['length'])
+            gen.prints.print_tcp(tcp)
     elif eth['protocol'] in [2054]:
-        arp = ofp_tcpip_parser.get_arp(packet[start:])
-        ofp_prints_v10.print_arp(arp)
+        arp = gen.tcpip.get_arp(packet[start:])
+        gen.prints.print_arp(arp)
     else:
         print 'Ethertype %s not dissected' % hex(eth['protocol'])
 
 
 def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
-    ofp_prints_v10.print_ofp_packetIn(of_xid, packetIn)
-    ofp_prints_v10.print_packetInOut_layer2(of_xid, eth)
+    of10.prints.print_ofp_packetIn(of_xid, packetIn)
+    of10.prints.print_packetInOut_layer2(of_xid, eth)
     if len(vlan) != 0:
-        ofp_prints_v10.print_packetInOut_vlan(of_xid, vlan)
+        of10.prints.print_packetInOut_vlan(of_xid, vlan)
     if len(lldp) != 0:
-        ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
+        of10.prints.print_packetInOut_lldp(of_xid, lldp)
 
 
 def parse_PacketIn(packet, h_size, of_xid, sanitizer):
     # buffer_id(32), total_len(16), in_port(16), reason(8), pad(8)
     pkt_raw = packet[h_size:h_size+10]
     p_in = unpack('!LHHBB', pkt_raw)
-    reason = ofp_dissector_v10.get_packetIn_reason(p_in[3])
+    reason = of10.dissector.get_packetIn_reason(p_in[3])
     packetIn = {'buffer_id': p_in[0], 'total_len': p_in[1], 'in_port': p_in[2],
                 'reason': reason, 'pad': p_in[4]}
 
@@ -308,13 +312,13 @@ def parse_PacketIn(packet, h_size, of_xid, sanitizer):
 # ******************** FlowRemoved ***************************
 def parse_FlowRemoved(packet, h_size, of_xid):
     ofmatch = _parse_OFMatch(packet, h_size)
-    ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
+    of10.prints.print_ofp_match(of_xid, ofmatch)
 
     of_rem_body = packet[h_size+40:h_size+40+40]
     ofrem = unpack('!8sHBBLLHBBQQ', of_rem_body)
     cookie = ofrem[0] if not len(ofrem[0]) else 0
     cookie = '0x' + format(cookie, '02x')
-    reason = ofp_dissector_v10.get_flow_removed_reason(ofrem[2])
+    reason = of10.dissector.get_flow_removed_reason(ofrem[2])
 
     ofrem = {'cookie': cookie, 'priority': ofrem[1], 'reason': reason,
              'pad': ofrem[3], 'duration_sec': ofrem[4],
@@ -322,7 +326,7 @@ def parse_FlowRemoved(packet, h_size, of_xid):
              'pad2': ofrem[7], 'pad3': ofrem[8],
              'packet_count': ofrem[9], 'byte_count': ofrem[10]}
 
-    ofp_prints_v10.print_ofp_flow_removed(of_xid, ofrem)
+    of10.prints.print_ofp_flow_removed(of_xid, ofrem)
     return 1
 
 
@@ -330,11 +334,11 @@ def parse_FlowRemoved(packet, h_size, of_xid):
 def parse_PortStatus(packet, h_size, of_xid):
     port_raw = packet[h_size:h_size+8]
     port = unpack('!B7s', port_raw)
-    reason = ofp_dissector_v10.get_portStatus_reason(port[0])
+    reason = of10.dissector.get_portStatus_reason(port[0])
     pad = port[1]
-    ofp_prints_v10.print_portStatus(of_xid, reason, pad)
+    of10.prints.print_portStatus(of_xid, reason, pad)
     ports = _parse_phy_ports(packet[h_size+8:h_size+64], of_xid)
-    ofp_prints_v10.print_of_feature_res_ports(of_xid, ports)
+    of10.prints.print_of_feature_res_ports(of_xid, ports)
     return 1
 
 
@@ -348,35 +352,35 @@ def parse_PacketOut(packet, h_size, of_xid, sanitizer, print_options):
     packetOut = {'buffer_id': p_out[0], 'in_port': p_out[1],
                  'actions_len': actions_len}
 
-    ofp_prints_v10.print_ofp_packetOut(of_xid, packetOut)
+    of10.prints.print_ofp_packetOut(of_xid, packetOut)
     # Actions
     start = h_size + 8
     _parse_OFAction(of_xid, packet[start:start+packetOut['actions_len']], 0)
     # Ethernet
     start = h_size + 8 + packetOut['actions_len']
-    eth = ofp_tcpip_parser.get_ethernet_frame(packet[start:start+14], 1)
-    ofp_prints_v10.print_packetInOut_layer2(of_xid, eth)
+    eth = gen.tcpip.get_ethernet_frame(packet[start:start+14], 1)
+    of10.prints.print_packetInOut_layer2(of_xid, eth)
     start = start + 14
     etype = '0x0000'
     # VLAN or not
     if eth['protocol'] in [33024]:
-        vlan = ofp_tcpip_parser.get_ethernet_vlan(packet[start:start+2])
-        ofp_prints_v10.print_packetInOut_vlan(of_xid, vlan)
+        vlan = gen.tcpip.get_ethernet_vlan(packet[start:start+2])
+        of10.prints.print_packetInOut_vlan(of_xid, vlan)
         start = start + 2
         # If VLAN exists, there is a next eth['protocol']
-        etype = ofp_tcpip_parser.get_next_etype(packet[start:start+2])
+        etype = gen.tcpip.get_next_etype(packet[start:start+2])
         start = start + 2
     else:
         etype = eth['protocol']
     if etype in [35020, 35138]:
         # LLDP TLV
-        lldp = ofp_tcpip_parser.get_lldp(packet[start:])
+        lldp = gen.tcpip.get_lldp(packet[start:])
         if len(lldp) is 0:
             print 'LLDP Packet MalFormed'
         else:
             # Support for FSFW/Proxy
-            ofp_fsfw_v10.support_fsfw(print_options, lldp)
-            ofp_prints_v10.print_packetInOut_lldp(of_xid, lldp)
+            gen.proxies.support_fsfw(print_options, lldp)
+            of10.prints.print_packetInOut_lldp(of_xid, lldp)
 
     return 1
 
@@ -419,8 +423,8 @@ def _parse_OFMatch(packet, h_size):
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
     wildcard = ofm[0]
-    dl_src = ofp_prints_v10.eth_addr(ofm[2])
-    dl_dst = ofp_prints_v10.eth_addr(ofm[3])
+    dl_src = of10.prints.eth_addr(ofm[2])
+    dl_dst = of10.prints.eth_addr(ofm[3])
     nw_src = get_ip_from_long(ofm[11])
     nw_dst = get_ip_from_long(ofm[12])
     etype = hex(ofm[7])
@@ -558,9 +562,9 @@ def _parse_OFAction(of_xid, packet, start, ofactions=[]):
                 total_length = 4
                 ofa_action_payload = packet[start:start + 4]
 
-            ofa_temp = ofp_prints_v10.print_ofp_action(of_xid, ofa_type,
-                                                       ofa_length,
-                                                       ofa_action_payload)
+            ofa_temp = of10.prints.print_ofp_action(of_xid, ofa_type,
+                                                    ofa_length,
+                                                    ofa_action_payload)
 
             # Print OVS format
             ofactions.append(ofa_temp)
@@ -576,10 +580,10 @@ def _parse_OFAction(of_xid, packet, start, ofactions=[]):
 def parse_FlowMod(packet, h_size, of_xid, print_options):
 
     ofmatch = _parse_OFMatch(packet, h_size)
-    ofp_prints_v10.print_ofp_match(of_xid, ofmatch)
+    of10.prints.print_ofp_match(of_xid, ofmatch)
 
     ofbody = _parse_OFBody(packet, h_size)
-    ofp_prints_v10.print_ofp_body(of_xid, ofbody)
+    of10.prints.print_ofp_body(of_xid, ofbody)
 
     if ofbody['command'] == 3:
         ovs_command = 'del-flows'
@@ -600,8 +604,8 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
     ofactions = _parse_OFAction(of_xid, packet, start, ofactions)
 
     if print_options['ovs'] == 1:
-        ofp_prints_v10.print_ofp_ovs(print_options, ofmatch, ofactions,
-                                     ovs_command, ofbody['priority'])
+        of10.prints.print_ofp_ovs(print_options, ofmatch, ofactions,
+                                  ovs_command, ofbody['priority'])
     return 1
 
 
@@ -617,7 +621,7 @@ def parse_PortMod(packet, h_size, of_xid):
     portMod = {'port': pmod[0], 'hw_addr': pmod[1], 'config': config,
                'mask': mask, 'advertise': advertise, 'pad': pmod[5]}
 
-    ofp_prints_v10.print_PortMod(of_xid, portMod)
+    of10.prints.print_PortMod(of_xid, portMod)
     return 1
 
 
@@ -639,7 +643,7 @@ def parse_StatsReq(packet, h_size, of_xid):
     if stat_type == 0:
         # Description
         # No extra fields
-        ofp_prints_v10.print_ofp_statReqDesc(of_xid, stat_type)
+        of10.prints.print_ofp_statReqDesc(of_xid, stat_type)
 
     elif stat_type == 1 or stat_type == 2:
         # Flow(1) or Aggregate(2)
@@ -651,13 +655,13 @@ def parse_StatsReq(packet, h_size, of_xid):
         table_id = ofstat[0]
         pad = ofstat[1]
         out_port = ofstat[2]
-        ofp_prints_v10.print_ofp_statReqFlowAggregate(of_xid, stat_type,
-                                                      of_match, table_id, pad,
-                                                      out_port)
+        of10.prints.print_ofp_statReqFlowAggregate(of_xid, stat_type,
+                                                   of_match, table_id, pad,
+                                                   out_port)
     elif stat_type == 3:
         # Table
         # No extra fields
-        ofp_prints_v10.print_ofp_statReqTable(of_xid, stat_type)
+        of10.prints.print_ofp_statReqTable(of_xid, stat_type)
 
     elif stat_type == 4:
         # Port
@@ -666,8 +670,8 @@ def parse_StatsReq(packet, h_size, of_xid):
         ofstat = unpack('!H6s', of_stat_req)
         port_number = ofstat[0]
         pad = ofstat[1]
-        ofp_prints_v10.print_ofp_statReqPort(of_xid, stat_type, port_number,
-                                             pad)
+        of10.prints.print_ofp_statReqPort(of_xid, stat_type, port_number,
+                                          pad)
 
     elif stat_type == 5:
         # Queue
@@ -677,15 +681,15 @@ def parse_StatsReq(packet, h_size, of_xid):
         port_number = ofstat[0]
         pad = ofstat[1]
         queue_id = ofstat[2]
-        ofp_prints_v10.print_ofp_statReqQueue(of_xid, stat_type, port_number,
-                                              pad, queue_id)
+        of10.prints.print_ofp_statReqQueue(of_xid, stat_type, port_number,
+                                           pad, queue_id)
     elif stat_type == 65535:
         # Vendor
         # Fields: vendor_id(32) + data
         of_stat_req = packet[start:start+4]
         ofstat = unpack('!L', of_stat_req)
         vendor_id = ofstat[0]
-        ofp_prints_v10.print_ofp_statReqVendor(of_xid, stat_type, vendor_id)
+        of10.prints.print_ofp_statReqVendor(of_xid, stat_type, vendor_id)
 
     else:
         print ('%s StatReq: Unknown Type: %s' % (of_xid, stat_type))
@@ -716,9 +720,9 @@ def parse_StatsRes(packet, h_size, of_xid):
         sw_desc = desc[2]
         serial_num = desc[3]
         dp_desc = desc[4]
-        ofp_prints_v10.print_ofp_statResDesc(of_xid, stat_type, mfr_desc,
-                                             hw_desc, sw_desc, serial_num,
-                                             dp_desc)
+        of10.prints.print_ofp_statResDesc(of_xid, stat_type, mfr_desc,
+                                          hw_desc, sw_desc, serial_num,
+                                          dp_desc)
 
     elif stat_type == 1:
         # Flow(1)
@@ -739,8 +743,8 @@ def parse_StatsRes(packet, h_size, of_xid):
                              'cookie': flow[6], 'packet_count': flow[7],
                              'byte_count': flow[8]})
 
-            ofp_prints_v10.print_ofp_statResFlow(of_xid, stat_type, of_match,
-                                                 res_flow)
+            of10.prints.print_ofp_statResFlow(of_xid, stat_type, of_match,
+                                              res_flow)
             # Process Actions[]
             end = res_flow['length'] - (4 + 40 + 44)
             actions = packet[start+88:start+88+end]
@@ -756,7 +760,7 @@ def parse_StatsRes(packet, h_size, of_xid):
         flow = unpack('!QQLL', flow_raw)
         res_flow = {'packet_count': flow[0], 'byte_count': flow[1],
                     'flow_count': flow[2], 'pad': flow[3]}
-        ofp_prints_v10.print_ofp_statResAggregate(of_xid, stat_type, res_flow)
+        of10.prints.print_ofp_statResAggregate(of_xid, stat_type, res_flow)
 
     elif stat_type == 3:
         # Table
@@ -769,7 +773,7 @@ def parse_StatsRes(packet, h_size, of_xid):
                     'wildcards': flow[3], 'max_entries': flow[4],
                     'active_count': flow[5], 'lookup_count': flow[6],
                     'matched_count': flow[7]}
-        ofp_prints_v10.print_ofp_statResTable(of_xid, stat_type, res_flow)
+        of10.prints.print_ofp_statResTable(of_xid, stat_type, res_flow)
 
     elif stat_type == 4:
         # Port
@@ -788,7 +792,7 @@ def parse_StatsRes(packet, h_size, of_xid):
                         'rx_errors': flow[8], 'tx_errors': flow[9],
                         'rx_frame_err': flow[10], 'rx_over_err': flow[11],
                         'rx_crc_err': flow[12], 'collisions': flow[13]}
-            ofp_prints_v10.print_ofp_statResPort(of_xid, stat_type, res_flow)
+            of10.prints.print_ofp_statResPort(of_xid, stat_type, res_flow)
 
             count = count - 104
             start = start + 104
@@ -804,7 +808,7 @@ def parse_StatsRes(packet, h_size, of_xid):
             res_flow = {'length': flow[0], 'pad': flow[1], 'queue_id': flow[2],
                         'tx_bytes': flow[3], 'tx_packets': flow[4],
                         'tx_errors': flow[5]}
-            ofp_prints_v10.print_ofp_statResQueue(of_xid, stat_type, res_flow)
+            of10.prints.print_ofp_statResQueue(of_xid, stat_type, res_flow)
             count = count - 32
             start = start + 32
         else:
@@ -817,7 +821,7 @@ def parse_StatsRes(packet, h_size, of_xid):
         flow_raw = packet[start:start+4]
         flow = unpack('!L', flow_raw)
         res_flow = {'vendor_id': flow[0]}
-        ofp_prints_v10.print_ofp_statResVendor(of_xid, stat_type, res_flow)
+        of10.prints.print_ofp_statResVendor(of_xid, stat_type, res_flow)
 
         start = start + 4
         data = []
@@ -827,7 +831,7 @@ def parse_StatsRes(packet, h_size, of_xid):
             flow = unpack('!B', flow_raw)
             data.append(str(flow[0]))
             start = start + 1
-        ofp_prints_v10.print_ofp_statResVendorData(of_xid, ''.join(data))
+        of10.prints.print_ofp_statResVendorData(of_xid, ''.join(data))
 
     else:
         print ('%s StatRes: Unknown Type: %s' % (of_xid, stat_type))
@@ -837,13 +841,13 @@ def parse_StatsRes(packet, h_size, of_xid):
 
 # ********************** BarrierReq ***********************
 def parse_BarrierReq(packet, h_size, of_xid):
-    ofp_prints_v10.print_of_BarrierReq(of_xid)
+    of10.prints.print_of_BarrierReq(of_xid)
     return 1
 
 
 # ********************** BarrierRes ***********************
 def parse_BarrierRes(packet, h_size, of_xid):
-    ofp_prints_v10.print_of_BarrierReply(of_xid)
+    of10.prints.print_of_BarrierReply(of_xid)
     return 1
 
 
@@ -852,7 +856,7 @@ def parse_QueueGetConfigReq(packet, h_size, of_xid):
     queue_raw = packet[h_size:h_size+4]
     queue = unpack('!HH', queue_raw)
     queueConfReq = {'port': queue[0], 'pad': queue[1]}
-    ofp_prints_v10.print_queueReq(of_xid, queueConfReq)
+    of10.prints.print_queueReq(of_xid, queueConfReq)
     return 1
 
 
@@ -862,7 +866,7 @@ def parse_QueueGetConfigRes(packet, h_size, of_xid):
     queue = unpack('!H6s', queue_raw)
     queueConfRes = {'port': queue[0], 'pad': queue[1]}
 
-    ofp_prints_v10.print_queueRes(of_xid, queueConfRes)
+    of10.prints.print_queueRes(of_xid, queueConfRes)
 
     start = h_size + 8
     while (packet[start:] > 0):
@@ -871,7 +875,7 @@ def parse_QueueGetConfigRes(packet, h_size, of_xid):
         queue_raw = packet[start:start+8]
         queue = unpack('!LHH', queue_raw)
         queues = {'queue_id': queue[0], 'length': queue[1], 'pad': queue[2]}
-        ofp_prints_v10.print_queues(of_xid, queues)
+        of10.prints.print_queues(of_xid, queues)
 
         q_start = start + 8
 
@@ -884,7 +888,7 @@ def parse_QueueGetConfigRes(packet, h_size, of_xid):
             prop = unpack('!HHLH6s', prop_raw)
             properties = {'type': prop[0], 'length': prop[1],
                           'pad': prop[2], 'rate': prop[3], 'pad2': prop[4]}
-            ofp_prints_v10.print_queueRes_properties(of_xid, properties)
+            of10.prints.print_queueRes_properties(of_xid, properties)
 
         start = start + queues['length']
 

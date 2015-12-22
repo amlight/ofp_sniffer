@@ -1,133 +1,29 @@
-from termcolor import colored
-import ofp_dissector_v10
-import ofp_dissector_v13
-from ofp_parser_v10 import get_action, get_ip_from_long
-import ofp_cli  # NO_COLOR variable
-import ofp_fsfw_v10
+'''
+    Prints for OpenFlow 1.0 only
+'''
+
+import of10.dissector
+import of10.parser
+import gen.prints
+#from gen.prints import *
+# red, green, eth_addr, datapath_id
+# from prints import print_layer2, print_vlan
 
 
 def red(string):
-    if ofp_cli.NO_COLOR is True:
-        return string
-    return colored(string, 'red')
+    return gen.prints.red(string)
 
 
 def green(string):
-    if ofp_cli.NO_COLOR is True:
-        return string
-    return colored(string, 'green')
+    return gen.prints.green(string)
 
 
-def blue(string):
-    if ofp_cli.NO_COLOR is True:
-        return string
-    return colored(string, 'blue')
+def eth_addr(string):
+    return gen.prints.eth_addr(string)
 
 
-def yellow(string):
-    if ofp_cli.NO_COLOR is True:
-        return string
-    return colored(string, 'yellow')
-
-
-def cyan(string):
-    if ofp_cli.NO_COLOR is True:
-        return string
-    return colored(string, 'cyan')
-
-
-def eth_addr(a):
-    mac = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (ord(a[0]), ord(a[1]), ord(a[2]),
-                                             ord(a[3]), ord(a[4]), ord(a[5]))
-    return mac
-
-
-def datapath_id(a):
-    dpid = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (ord(a[0]), ord(a[1]),
-                                                        ord(a[2]), ord(a[3]),
-                                                        ord(a[4]), ord(a[5]),
-                                                        ord(a[6]), ord(a[7]))
-    return dpid
-
-
-def print_headers(print_options, date, getlen, caplen, eth, ip, tcp):
-    if print_options['min'] == 1:
-        print_minimal(date, getlen, ip, tcp)
-    else:
-        print_layer1(date, getlen, caplen)
-        print_layer2(eth)
-        print_layer3(ip)
-        print_tcp(tcp)
-
-
-def print_minimal(date, getlen, ip, tcp):
-    string = '%s %s:%s -> %s:%s Size: %s Bytes'
-
-    source = ofp_fsfw_v10.get_ip_name(ip['s_addr'], tcp['source_port'])
-    dest = ofp_fsfw_v10.get_ip_name(ip['d_addr'], tcp['dest_port'])
-
-    print string % (date, cyan(source), cyan(tcp['source_port']),
-                    cyan(dest), cyan(tcp['dest_port']), getlen)
-
-
-def print_layer1(date, getlen, caplen):
-    print ('%s: captured %d bytes, truncated to %d bytes' %
-           (date, getlen, caplen))
-
-
-def print_layer2(eth):
-    print ('Ethernet: Destination MAC: %s Source MAC: %s Protocol: %s' %
-           (eth_addr(eth['dst_mac']), eth_addr(eth['src_mac']),
-            red(hex(eth['protocol']))))
-
-
-def print_vlan(vlan):
-    print ('Prio: %s CFI: %s VID: %s' %
-           (vlan['prio'], vlan['cfi'], red(vlan['vid'])))
-
-
-def print_arp(arp):
-    print ('ARP: Hardware Type: %s Protocol Type: %s '
-           'HW Length: %s Prot Length: %s Opcode: %s '
-           '\nARP: Source MAC: %s Source IP: %s Destination MAC: %s '
-           'Destination IP: %s'
-           % (arp['hw_type'], arp['prot_type'], arp['hw_len'], arp['prot_len'],
-              arp['opcode'],
-              eth_addr(arp['src_mac']), get_ip_from_long(arp['src_ip']),
-              eth_addr(arp['dst_mac']), get_ip_from_long(arp['dst_ip'])))
-
-
-def print_layer3(ip):
-    print (('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '
-           'Source Address: %s Destination Address: %s') %
-           (ip['version'], (ip['ihl'] * 4), ip['ttl'], ip['protocol'],
-            blue(ip['s_addr']), blue(ip['d_addr'])))
-
-
-def print_tcp(tcp):
-    print ('TCP Source Port: %s Dest Port: %s Sequence Number: %s '
-           'Acknowledgement: %s TCP header length: %s Flags: (CWR: %s '
-           'ECE: %s URG: %s ACK: %s PSH: %s RST: %s SYN: %s FYN: %s' %
-           (tcp['source_port'], tcp['dest_port'], tcp['sequence'],
-            tcp['acknowledgement'], (tcp['length']), tcp['flag_cwr'],
-            tcp['flag_ece'], tcp['flag_urg'], tcp['flag_ack'], tcp['flag_psh'],
-            tcp['flag_rst'], tcp['flag_syn'], tcp['flag_fyn']))
-
-
-def print_openflow_header(of):
-    version = ofp_dissector_v10.get_ofp_version(of['version'])
-    name_version = '%s(%s)' % (version, of['version'])
-    if version == '1.0':
-        name = ofp_dissector_v10.get_ofp_type(of['type'])
-        name_type = '%s(%s)' % (name, of['type'])
-    elif version == '1.3':
-        name = ofp_dissector_v13.get_ofp_type(of['type'])
-        name_type = '%s(%s)' % (name, of['type'])
-    else:
-        name_type = '%s' % (of['type'])
-
-    print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
-           (name_version, yellow(name_type), of['length'], red(of['xid'])))
+def datapath_id(string):
+    return gen.prints.datapath_id(string)
 
 
 def print_of_hello(of_xid):
@@ -158,11 +54,11 @@ def print_of_feature_res(of_xid, f_res):
 def print_of_feature_res_caps_and_actions(of_xid, caps, actions):
     print ('%s FeatureRes - Capabilities:' % of_xid),
     for i in caps:
-        print ofp_dissector_v10.get_feature_res_capabilities(i),
+        print of10.dissector.get_feature_res_capabilities(i),
     print
     print ('%s FeatureRes - Actions:' % of_xid),
     for i in actions:
-        print ofp_dissector_v10.get_feature_res_actions(i),
+        print of10.dissector.get_feature_res_actions(i),
     print
 
 
@@ -179,42 +75,42 @@ def print_of_feature_res_ports(of_xid, ports):
     print ('%s FeatureRes - config:' % of_xid),
     printed = False
     for i in ports['config']:
-        print ofp_dissector_v10.get_phy_config(i),
+        print of10.dissector.get_phy_config(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - state:' % of_xid),
     for i in ports['state']:
-        print ofp_dissector_v10.get_phy_state(i),
+        print of10.dissector.get_phy_state(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - curr:' % of_xid),
     for i in ports['curr']:
-        print ofp_dissector_v10.get_phy_feature(i),
+        print of10.dissector.get_phy_feature(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - advertised:' % of_xid),
     for i in ports['advertised']:
-        print ofp_dissector_v10.get_phy_feature(i),
+        print of10.dissector.get_phy_feature(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - supported:' % of_xid),
     for i in ports['supported']:
-        print ofp_dissector_v10.get_phy_feature(i),
+        print of10.dissector.get_phy_feature(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
     print
     print ('%s FeatureRes - peer:' % of_xid),
     for i in ports['peer']:
-        print ofp_dissector_v10.get_phy_feature(i),
+        print of10.dissector.get_phy_feature(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
@@ -234,8 +130,8 @@ def print_ofp_match(xid, ofmatch):
 def print_ofp_body(xid, ofbody):
     string = ('%s OpenFlow Body - Cookie: %s Command: %s Idle/Hard Timeouts: '
               '%s/%s Priority: %s Buffer ID: %s Out Port: %s Flags: %s')
-    command = green(ofp_dissector_v10.get_ofp_command(ofbody['command']))
-    flags = green(ofp_dissector_v10.get_ofp_flags(ofbody['flags']))
+    command = green(of10.dissector.get_ofp_command(ofbody['command']))
+    flags = green(of10.dissector.get_ofp_flags(ofbody['flags']))
 
     print string % (xid, ofbody['cookie'], command, ofbody['idle_timeout'],
                     ofbody['hard_timeout'], ofbody['priority'],
@@ -256,22 +152,22 @@ def print_ofp_flow_removed(xid, ofrem):
 
 def print_ofp_action(xid, action_type, length, payload):
     if action_type == 0:
-        port, max_len = get_action(action_type, length, payload)
+        port, max_len = of10.parser.get_action(action_type, length, payload)
 
-        port = ofp_dissector_v10.get_phy_port_id(port)
+        port = of10.dissector.get_phy_port_id(port)
         print ('%s OpenFlow Action - Type: %s Length: %s Port: %s '
                'Max Length: %s' %
                (xid, green('OUTPUT'), length, green(port), max_len))
         return 'output:' + port
 
     elif action_type == 1:
-        vlan, pad = get_action(action_type, length, payload)
+        vlan, pad = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s VLAN ID: %s Pad: %s' %
                (xid, green('SetVLANID'), length, green(str(vlan)), pad))
         return 'mod_vlan_vid:' + str(vlan)
 
     elif action_type == 2:
-        vlan_pc, pad = get_action(action_type, length, payload)
+        vlan_pc, pad = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s VLAN PCP: %s Pad: %s' %
                (xid, green('SetVLANPCP'), length, green(str(vlan_pc)), pad))
         return 'mod_vlan_pcp:' + str(vlan_pc)
@@ -282,51 +178,52 @@ def print_ofp_action(xid, action_type, length, payload):
         return 'strip_vlan'
 
     elif action_type == 4:
-        setDLSrc, pad = get_action(action_type, length, payload)
+        setDLSrc, pad = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetDLSrc: %s Pad: %s' %
                (xid, green('SetDLSrc'), length, green(str(eth_addr(setDLSrc))),
                 pad))
         return 'mod_dl_src:' + str(eth_addr(setDLSrc))
 
     elif action_type == 5:
-        setDLDst, pad = get_action(action_type, length, payload)
+        setDLDst, pad = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetDLDst: %s Pad: %s' %
                (xid, green('SetDLDst'), length, green(str(eth_addr(setDLDst))),
                 pad))
         return 'mod_dl_dst:' + str(eth_addr(setDLDst))
 
     elif action_type == 6:
-        nw_addr = get_action(action_type, length, payload)
+        nw_addr = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetNWSrc: %s' %
                (xid, green('SetNWSrc'), length, green(str(nw_addr))))
         return 'mod_nw_src:' + str(nw_addr)
 
     elif action_type == 7:
-        nw_addr = get_action(action_type, length, payload)
+        nw_addr = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetNWDst: %s' %
                (xid, green('SetNWDst'), length, green(str(nw_addr))))
         return 'mod_nw_src:' + str(nw_addr)
 
     elif action_type == 8:
-        nw_tos, pad = get_action(action_type, length, payload)
+        nw_tos, pad = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetNWTos: %s Pad: %s' %
                (xid, green('SetNWTos'), length, green(str(nw_tos)), pad))
         return 'mod_nw_tos:' + str(nw_tos)
 
     elif action_type == 9:
-        port, pad = get_action(action_type, length, payload)
+        port, pad = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetTPSrc: %s Pad: %s' %
                (xid, green('SetTPSrc'), length, green(str(port)), pad))
         return 'mod_tp_src:' + str(port)
 
     elif action_type == int('a', 16):
-        port, pad = get_action(action_type, length, payload)
+        port, pad = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type: %s Length: %s SetTPDst: %s Pad: %s' %
                (xid, green('SetTPDst'), length, green(str(port)), pad))
         return 'mod_tp_dst:' + str(port)
 
     elif action_type == int('b', 16):
-        port, pad, queue_id = get_action(action_type, length, payload)
+        port, pad, queue_id = of10.parser.get_action(action_type, length,
+                                                     payload)
         print (('%s OpenFlow Action - Type: %s Length: %s Enqueue: %s Pad: %s'
                 ' Queue: %s') %
                (xid, green('Enqueue'), length, green(str(port)), pad,
@@ -334,7 +231,7 @@ def print_ofp_action(xid, action_type, length, payload):
         return 'set_queue:' + str(queue_id)
 
     elif action_type == int('ffff', 16):
-        vendor = get_action(action_type, length, payload)
+        vendor = of10.parser.get_action(action_type, length, payload)
         print ('%s OpenFlow Action - Type:  %s Length: %s Vendor: %s' %
                (xid, green('VENDOR'), length, green(str(vendor))))
         return 'VendorType'
@@ -371,7 +268,7 @@ def _print_portMod_config_mask(of_xid, array, name):
     print ('%s PortMod %s:' % (of_xid, name)),
     printed = False
     for i in array[name]:
-        print ofp_dissector_v10.get_phy_config(i),
+        print of10.dissector.get_phy_config(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
@@ -396,7 +293,7 @@ def print_of_BarrierReply(of_xid):
 
 
 def print_of_vendor(of_vendor, of_xid):
-    vendor = ofp_dissector_v10.get_ofp_vendor(of_vendor)
+    vendor = of10.dissector.get_ofp_vendor(of_vendor)
     print ('%s OpenFlow Vendor: %s' % (of_xid, vendor))
 
 
@@ -538,12 +435,12 @@ def print_portStatus(of_xid, reason, pad):
 
 def print_packetInOut_layer2(of_xid, eth):
     print ('%s' % of_xid),
-    print_layer2(eth)
+    gen.prints.print_layer2(eth)
 
 
 def print_packetInOut_vlan(of_xid, vlan):
     print ('%s Ethernet:' % of_xid),
-    print_vlan(vlan)
+    gen.prints.print_vlan(vlan)
 
 
 def print_ofp_packetIn(of_xid, packetIn):
@@ -569,7 +466,7 @@ def print_packetInOut_lldp(of_xid, lldp):
 def print_ofp_packetOut(of_xid, packetOut):
     print ('%s PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
            (of_xid, hex(packetOut['buffer_id']),
-            green(ofp_dissector_v10.get_phy_port_id(packetOut['in_port'])),
+            green(of10.dissector.get_phy_port_id(packetOut['in_port'])),
             packetOut['actions_len']))
 
 
