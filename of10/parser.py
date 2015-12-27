@@ -315,8 +315,8 @@ def parse_FlowRemoved(packet, h_size, of_xid):
     of10.prints.print_ofp_match(of_xid, ofmatch)
 
     of_rem_body = packet[h_size+40:h_size+40+40]
-    ofrem = unpack('!8sHBBLLHBBQQ', of_rem_body)
-    cookie = ofrem[0] if not len(ofrem[0]) else 0
+    ofrem = unpack('!QHBBLLHBBQQ', of_rem_body)
+    cookie = ofrem[0] if ofrem[0] > 0 else 0
     cookie = '0x' + format(cookie, '02x')
     reason = of10.dissector.get_flow_removed_reason(ofrem[2])
 
@@ -469,8 +469,8 @@ def _parse_OFMatch(packet, h_size):
 
 def _parse_OFBody(packet, h_size):
     of_mod_body = packet[h_size+40:h_size+40+24]
-    ofmod = unpack('!8sHHHHLHH', of_mod_body)
-    ofmod_cookie = ofmod[0] if not len(ofmod[0]) else 0
+    ofmod = unpack('!QHHHHLHH', of_mod_body)
+    ofmod_cookie = ofmod[0] if ofmod[0] > 0 else 0
     ofmod_cookie = '0x' + format(ofmod_cookie, '02x')
     ofmod_buffer_id = '0x' + format(ofmod[5], '02x')
 

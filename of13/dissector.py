@@ -221,3 +221,150 @@ def get_ofp_error(error_type, code):
                      5: 'Eperm(5)'}
 
     return errors_types[error_type], codes[code]
+
+
+def get_feature_res_capabilities(cap):
+    caps = {1: 'FLOW_STATS(0x1)',
+            2: 'TABLE_STATS(0x2)',
+            4: 'PORT_STATS(0x4)',
+            8: 'GROUP_STATS(0x8)',
+            32: 'IP_REASM(0x20)',
+            64: 'QUEUE_STATS(0x40)',
+            256: 'PORT_BLOCKED(0x100)'}
+    try:
+        return caps[cap]
+    except:
+        return 'UnknownCapability(%s)' % cap
+
+
+def get_configres_flags(flag):
+    flags = {0: 'FRAG_NORMAL(0)',
+             1: 'FRAG_DROP(1)',
+             2: 'FRAG_REASM(2)',
+             3: 'FRAG_MASK(3)'}
+    try:
+        return flags[flag]
+    except:
+        return 'UnknownFlag(%s)' % flag
+
+
+def get_phy_port_id(p_id):
+    ids = {65280: 'Max(OxFF00)',
+           65528: 'InPort(0xFFF8)',
+           65529: 'Table(0xFFF9)',
+           65530: 'Normal(0xFFFA)',
+           65531: 'Flood(0xFFFB)',
+           65532: 'All(0xFFFC)',
+           65533: 'Controller(0xFFFD)',
+           65534: 'Local(0xFFFE)',
+           65535: 'Any(0xFFFF)'}
+    try:
+        return ids[p_id]
+    except:
+        return '%s' % p_id
+
+
+def get_flow_match_fields(value):
+    values = {0: 'In_Port',
+              1: 'In_Phy_Port',
+              2: 'Metadata',
+              3: 'Eth_Dst',
+              4: 'Eth_Src',
+              5: 'Eth_Type',
+              6: 'Vlan_VID',
+              7: 'Vlan_PCP',
+              8: 'IP_DSCP',
+              9: 'IP_ECN',
+              10: 'IP_PROTO',
+              11: 'IPv4_Src',
+              12: 'IPv4_Dst',
+              13: 'TCP_Src',
+              14: 'TCP_Dst',
+              15: 'UDP_Src',
+              16: 'UDP_Dst',
+              17: 'SCTP_Src',
+              18: 'SCTP_Dst',
+              19: 'ICMPv4_Type',
+              20: 'ICMPv4_Code',
+              21: 'ARP_OP',
+              22: 'ARP_SPA',
+              23: 'ARP_TPA',
+              24: 'ARP_SHA',
+              25: 'ARP_THA',
+              26: 'IPv6_Src',
+              27: 'IPv6_Dst',
+              28: 'IPv6_FLabel',
+              29: 'ICMPv6_Type',
+              30: 'ICMPv6_Code',
+              31: 'IPv6_ND_Target',
+              32: 'IPv6_ND_SLL',
+              33: 'IPv6_ND_TLL',
+              34: 'MPLS_Label',
+              35: 'MPLS_TC',
+              36: 'MPLS_BoS',
+              37: 'PBB_ISID',
+              38: 'Tunnel_ID',
+              39: 'IPv6_EXTHDR'}
+
+    try:
+        return '%s(%s)' % (values[value], value)
+    except:
+        return 'UnknownMatchField(%s)' % value
+
+
+def get_of_command(command):
+    commands = {0: 'Add(0)',
+                1: 'Modify(1)',
+                2: 'ModifyStrict(2)',
+                3: 'Delete(3)',
+                4: 'DeleteStrict(4)'}
+    try:
+        return commands[command]
+    except:
+        return 'UnknownCommand(%s)' % command
+
+
+def get_of_flags(flag):
+    flags = {0: 'NoFlagSet(0)',
+             1: 'SendFlowRem(0x1)',
+             2: 'CheckOverLap(0x2)',
+             4: 'ResetCounts(0x4)',
+             16: 'NoPacketCounts(0x10)',
+             32: 'NoByteCounts(0x20)'}
+    try:
+        return flags[flag]
+    except:
+        return 'UnknownFlag(%s)' % flag
+
+
+def get_ipv6_extension(bit):
+    options = {1: 'NO_NEXT',
+               2: 'ESP',
+               4: 'AUTH',
+               8: 'DEST',
+               16: 'FRAG',
+               32: 'ROUTER',
+               64: 'HOP',
+               128: 'UNREP',
+               256: 'UNSEQ'}
+    try:
+        return '%s(%s)' % (options[bit], hex(bit))
+    except:
+        return 'UnknownBit(%s)' % bit
+
+
+def get_instructions(instruction):
+    instructions = {1: 'GOTO_TABLE',
+                    2: 'WRITE_METADATA',
+                    3: 'WRITE_ACTIONS',
+                    4: 'APPLY_ACTIONS',
+                    5: 'CLEAR_ACTIONS',
+                    6: 'METER',
+                    65535: 'EXPERIMENTER'}
+
+    try:
+        return '%s(%s)' % (instructions[instruction], instruction)
+    except:
+        return 'UnknownInstruction(%s)' % instruction
+
+

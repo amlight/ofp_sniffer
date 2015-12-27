@@ -5,9 +5,10 @@
 from gen.termcolor import colored
 import of10.dissector
 import of13.dissector
-from of10.parser import get_ip_from_long
 import gen.cli  # NO_COLOR variable
 import gen.proxies
+import socket
+import struct
 
 
 def red(string):
@@ -52,6 +53,10 @@ def datapath_id(a):
                                                         ord(a[4]), ord(a[5]),
                                                         ord(a[6]), ord(a[7]))
     return dpid
+
+
+def get_ip_from_long(long_ip):
+    return (socket.inet_ntoa(struct.pack('!L', long_ip)))
 
 
 def print_headers(print_options, date, getlen, caplen, eth, ip, tcp):
@@ -132,5 +137,3 @@ def print_openflow_header(of):
 
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
            (name_version, yellow(name_type), of['length'], red(of['xid'])))
-
-
