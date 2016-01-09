@@ -16,6 +16,20 @@ def get_ethernet_frame(packet, host_order=0):
     return eth_frame
 
 
+def get_ethertype(etype):
+    etypes = {8: 'IP',
+              2048: 'IP',
+              2054: 'ARP',
+              34925: 'IPv6',
+              34887: 'MPLS',
+              35020: 'LLDP',
+              35138: 'BBDP'}
+    try:
+        return '%s(%s)' % (etypes[etype], hex(etype))
+    except:
+        return etype
+
+
 def get_ethernet_vlan(packet):
     vlan_length = 2
     vlan_pq = packet[:vlan_length]
@@ -96,6 +110,20 @@ def get_tcp_stream(packet, header_size):
                   'flag_rst': flag_rst, 'flag_syn': flag_syn,
                   'flag_fyn': flag_fyn}
     return tcp_stream
+
+
+def get_ofp_version(version):
+    of_versions = {0: 'Experimental',
+                   1: '1.0',
+                   2: '1.1',
+                   3: '1.2',
+                   4: '1.3',
+                   5: '1.4',
+                   6: '1.5'}
+    try:
+        return of_versions[version]
+    except:
+        return 'Unknown(%s)' % version
 
 
 def get_openflow_header(packet, start):

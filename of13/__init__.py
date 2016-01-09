@@ -1,4 +1,5 @@
 import gen.cli
+import gen.packet
 import gen.prints
 import gen.proxies
 import gen.tcpip

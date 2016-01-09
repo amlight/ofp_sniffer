@@ -5,9 +5,7 @@
 import of10.dissector
 import of10.parser
 import gen.prints
-#from gen.prints import *
-# red, green, eth_addr, datapath_id
-# from prints import print_layer2, print_vlan
+import gen.packet
 
 
 def red(string):
@@ -26,17 +24,39 @@ def datapath_id(string):
     return gen.prints.datapath_id(string)
 
 
-def print_of_hello(of_xid):
-    print '%s OpenFlow Hello' % of_xid
+def print_layer2(pkt):
+    gen.prints.print_layer2(pkt.l2)
 
 
-def print_of_error(of_xid, nameCode, typeCode):
-    print ('%s OpenFlow Error - Type: %s Code: %s' %
-           (of_xid, red(nameCode), red(typeCode)))
+def print_layer2_pktIn(pkt):
+    gen.prints.print_layer2(pkt.of_body['print_layer2_pktIn'])
 
 
-def print_of_feature_req(of_xid):
-    print '%s OpenFlow Feature Request' % of_xid
+def print_lldp(pkt):
+    gen.prints.print_lldp(pkt)
+
+
+def print_arp(pkt):
+    gen.prints.print_arp(pkt.of_body['print_arp'])
+
+
+def print_type_unknown(pkt):
+    string = '%s OpenFlow OFP_Type %s unknown \n'
+    print string % (pkt.of_h['xid'], pkt.of_h['type'])
+
+
+def print_of_hello(pkt):
+    print 'OpenFlow Hello'
+
+
+def print_of_error(pkt):
+    error = pkt.of_body['print_of_error']
+    nCode, tCode = of10.dissector.get_ofp_error(error['type'], error['code'])
+    print ('OpenFlow Error - Type: %s Code: %s' % (red(nCode), red(tCode)))
+
+
+def print_of_feature_req(pkt):
+    print 'OpenFlow Feature Request'
 
 
 def print_of_getconfig_req(of_xid):
@@ -150,90 +170,90 @@ def print_ofp_flow_removed(xid, ofrem):
                     ofrem['byte_count'])
 
 
-def print_ofp_action(xid, action_type, length, payload):
+def print_ofp_action(action_type, length, payload):
     if action_type == 0:
         port, max_len = of10.parser.get_action(action_type, length, payload)
 
         port = of10.dissector.get_phy_port_id(port)
-        print ('%s OpenFlow Action - Type: %s Length: %s Port: %s '
+        print ('OpenFlow Action - Type: %s Length: %s Port: %s '
                'Max Length: %s' %
-               (xid, green('OUTPUT'), length, green(port), max_len))
+               (green('OUTPUT'), length, green(port), max_len))
         return 'output:' + port
 
     elif action_type == 1:
         vlan, pad = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s VLAN ID: %s Pad: %s' %
-               (xid, green('SetVLANID'), length, green(str(vlan)), pad))
+        print ('OpenFlow Action - Type: %s Length: %s VLAN ID: %s Pad: %s' %
+               (green('SetVLANID'), length, green(str(vlan)), pad))
         return 'mod_vlan_vid:' + str(vlan)
 
     elif action_type == 2:
         vlan_pc, pad = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s VLAN PCP: %s Pad: %s' %
-               (xid, green('SetVLANPCP'), length, green(str(vlan_pc)), pad))
+        print ('OpenFlow Action - Type: %s Length: %s VLAN PCP: %s Pad: %s' %
+               (green('SetVLANPCP'), length, green(str(vlan_pc)), pad))
         return 'mod_vlan_pcp:' + str(vlan_pc)
 
     elif action_type == 3:
-        print ('%s OpenFlow Action - Type: %s Length: %s' %
-               (xid, green('StripVLAN'), length))
+        print ('OpenFlow Action - Type: %s Length: %s' %
+               (green('StripVLAN'), length))
         return 'strip_vlan'
 
     elif action_type == 4:
         setDLSrc, pad = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s SetDLSrc: %s Pad: %s' %
-               (xid, green('SetDLSrc'), length, green(str(eth_addr(setDLSrc))),
+        print ('OpenFlow Action - Type: %s Length: %s SetDLSrc: %s Pad: %s' %
+               (green('SetDLSrc'), length, green(str(eth_addr(setDLSrc))),
                 pad))
         return 'mod_dl_src:' + str(eth_addr(setDLSrc))
 
     elif action_type == 5:
         setDLDst, pad = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s SetDLDst: %s Pad: %s' %
-               (xid, green('SetDLDst'), length, green(str(eth_addr(setDLDst))),
+        print ('OpenFlow Action - Type: %s Length: %s SetDLDst: %s Pad: %s' %
+               (green('SetDLDst'), length, green(str(eth_addr(setDLDst))),
                 pad))
         return 'mod_dl_dst:' + str(eth_addr(setDLDst))
 
     elif action_type == 6:
         nw_addr = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s SetNWSrc: %s' %
-               (xid, green('SetNWSrc'), length, green(str(nw_addr))))
+        print ('OpenFlow Action - Type: %s Length: %s SetNWSrc: %s' %
+               (green('SetNWSrc'), length, green(str(nw_addr))))
         return 'mod_nw_src:' + str(nw_addr)
 
     elif action_type == 7:
         nw_addr = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s SetNWDst: %s' %
-               (xid, green('SetNWDst'), length, green(str(nw_addr))))
+        print ('OpenFlow Action - Type: %s Length: %s SetNWDst: %s' %
+               (green('SetNWDst'), length, green(str(nw_addr))))
         return 'mod_nw_src:' + str(nw_addr)
 
     elif action_type == 8:
         nw_tos, pad = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s SetNWTos: %s Pad: %s' %
-               (xid, green('SetNWTos'), length, green(str(nw_tos)), pad))
+        print ('OpenFlow Action - Type: %s Length: %s SetNWTos: %s Pad: %s' %
+               (green('SetNWTos'), length, green(str(nw_tos)), pad))
         return 'mod_nw_tos:' + str(nw_tos)
 
     elif action_type == 9:
         port, pad = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s SetTPSrc: %s Pad: %s' %
-               (xid, green('SetTPSrc'), length, green(str(port)), pad))
+        print ('OpenFlow Action - Type: %s Length: %s SetTPSrc: %s Pad: %s' %
+               (green('SetTPSrc'), length, green(str(port)), pad))
         return 'mod_tp_src:' + str(port)
 
     elif action_type == int('a', 16):
         port, pad = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type: %s Length: %s SetTPDst: %s Pad: %s' %
-               (xid, green('SetTPDst'), length, green(str(port)), pad))
+        print ('OpenFlow Action - Type: %s Length: %s SetTPDst: %s Pad: %s' %
+               (green('SetTPDst'), length, green(str(port)), pad))
         return 'mod_tp_dst:' + str(port)
 
     elif action_type == int('b', 16):
         port, pad, queue_id = of10.parser.get_action(action_type, length,
                                                      payload)
-        print (('%s OpenFlow Action - Type: %s Length: %s Enqueue: %s Pad: %s'
+        print (('OpenFlow Action - Type: %s Length: %s Enqueue: %s Pad: %s'
                 ' Queue: %s') %
-               (xid, green('Enqueue'), length, green(str(port)), pad,
+               (green('Enqueue'), length, green(str(port)), pad,
                 green(str(queue_id))))
         return 'set_queue:' + str(queue_id)
 
     elif action_type == int('ffff', 16):
         vendor = of10.parser.get_action(action_type, length, payload)
-        print ('%s OpenFlow Action - Type:  %s Length: %s Vendor: %s' %
-               (xid, green('VENDOR'), length, green(str(vendor))))
+        print ('OpenFlow Action - Type:  %s Length: %s Vendor: %s' %
+               (green('VENDOR'), length, green(str(vendor))))
         return 'VendorType'
 
     else:
@@ -284,12 +304,12 @@ def print_PortMod(of_xid, portMod):
     _print_portMod_config_mask(of_xid, portMod, 'advertise')
 
 
-def print_of_BarrierReq(of_xid):
-    print '%s OpenFlow Barrier Request' % of_xid
+def print_of_BarrierReq(pkt):
+    print 'OpenFlow Barrier Request'
 
 
-def print_of_BarrierReply(of_xid):
-    print '%s OpenFlow Barrier Reply' % of_xid
+def print_of_BarrierReply(pkt):
+    print 'OpenFlow Barrier Reply'
 
 
 def print_of_vendor(of_vendor, of_xid):
@@ -420,12 +440,12 @@ def print_ofp_setConfig(of_xid, flag, miss):
            (of_xid, flag, miss))
 
 
-def print_echoreq(of_xid):
-    print ('%s OpenFlow Echo Request' % (of_xid))
+def print_echoreq(pkt):
+    print 'OpenFlow Echo Request'
 
 
-def print_echores(of_xid):
-    print ('%s OpenFlow Echo Reply' % (of_xid))
+def print_echores(pkt):
+    print 'OpenFlow Echo Reply'
 
 
 def print_portStatus(of_xid, reason, pad):
@@ -443,14 +463,31 @@ def print_packetInOut_vlan(of_xid, vlan):
     gen.prints.print_vlan(vlan)
 
 
-def print_ofp_packetIn(of_xid, packetIn):
-    print ('%s PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
+def print_packetIn(pkt):
+    packetIn = pkt.of_body['print_packetIn']
+
+    # If we have filters (-F)
+    # filters = pkt.sanitizer['packetIn_filter']
+
+    # if len(filters) > 0:
+    #    if filters['switch_dpid'] == "any":
+    #    should_print = True _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    #    elif filters['switch_dpid'] == lldp['c_id']:
+    #        if (filters['in_port'] == "any" or
+    #           filters['in_port'] == lldp['in_port']):
+    #            _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    # else:
+    #    _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+
+    print ('PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
            'pad: %s' %
-           (of_xid, hex(packetIn['buffer_id']), packetIn['total_len'],
+           (hex(packetIn['buffer_id']), packetIn['total_len'],
             green(packetIn['in_port']), green(packetIn['reason']),
             packetIn['pad']))
 
 
+# a print_lldp function was created on gen.prints
+# remove this
 def print_packetInOut_lldp(of_xid, lldp):
     print ('%s LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
            '%s LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'
@@ -463,9 +500,10 @@ def print_packetInOut_lldp(of_xid, lldp):
             lldp['e_length']))
 
 
-def print_ofp_packetOut(of_xid, packetOut):
-    print ('%s PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
-           (of_xid, hex(packetOut['buffer_id']),
+def print_packetOut(pkt):
+    packetOut = pkt.of_body['print_packetOut']
+    print ('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
+           (hex(packetOut['buffer_id']),
             green(of10.dissector.get_phy_port_id(packetOut['in_port'])),
             packetOut['actions_len']))
 
@@ -489,3 +527,8 @@ def print_queueRes_properties(of_xid, properties):
     print ('%s Property: %s Length: %s Pad: %s Rate: %s Pad: %s' %
            (of_xid, properties['type'], properties['length'], properties['pad'],
             properties['rate'], properties['pad2']))
+
+
+def print_body(pkt):
+    for f in pkt.printing_seq:
+        eval(f)(pkt)

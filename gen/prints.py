@@ -9,6 +9,7 @@ import gen.cli  # NO_COLOR variable
 import gen.proxies
 import socket
 import struct
+import gen.tcpip
 
 
 def red(string):
@@ -59,14 +60,14 @@ def get_ip_from_long(long_ip):
     return (socket.inet_ntoa(struct.pack('!L', long_ip)))
 
 
-def print_headers(print_options, date, getlen, caplen, eth, ip, tcp):
-    if print_options['min'] == 1:
-        print_minimal(date, getlen, ip, tcp)
+def print_headers(pkt):
+    if pkt.print_options['min'] == 1:
+        print_minimal(pkt.l1['time'], pkt.l1['caplen'], pkt.l3, pkt.l4)
     else:
-        print_layer1(date, getlen, caplen)
-        print_layer2(eth)
-        print_layer3(ip)
-        print_tcp(tcp)
+        print_layer1(pkt.l1['time'], pkt.l1['caplen'], pkt.l1['truncate_len'])
+        print_layer2(pkt.l2)
+        print_layer3(pkt.l3)
+        print_tcp(pkt.l4)
 
 
 def print_minimal(date, getlen, ip, tcp):
@@ -87,7 +88,7 @@ def print_layer1(date, getlen, caplen):
 def print_layer2(eth):
     print ('Ethernet: Destination MAC: %s Source MAC: %s Protocol: %s' %
            (eth_addr(eth['dst_mac']), eth_addr(eth['src_mac']),
-            red(hex(eth['protocol']))))
+            red(gen.tcpip.get_ethertype(eth['protocol']))))
 
 
 def print_vlan(vlan):
@@ -124,7 +125,7 @@ def print_tcp(tcp):
 
 
 def print_openflow_header(of):
-    version = of10.dissector.get_ofp_version(of['version'])
+    version = gen.tcpip.get_ofp_version(of['version'])
     name_version = '%s(%s)' % (version, of['version'])
     if version == '1.0':
         name = of10.dissector.get_ofp_type(of['type'])
@@ -137,3 +138,16 @@ def print_openflow_header(of):
 
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
            (name_version, yellow(name_type), of['length'], red(of['xid'])))
+
+
+def print_lldp(pkt):
+    lldp = pkt.of_body['print_lldp']
+    print ('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
+           'LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'
+           'LLDP: TTL(%s) Length: %s Seconds: %s\n'
+           'LLDP: END(%s) Length: %s' %
+           (lldp['c_type'], lldp['c_length'], lldp['c_subtype'],
+            green(lldp['c_id']), lldp['p_type'],
+            lldp['p_length'], lldp['p_subtype'], green(lldp['p_id']),
+            lldp['t_type'], lldp['t_length'], lldp['t_ttl'],
+            lldp['e_type'], lldp['e_length']))

@@ -4,20 +4,6 @@
 '''
 
 
-def get_ofp_version(version):
-    of_versions = {0: 'Experimental',
-                   1: '1.0',
-                   2: '1.1',
-                   3: '1.2',
-                   4: '1.3',
-                   5: '1.4',
-                   6: '1.5'}
-    try:
-        return of_versions[version]
-    except:
-        return 'Unknown(%s)' % version
-
-
 def get_ofp_type(of_type):
     of_types = {0: 'Hello',
                 1: 'Error',

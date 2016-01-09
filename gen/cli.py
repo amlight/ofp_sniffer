@@ -57,7 +57,7 @@ def get_params(argv):
         print str(err)
         usage(argv[0])
 
-    print_options = {'min': 1, 'ovs': 0, 'colors': 0}
+    print_options = {'min': 1, 'ovs': 0, 'colors': 0, 'filters': 0}
 
     for option, param in opts:
         if option in ['-p', '--print']:
@@ -93,6 +93,7 @@ def get_params(argv):
                      'flowMod_logs': {},
                      'packetIn_filter': {}}
     else:
+        print_options['filters'] = 1
         sanitizer = read_sanitizer(sanitizer_file)
 
     return print_options, input_filter, sanitizer, dev, captured_file

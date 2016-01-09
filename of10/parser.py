@@ -12,19 +12,25 @@ import of10.vendors
 import gen.proxies
 
 
-def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
+def process_ofp_type(pkt):
+    of_type = pkt.of_h['type']
+    of_xid = pkt.of_h['xid']
+    print_options = pkt.print_options
+    h_size = 0
+    packet = pkt.this_packet
+
     if of_type == 0:
-        result = parse_Hello(packet, h_size, of_xid)
+        result = parse_Hello(pkt)
     elif of_type == 1:
-        result = parse_Error(packet, h_size, of_xid)
+        result = parse_Error(pkt)
     elif of_type == 2:
-        result = parse_EchoReq(packet, h_size, of_xid)
+        result = parse_EchoReq(pkt)
     elif of_type == 3:
-        result = parse_EchoRes(packet, h_size, of_xid)
+        result = parse_EchoRes(pkt)
     elif of_type == 4:
         result = parse_Vendor(packet, h_size, of_xid)
     elif of_type == 5:
-        result = parse_FeatureReq(packet, h_size, of_xid)
+        result = parse_FeatureReq(pkt)
     elif of_type == 6:
         result = parse_FeatureRes(packet, h_size, of_xid)
     elif of_type == 7:
@@ -34,26 +40,25 @@ def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
     elif of_type == 9:
         result = parse_SetConfig(packet, h_size, of_xid)
     elif of_type == 10:
-        result = parse_PacketIn(packet, h_size, of_xid, sanitizer)
+        result = parse_PacketIn(pkt)
     elif of_type == 11:
         result = parse_FlowRemoved(packet, h_size, of_xid)
     elif of_type == 12:
         result = parse_PortStatus(packet, h_size, of_xid)
     elif of_type == 13:
-        result = parse_PacketOut(packet, h_size, of_xid, sanitizer,
-                                 print_options)
+        result = parse_PacketOut(pkt)
     elif of_type == 14:
         result = parse_FlowMod(packet, h_size, of_xid, print_options)
     elif of_type == 15:
         result = parse_PortMod(packet, h_size, of_xid)
-    elif of_type == 16:
-        result = parse_StatsReq(packet, h_size, of_xid)
-    elif of_type == 17:
-        result = parse_StatsRes(packet, h_size, of_xid)
+#    elif of_type == 16:
+#        result = parse_StatsReq(packet, h_size, of_xid)
+#    elif of_type == 17:
+#        result = parse_StatsRes(packet, h_size, of_xid)
     elif of_type == 18:
-        result = parse_BarrierReq(packet, h_size, of_xid)
+        result = parse_BarrierReq(pkt)
     elif of_type == 19:
-        result = parse_BarrierRes(packet, h_size, of_xid)
+        result = parse_BarrierRes(pkt)
     elif of_type == 20:
         result = parse_QueueGetConfigReq(packet, h_size, of_xid)
     elif of_type == 21:
@@ -64,32 +69,34 @@ def process_ofp_type(of_type, packet, h_size, of_xid, print_options, sanitizer):
 
 
 # *************** Hello *****************
-def parse_Hello(packet, h_size, of_xid):
-    of10.prints.print_of_hello(of_xid)
+def parse_Hello(pkt):
+    pkt.prepare_printing('print_of_hello', None)
+    pkt.print_packet()
     return 1
 
 
 # ************** Error *****************
-def parse_Error(packet, h_size, of_xid):
-    of_error = packet[h_size:h_size+4]
+def parse_Error(pkt):
+    of_error = pkt.this_packet[0:4]
     ofe = unpack('!HH', of_error)
-    ofe_type = ofe[0]
-    ofe_code = ofe[1]
 
-    nameCode, typeCode = of10.dissector.get_ofp_error(ofe_type, ofe_code)
-    of10.prints.print_of_error(of_xid, nameCode, typeCode)
+    error = {'type': ofe[0], 'code': ofe[1]}
+    pkt.prepare_printing('print_of_error', error)
+    pkt.print_packet()
     return 1
 
 
 # ************ EchoReq *****************
-def parse_EchoReq(packet, h_size, of_xid):
-    of10.prints.print_echoreq(of_xid)
+def parse_EchoReq(pkt):
+    pkt.prepare_printing('print_echoreq', None)
+    pkt.print_packet()
     return 1
 
 
 # ************ EchoRes *****************
-def parse_EchoRes(packet, h_size, of_xid):
-    of10.prints.print_echores(of_xid)
+def parse_EchoRes(pkt):
+    pkt.prepare_printing('print_echores', None)
+    pkt.print_packet()
     return 1
 
 
@@ -107,8 +114,9 @@ def parse_Vendor(packet, h_size, of_xid):
 
 
 # *********** FeatureReq ***************
-def parse_FeatureReq(packet, h_size, of_xid):
-    of10.prints.print_of_feature_req(of_xid)
+def parse_FeatureReq(pkt):
+    pkt.prepare_printing('print_of_feature_req', None)
+    pkt.print_packet()
     return 1
 
 
@@ -249,24 +257,28 @@ def _parse_ethernet_lldp_PacketInOut(packet, start):
     return eth, vlan, {}, start
 
 
-def _parse_other_types(packet, start, eth):
+def _parse_other_types(packet, start, eth, pkt):
     # OESS FVD
     if eth['protocol'] in [34998]:
-        print 'OESS FVD'
+        message = {'message': 'OESS FVD'}
+        pkt.prepare_printing('print_string', message)
     elif eth['protocol'] in [35020]:
         # If it gets here, means that the LLDP packet is MalFormed
-        print 'LLDP Packet MalFormed'
+        message = {'message': 'LLDP Packet MalFormed'}
+        pkt.prepare_printing('print_string', message)
     elif eth['protocol'] in [2048]:
         ip = gen.tcpip.get_ip_packet(packet, start)
-        gen.prints.print_layer3(ip)
         if ip['protocol'] is 6:
             tcp = gen.tcpip.get_tcp_stream(packet, start + ip['length'])
-            gen.prints.print_tcp(tcp)
+            pkt.prepare_printing('print_layer3', ip)
+            pkt.prepare_printing('print_tcp', tcp)
     elif eth['protocol'] in [2054]:
         arp = gen.tcpip.get_arp(packet[start:])
-        gen.prints.print_arp(arp)
+        pkt.prepare_printing('print_arp', arp)
     else:
-        print 'Ethertype %s not dissected' % hex(eth['protocol'])
+        string = 'Ethertype %s not dissected' % hex(eth['protocol'])
+        message = {'message': string}
+        pkt.prepare_printing('print_string', message)
 
 
 def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
@@ -278,33 +290,43 @@ def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
         of10.prints.print_packetInOut_lldp(of_xid, lldp)
 
 
-def parse_PacketIn(packet, h_size, of_xid, sanitizer):
+# def parse_PacketIn(packet, h_size, of_xid, sanitizer):
+def parse_PacketIn(pkt):
     # buffer_id(32), total_len(16), in_port(16), reason(8), pad(8)
-    pkt_raw = packet[h_size:h_size+10]
+    pkt_raw = pkt.this_packet[0:10]
     p_in = unpack('!LHHBB', pkt_raw)
     reason = of10.dissector.get_packetIn_reason(p_in[3])
     packetIn = {'buffer_id': p_in[0], 'total_len': p_in[1], 'in_port': p_in[2],
                 'reason': reason, 'pad': p_in[4]}
 
-    eth, vlan, lldp, offset = _parse_ethernet_lldp_PacketInOut(packet,
-                                                               h_size + 10)
+    pkt.prepare_printing('print_packetIn', packetIn)
+
+    eth, vlan, lldp, offset = _parse_ethernet_lldp_PacketInOut(pkt.this_packet,
+                                                               10)
+
+    pkt.prepare_printing('print_layer2_pktIn', eth)
+    if len(vlan) > 0:
+        pkt.prepare_printing('print_vlan', vlan)
+
     if len(lldp) == 0:
-        _print_packetIn(of_xid, packetIn, eth, vlan, {})
-        _parse_other_types(packet[offset:], 0, eth)
-        return 1
+        _parse_other_types(pkt.this_packet[offset:], 0, eth, pkt)
+    else:
+        pkt.prepare_printing('print_lldp', lldp)
+
+    pkt.print_packet()
 
     # If we have filters (-F)
-    filters = sanitizer['packetIn_filter']
+    # filters = sanitizer['packetIn_filter']
 
-    if len(filters) > 0:
-        if filters['switch_dpid'] == "any":
-            _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-        elif filters['switch_dpid'] == lldp['c_id']:
-            if (filters['in_port'] == "any" or
-               filters['in_port'] == lldp['in_port']):
-                _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-    else:
-        _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    # if len(filters) > 0:
+    #     if filters['switch_dpid'] == "any":
+    #         _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    #     elif filters['switch_dpid'] == lldp['c_id']:
+    #         if (filters['in_port'] == "any" or
+    #            filters['in_port'] == lldp['in_port']):
+    #             _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    # else:
+    #     _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
 
     return 1
 
@@ -343,45 +365,46 @@ def parse_PortStatus(packet, h_size, of_xid):
 
 
 # ******************* PacketOut *****************************
-# Actions need to be handled
-def parse_PacketOut(packet, h_size, of_xid, sanitizer, print_options):
+def parse_PacketOut(pkt):
     # buffer_id(32), in_port(16), actions_len(16)
-    pkt_raw = packet[h_size:h_size+8]
+    pkt_raw = pkt.this_packet[0:8]
     p_out = unpack('!LHH', pkt_raw)
     actions_len = p_out[2]
     packetOut = {'buffer_id': p_out[0], 'in_port': p_out[1],
                  'actions_len': actions_len}
 
-    of10.prints.print_ofp_packetOut(of_xid, packetOut)
+    pkt.prepare_printing('print_packetOut', packetOut)
     # Actions
-    start = h_size + 8
-    _parse_OFAction(of_xid, packet[start:start+packetOut['actions_len']], 0)
+    start = 8
+    _parse_OFAction(pkt.this_packet[start:start+packetOut['actions_len']], 0)
     # Ethernet
-    start = h_size + 8 + packetOut['actions_len']
-    eth = gen.tcpip.get_ethernet_frame(packet[start:start+14], 1)
-    of10.prints.print_packetInOut_layer2(of_xid, eth)
+    start = 8 + packetOut['actions_len']
+    eth = gen.tcpip.get_ethernet_frame(pkt.this_packet[start:start+14], 1)
+    pkt.prepare_printing('print_layer2_pktIn', eth)
     start = start + 14
     etype = '0x0000'
     # VLAN or not
     if eth['protocol'] in [33024]:
-        vlan = gen.tcpip.get_ethernet_vlan(packet[start:start+2])
-        of10.prints.print_packetInOut_vlan(of_xid, vlan)
+        vlan = gen.tcpip.get_ethernet_vlan(pkt.this_packet[start:start+2])
+        if len(vlan) > 0:
+            pkt.prepare_printing('print_vlan', vlan)
         start = start + 2
         # If VLAN exists, there is a next eth['protocol']
-        etype = gen.tcpip.get_next_etype(packet[start:start+2])
+        etype = gen.tcpip.get_next_etype(pkt.this_packet[start:start+2])
         start = start + 2
     else:
         etype = eth['protocol']
     if etype in [35020, 35138]:
         # LLDP TLV
-        lldp = gen.tcpip.get_lldp(packet[start:])
+        lldp = gen.tcpip.get_lldp(pkt.this_packet[start:])
         if len(lldp) is 0:
             print 'LLDP Packet MalFormed'
         else:
             # Support for FSFW/Proxy
-            gen.proxies.support_fsfw(print_options, lldp)
-            of10.prints.print_packetInOut_lldp(of_xid, lldp)
+            gen.proxies.support_fsfw(pkt.print_options, lldp)
+            pkt.prepare_printing('print_lldp', lldp)
 
+    pkt.print_packet()
     return 1
 
 
@@ -536,7 +559,7 @@ def get_action(action_type, length, payload):
         return type_f[0]
 
 
-def _parse_OFAction(of_xid, packet, start, ofactions=[]):
+def _parse_OFAction(packet, start, ofactions=[]):
     '''
         Actions
     '''
@@ -562,7 +585,7 @@ def _parse_OFAction(of_xid, packet, start, ofactions=[]):
                 total_length = 4
                 ofa_action_payload = packet[start:start + 4]
 
-            ofa_temp = of10.prints.print_ofp_action(of_xid, ofa_type,
+            ofa_temp = of10.prints.print_ofp_action(ofa_type,
                                                     ofa_length,
                                                     ofa_action_payload)
 
@@ -601,7 +624,7 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
     #  12 for types 4,5,b
     start = h_size+64
 
-    ofactions = _parse_OFAction(of_xid, packet, start, ofactions)
+    ofactions = _parse_OFAction(packet, start, ofactions)
 
     if print_options['ovs'] == 1:
         of10.prints.print_ofp_ovs(print_options, ofmatch, ofactions,
@@ -748,7 +771,7 @@ def parse_StatsRes(packet, h_size, of_xid):
             # Process Actions[]
             end = res_flow['length'] - (4 + 40 + 44)
             actions = packet[start+88:start+88+end]
-            _parse_OFAction(of_xid, actions, 0)
+            _parse_OFAction(actions, 0)
 
             count = count - int(res_flow['length'])
             start = start + int(res_flow['length'])
@@ -840,14 +863,16 @@ def parse_StatsRes(packet, h_size, of_xid):
 
 
 # ********************** BarrierReq ***********************
-def parse_BarrierReq(packet, h_size, of_xid):
-    of10.prints.print_of_BarrierReq(of_xid)
+def parse_BarrierReq(pkt):
+    pkt.prepare_printing('print_of_BarrierReq', None)
+    pkt.print_packet()
     return 1
 
 
 # ********************** BarrierRes ***********************
-def parse_BarrierRes(packet, h_size, of_xid):
-    of10.prints.print_of_BarrierReply(of_xid)
+def parse_BarrierRes(pkt):
+    pkt.prepare_printing('print_of_BarrierReply', None)
+    pkt.print_packet()
     return 1
 
 

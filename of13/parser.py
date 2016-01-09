@@ -282,8 +282,6 @@ def _parse_matches(of_xid, packet, start):
     of13.prints.print_match_type(of_xid, m_type, m_length)
 
     length_oxm = (m_length - 4)
-    # Debug
-    # print 'Length_oxm %s' % length_oxm
     padding = (((m_length + 7)/8*8 - m_length))
 
     start = start + 4
@@ -308,11 +306,76 @@ def _parse_matches(of_xid, packet, start):
     print_padding(padding)
 
     # Return offset for Instructions
-    return start + start_2
+    return start + length_oxm + padding
+
+
+def _parse_actions(of_xid, packet, length):
+    print '%s Actions: ' % (of_xid)
+
+
+def _inst_goto_table(packet, start, i_len):
+    print
+
+
+def _inst_write_metadata(packet, start, i_len):
+    print
+
+
+def _inst_write_actions(packet, start, i_len):
+    print
+
+
+def _inst_apply_actions(of_xid, packet, start, i_len):
+    print 'APPLY_ACTIONS'
+
+    apply_raw = packet[start:start+4]
+    apply_padding = unpack('!L', apply_raw)
+    print '%s Padding: %s' % (of_xid, apply_padding[0])
+    _parse_actions(of_xid, packet[start+4:], i_len-8)
+
+
+def _inst_clear_actions(packet, start, i_len):
+    print
+
+
+def _inst_meter(packet, start, i_len):
+    print
+
+
+def _inst_experimenter(packet, start, i_len):
+    print
 
 
 def _parse_instructions(of_xid, packet, instructions_start):
-    print
+
+    start = instructions_start
+
+    while len(packet[start:]) > 0:
+        instructions_raw = packet[instructions_start:instructions_start+4]
+        instructions = unpack('!HH', instructions_raw)
+        i_type = instructions[0]
+        i_len = instructions[1]
+        start = start + 4
+
+        print ('%s Instructions:' % of_xid),
+        # Call proper instruction
+        if i_type == 1:
+            _inst_goto_table(packet, start, i_len)
+        elif i_type == 2:
+            _inst_write_metadata(packet, start, i_len)
+        elif i_type == 3:
+            _inst_write_actions(packet, start, i_len)
+        elif i_type == 4:
+            _inst_apply_actions(of_xid, packet, start, i_len)
+        elif i_type == 5:
+            _inst_clear_actions(packet, start, i_len)
+        elif i_type == 6:
+            _inst_meter(packet, start, i_len)
+        elif i_type == 65535:
+            _inst_experimenter(packet, start, i_len)
+
+        start = start + i_len - 4
+
 
 def parse_FlowMod(packet, h_size, of_xid, print_options):
     flow_mod_raw = packet[h_size:h_size+40]
