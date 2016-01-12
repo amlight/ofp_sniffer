@@ -42,17 +42,17 @@ def process_ofp_type(pkt):
     elif of_type == 10:
         result = parse_PacketIn(pkt)
     elif of_type == 11:
-        result = parse_FlowRemoved(packet, h_size, of_xid)
+        result = parse_FlowRemoved(pkt)
     elif of_type == 12:
-        result = parse_PortStatus(packet, h_size, of_xid)
+        result = parse_PortStatus(pkt)
     elif of_type == 13:
         result = parse_PacketOut(pkt)
     elif of_type == 14:
         result = parse_FlowMod(packet, h_size, of_xid, print_options)
     elif of_type == 15:
         result = parse_PortMod(packet, h_size, of_xid)
-#    elif of_type == 16:
-#        result = parse_StatsReq(packet, h_size, of_xid)
+    elif of_type == 16:
+        result = parse_StatsReq(pkt)
 #    elif of_type == 17:
 #        result = parse_StatsRes(packet, h_size, of_xid)
     elif of_type == 18:
@@ -332,11 +332,11 @@ def parse_PacketIn(pkt):
 
 
 # ******************** FlowRemoved ***************************
-def parse_FlowRemoved(packet, h_size, of_xid):
-    ofmatch = _parse_OFMatch(packet, h_size)
-    of10.prints.print_ofp_match(of_xid, ofmatch)
+def parse_FlowRemoved(pkt):
+    ofmatch = _parse_OFMatch(pkt.this_packet, 0)
+    pkt.prepare_printing('print_ofp_match', ofmatch)
 
-    of_rem_body = packet[h_size+40:h_size+40+40]
+    of_rem_body = pkt.this_packet[40:40+40]
     ofrem = unpack('!QHBBLLHBBQQ', of_rem_body)
     cookie = ofrem[0] if ofrem[0] > 0 else 0
     cookie = '0x' + format(cookie, '02x')
@@ -348,19 +348,22 @@ def parse_FlowRemoved(packet, h_size, of_xid):
              'pad2': ofrem[7], 'pad3': ofrem[8],
              'packet_count': ofrem[9], 'byte_count': ofrem[10]}
 
-    of10.prints.print_ofp_flow_removed(of_xid, ofrem)
+    pkt.prepare_printing('print_ofp_flow_removed', ofrem)
+    pkt.print_packet()
     return 1
 
 
 # ******************* PortStatus *****************************
-def parse_PortStatus(packet, h_size, of_xid):
-    port_raw = packet[h_size:h_size+8]
+def parse_PortStatus(pkt):
+    port_raw = pkt.this_packet[0:8]
     port = unpack('!B7s', port_raw)
     reason = of10.dissector.get_portStatus_reason(port[0])
-    pad = port[1]
-    of10.prints.print_portStatus(of_xid, reason, pad)
-    ports = _parse_phy_ports(packet[h_size+8:h_size+64], of_xid)
-    of10.prints.print_of_feature_res_ports(of_xid, ports)
+    p_status = {'reason': reason, 'pad': port[1]}
+    pkt.prepare_printing('print_portStatus', p_status)
+
+    ports = _parse_phy_ports(pkt.this_packet[8:64], pkt.of_h['xid'])
+    pkt.prepare_printing('print_of_feature_res_ports', ports)
+    pkt.print_packet()
     return 1
 
 
@@ -588,7 +591,6 @@ def _parse_OFAction(packet, start, ofactions=[]):
             ofa_temp = of10.prints.print_ofp_action(ofa_type,
                                                     ofa_length,
                                                     ofa_action_payload)
-
             # Print OVS format
             ofactions.append(ofa_temp)
             ofactions.append(',')
@@ -649,13 +651,13 @@ def parse_PortMod(packet, h_size, of_xid):
 
 
 # ******************** StatReq ****************************
-def parse_StatsReq(packet, h_size, of_xid):
+def parse_StatsReq(pkt):
     '''
         Process the StatsReq
     '''
     # Get type = 16bits
     # Get flags = 16bits
-    of_stat_req = packet[h_size:h_size+4]
+    of_stat_req = pkt.this_packet[0:4]
     ofstat = unpack('!HH', of_stat_req)
     stat_type = ofstat[0]
     # FLags were not defined yet. Ignoring.
@@ -666,14 +668,14 @@ def parse_StatsReq(packet, h_size, of_xid):
     if stat_type == 0:
         # Description
         # No extra fields
-        of10.prints.print_ofp_statReqDesc(of_xid, stat_type)
+        pkt.prepare_printing('print_ofp_statReqDesc', stat_type)
 
     elif stat_type == 1 or stat_type == 2:
         # Flow(1) or Aggregate(2)
         # Fields: match(40), table_id(8), pad(8), out_port(16)
         of_match = _parse_OFMatch(packet, start)
         # 44 Bytes (40B from Match, 4 from header)
-        of_stat_req = packet[start+40:start+40+4]
+        of_stat_req = pkt.this_packet[start+40:start+40+4]
         ofstat = unpack('!BBH', of_stat_req)
         table_id = ofstat[0]
         pad = ofstat[1]

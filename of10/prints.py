@@ -448,9 +448,10 @@ def print_echores(pkt):
     print 'OpenFlow Echo Reply'
 
 
-def print_portStatus(of_xid, reason, pad):
-    print ('%s OpenFlow PortStatus - Reason: %s Pad: %s' %
-           (of_xid, reason, pad))
+def print_portStatus(pkt):
+    reason = pkt.of_body['print_portStatus']['reason']
+    pad = pkt.of_body['print_portStatus']['pad']
+    print ('OpenFlow PortStatus - Reason: %s Pad: %s' % (reason, pad))
 
 
 def print_packetInOut_layer2(of_xid, eth):
