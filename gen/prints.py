@@ -92,7 +92,7 @@ def print_layer2(eth):
 
 
 def print_vlan(vlan):
-    print ('Prio: %s CFI: %s VID: %s' %
+    print ('VLAN: Prio: %s CFI: %s VID: %s' %
            (vlan['prio'], vlan['cfi'], red(vlan['vid'])))
 
 

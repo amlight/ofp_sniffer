@@ -20,6 +20,7 @@ def get_ethertype(etype):
     etypes = {8: 'IP',
               2048: 'IP',
               2054: 'ARP',
+              33024: 'VLAN',
               34925: 'IPv6',
               34887: 'MPLS',
               35020: 'LLDP',

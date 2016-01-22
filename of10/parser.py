@@ -98,7 +98,7 @@ def parse_Vendor(pkt):
 
     # Future - version 0.4
     # If code 8992 = NICIRA
-    #if ofv[0] == 8992:
+    # if ofv[0] == 8992:
     #    of10.vendors.parse_nicira(packet, h_size+4, of_xid)
 
     return 1
@@ -260,13 +260,13 @@ def _parse_other_types(packet, start, eth, pkt):
         pkt.prepare_printing('print_string', message)
     elif eth['protocol'] in [2048]:
         ip = gen.tcpip.get_ip_packet(packet, start)
+        pkt.prepare_printing('print_layer3', ip)
         if ip['protocol'] is 6:
             tcp = gen.tcpip.get_tcp_stream(packet, start + ip['length'])
-            pkt.prepare_printing('print_layer3', ip)
             pkt.prepare_printing('print_tcp', tcp)
     elif eth['protocol'] in [2054]:
         arp = gen.tcpip.get_arp(packet[start:])
-       # pkt.prepare_printing('print_arp', arp)
+        pkt.prepare_printing('print_arp', arp)
     else:
         string = 'Ethertype %s not dissected' % hex(eth['protocol'])
         message = {'message': string}
@@ -365,7 +365,8 @@ def parse_PacketOut(pkt):
     pkt.prepare_printing('print_packetOut', packetOut)
     # Actions
     start = 8
-    actions_dict = _parse_OFAction(pkt.this_packet[start:start+packetOut['actions_len']], 0)
+    total = start+packetOut['actions_len']
+    actions_dict = _parse_OFAction(pkt.this_packet[start:total], 0)
     pkt.prepare_printing('print_actions', actions_dict)
 
     start = start + packetOut['actions_len']
@@ -600,7 +601,7 @@ def parse_FlowMod(pkt):
     ofbody = _parse_OFBody(pkt.this_packet, 0)
     pkt.prepare_printing("print_ofp_body", ofbody)
 
-    ofactions = []
+    # ofactions = []
 
     # Actions: Header = 4 , plus each possible action
     actions_start = 64
@@ -656,8 +657,8 @@ def parse_StatsReq(pkt):
         table_id = ofstat[0]
         pad = ofstat[1]
         out_port = ofstat[2]
-        stats = {'type': stat_type, 'match': of_match, 'table_id': table_id, 'pad': pad,
-                 'out_port': out_port}
+        stats = {'type': stat_type, 'match': of_match, 'table_id': table_id,
+                 'pad': pad, 'out_port': out_port}
         pkt.prepare_printing('print_ofp_statReqFlowAggregate', stats)
 
     elif stat_type == 3:
@@ -801,12 +802,12 @@ def parse_StatsRes(pkt):
             flow_raw = pkt.this_packet[start:start+104]
             flow = unpack('!H6sQQQQQQQQQQQQ', flow_raw)
             port = {'type': stat_type, 'port_no': flow[0], 'pad': flow[1],
-                     'rx_packets': flow[2], 'tx_packets': flow[3],
-                     'rx_bytes': flow[4], 'tx_bytes': flow[5],
-                     'rx_dropped': flow[6], 'tx_dropped': flow[7],
-                     'rx_errors': flow[8], 'tx_errors': flow[9],
-                     'rx_frame_err': flow[10], 'rx_over_err': flow[11],
-                     'rx_crc_err': flow[12], 'collisions': flow[13]}
+                    'rx_packets': flow[2], 'tx_packets': flow[3],
+                    'rx_bytes': flow[4], 'tx_bytes': flow[5],
+                    'rx_dropped': flow[6], 'tx_dropped': flow[7],
+                    'rx_errors': flow[8], 'tx_errors': flow[9],
+                    'rx_frame_err': flow[10], 'rx_over_err': flow[11],
+                    'rx_crc_err': flow[12], 'collisions': flow[13]}
 
             ports.append(port)
 
@@ -841,16 +842,15 @@ def parse_StatsRes(pkt):
         vendor_flow = {'type': stat_type, 'vendor_id': flow[0]}
         pkt.prepare_printing('print_ofp_statResVendor', vendor_flow)
 
-
         pkt.prepare_printing('print_ofp_statResVendorData',
                              pkt.this_packet[start+4:])
-        #start = start + 4
-        #data = []
-        #count = len(packet[0:])
+        # start = start + 4
+        # data = []
+        # count = len(packet[0:])
 
-        #import hexdump
-        #hexdump.hexdump(pkt.this_packet[start:])
-        #print
+        # import hexdump
+        # hexdump.hexdump(pkt.this_packet[start:])
+        # print
         # while (start < count):
         #    flow_raw = pkt.this_packet[start:start+1]
         #    flow = unpack('!B', flow_raw)
@@ -890,7 +890,7 @@ def parse_QueueGetConfigRes(pkt):
     queue = unpack('!H6s', queue_raw)
     queueConfRes = {'port': queue[0], 'pad': queue[1]}
 
-    pkt.prepare_printing('print_queueRea', queueConfRea)
+    pkt.prepare_printing('print_queueRes', queueConfRes)
 
     start = 8
     while (pkt.this_packet[start:] > 0):

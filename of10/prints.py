@@ -1,7 +1,6 @@
 '''
     Prints for OpenFlow 1.0 only
 '''
-
 import of10.dissector
 import of10.parser
 import gen.prints
@@ -48,6 +47,14 @@ def print_arp(pkt):
     gen.prints.print_arp(pkt.of_body['print_arp'])
 
 
+def print_vlan(pkt):
+    gen.prints.print_vlan(pkt.of_body['print_vlan'])
+
+
+def print_string(pkt):
+    print pkt.of_body['print_string']['message']
+
+
 def print_type_unknown(pkt):
     string = '%s OpenFlow OFP_Type %s unknown \n'
     print string % (pkt.of_h['xid'], pkt.of_h['type'])
@@ -85,6 +92,7 @@ def print_of_feature_res_caps(pkt):
     for i in caps:
         print of10.dissector.get_feature_res_capabilities(i),
     print
+
 
 def print_of_feature_res_actions(pkt):
     actions = pkt.of_body['print_of_feature_res_actions']
@@ -152,7 +160,7 @@ def print_of_feature_res_ports(pkt):
 
 def print_ofp_match(pkt):
     ofmatch = pkt.of_body['print_ofp_match']
-    print 'Match -' ,
+    print 'Match -',
     for K in ofmatch:
         value = ofmatch[K]
         if K is 'dl_vlan':
@@ -503,10 +511,11 @@ def print_ofp_statResVendor(pkt):
 
 def print_ofp_statResVendorData(pkt):
     data = pkt.of_body['print_ofp_statResVendorData']
-    #print 'StatRes Vendor Data: %s' % (data)
+    # print 'StatRes Vendor Data: %s' % (data)
     print ('StatRes Vendor Data: ')
     import hexdump
     hexdump.hexdump(data)
+
 
 def print_ofp_getConfigRes(pkt):
     print ('OpenFlow GetConfigRes - Flag: %s Miss_send_len: %s' %
