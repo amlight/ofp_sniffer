@@ -225,29 +225,6 @@ def parse_SetConfig(pkt):
 
 
 # ****************** PacketIn ************************
-def _parse_ethernet_lldp_PacketInOut(packet, start):
-    # Ethernet
-    eth = gen.tcpip.get_ethernet_frame(packet[start:start+14], 1)
-    start = start + 14
-    etype = '0x0000'
-    vlan = {}
-    # VLAN or not
-    if eth['protocol'] in [33024]:
-        vlan = gen.tcpip.get_ethernet_vlan(packet[start:start+2])
-        start = start + 2
-        # If VLAN exists, there is a next eth['protocol']
-        etype = gen.tcpip.get_next_etype(packet[start:start+2])
-        start = start + 2
-    else:
-        etype = eth['protocol']
-    # LLDP
-    lldp = {}
-    if etype in [35020, 35138]:
-        lldp = gen.tcpip.get_lldp(packet[start:])
-        return eth, vlan, lldp, start
-    eth['protocol'] = etype
-    return eth, vlan, {}, start
-
 
 def _parse_other_types(packet, start, eth, pkt):
     # OESS FVD
@@ -282,6 +259,72 @@ def _print_packetIn(of_xid, packetIn, eth, vlan, lldp):
         of10.prints.print_packetInOut_lldp(of_xid, lldp)
 
 
+def process_data(pkt, start):
+    '''
+        This funcion aims to dissect PacketIn and PacketOut data
+        It assumes it is
+        Ethernet [vlan] (BDDP|LLDP|ARP|IP) [TCP|UDP]
+    '''
+
+    # Ethernet
+    eth = gen.tcpip.get_ethernet_frame(pkt.this_packet[start:start+14], 1)
+    pkt.prepare_printing('print_layer2_pktIn', eth)
+
+    # VLAN or not - ETYPE 0x8100 or 33024
+    start = start + 14
+    etype = '0x0000'
+    vlan = {}
+    if eth['protocol'] in [33024]:
+        vlan = gen.tcpip.get_ethernet_vlan(pkt.this_packet[start:start+2])
+        pkt.prepare_printing('print_vlan', vlan)
+        start = start + 2
+        # If VLAN exists, there is a next eth['protocol']
+        etype = gen.tcpip.get_next_etype(pkt.this_packet[start:start+2])
+        start = start + 2
+    else:
+        etype = eth['protocol']
+
+    # LLDP - ETYPE 0x88CC or 35020
+    # BBDP - ETYPE 0x8942 or 35138
+    lldp = {}
+    if etype in [35020, 35138]:
+        lldp = gen.tcpip.get_lldp(pkt.this_packet[start:])
+        if len(lldp) is 0:
+            message = {'message': 'LLDP Packet MalFormed'}
+            pkt.prepare_printing('print_string', message)
+        else:
+            pkt.prepare_printing('print_lldp', lldp)
+            if pkt.of_h['type'] is 13:
+                gen.proxies.support_fsfw(pkt.print_options, lldp)
+        return
+
+    # OESS FVD - ETYPE 0x88B6 or 34998
+    if etype in [34998]:
+        message = {'message': 'OESS FVD'}
+        pkt.prepare_printing('print_string', message)
+        return
+
+    # IP - ETYPE 0x800 or 2048
+    if etype in [2048]:
+        ip = gen.tcpip.get_ip_packet(pkt.this_packet, start)
+        pkt.prepare_printing('print_layer3', ip)
+        if ip['protocol'] is 6:
+            tcp = gen.tcpip.get_tcp_stream(pkt.this_packet, start+ip['length'])
+            pkt.prepare_printing('print_tcp', tcp)
+        return
+
+    # ARP - ETYPE 0x806 or 2054
+    if etype in [2054]:
+        arp = gen.tcpip.get_arp(pkt.this_packet[start:])
+        pkt.prepare_printing('print_arp', arp)
+        return
+
+    string = 'Ethertype %s not dissected' % hex(eth['protocol'])
+    message = {'message': string}
+    pkt.prepare_printing('print_string', message)
+    return
+
+
 def parse_PacketIn(pkt):
     # buffer_id(32), total_len(16), in_port(16), reason(8), pad(8)
     pkt_raw = pkt.this_packet[0:10]
@@ -292,30 +335,8 @@ def parse_PacketIn(pkt):
 
     pkt.prepare_printing('print_packetIn', packetIn)
 
-    eth, vlan, lldp, offset = _parse_ethernet_lldp_PacketInOut(pkt.this_packet,
-                                                               10)
-
-    pkt.prepare_printing('print_layer2_pktIn', eth)
-    if len(vlan) > 0:
-        pkt.prepare_printing('print_vlan', vlan)
-
-    if len(lldp) == 0:
-        _parse_other_types(pkt.this_packet[offset:], 0, eth, pkt)
-    else:
-        pkt.prepare_printing('print_lldp', lldp)
-
-    # If we have filters (-F)
-    # filters = sanitizer['packetIn_filter']
-
-    # if len(filters) > 0:
-    #     if filters['switch_dpid'] == "any":
-    #         _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-    #     elif filters['switch_dpid'] == lldp['c_id']:
-    #         if (filters['in_port'] == "any" or
-    #            filters['in_port'] == lldp['in_port']):
-    #             _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-    # else:
-    #     _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
+    # process data
+    process_data(pkt, 10)
 
     return 1
 
@@ -375,31 +396,8 @@ def parse_PacketOut(pkt):
     if len(pkt.this_packet[start:]) == 0:
         return 1
 
-    # Ethernet
-    eth = gen.tcpip.get_ethernet_frame(pkt.this_packet[start:start+14], 1)
-    pkt.prepare_printing('print_layer2_pktIn', eth)
-    start = start + 14
-    etype = '0x0000'
-    # VLAN or not
-    if eth['protocol'] in [33024]:
-        vlan = gen.tcpip.get_ethernet_vlan(pkt.this_packet[start:start+2])
-        if len(vlan) > 0:
-            pkt.prepare_printing('print_vlan', vlan)
-        start = start + 2
-        # If VLAN exists, there is a next eth['protocol']
-        etype = gen.tcpip.get_next_etype(pkt.this_packet[start:start+2])
-        start = start + 2
-    else:
-        etype = eth['protocol']
-    if etype in [35020, 35138]:
-        # LLDP TLV
-        lldp = gen.tcpip.get_lldp(pkt.this_packet[start:])
-        if len(lldp) is 0:
-            print 'LLDP Packet MalFormed'
-        else:
-            # Support for FSFW/Proxy
-            gen.proxies.support_fsfw(pkt.print_options, lldp)
-            pkt.prepare_printing('print_lldp', lldp)
+    # process body
+    process_data(pkt, start)
 
     return 1
 
