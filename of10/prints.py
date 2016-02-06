@@ -190,7 +190,7 @@ def print_ofp_body(pkt):
 
 def print_ofp_flow_removed(pkt):
     ofrem = pkt.of_body['print_ofp_flow_removed']
-    string = ('Body - Cookie: %s Priority: %s Reason: %s Pad: %s '
+    string = ('Body - Cookie: %s Priority: %s Reason: %s Pad: %s\nBody - '
               'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2/Pad3: %s/%s'
               ' Packet Count: %s Byte Count: %s')
 

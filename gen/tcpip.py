@@ -57,6 +57,7 @@ def get_arp(packet):
                  'src_ip': arp[6], 'dst_mac': arp[7], 'dst_ip': arp[8]}
     return arp_frame
 
+
 def get_ip_packet(packet, eth_length):
     '''
         Returns IP Header fields

@@ -12,6 +12,11 @@ import struct
 import gen.tcpip
 
 
+def debug(pkt, string):
+    if pkt.print_options['debug'] is 1:
+        print 'DEBUG: %s' % string
+
+
 def red(string):
     if gen.cli.NO_COLOR is True:
         return string

@@ -33,21 +33,32 @@ class OFMessage:
         self.offset += 8
         self.packet = self.packet[8:]
 
+    def handle_malformed_pkts(self):
+        string = ('!!! MalFormed Packet - Packet Len: %s Informed: %s '
+                  'Missing: %s Bytes - Probably Reached MTU? !!!' %
+                  (len(self.packet), self.of_h['length'],
+                   self.of_h['length'] - len(self.packet)))
+        message = {'message': string}
+        self.prepare_printing('print_string', message)
+
     def process_openflow_body(self):
         self.process_openflow_header()
-        # debug
-        # print self.of_h['type']
         if self.of_h['version'] is 1:
-            if not process_ofp_type(self):
-                of10.prints.print_type_unknown(self)
-                return
+            try:
+                if not process_ofp_type(self):
+                    of10.prints.print_type_unknown(self)
+                return 1
+            except:
+                self.handle_malformed_pkts()
+                return -1
+        return 0
 
     def prepare_printing(self, string, values):
         self.of_body[string] = values
         self.seq_of_print(string)
 
     def print_packet(self):
-        if not self.check_filters():
+        # if not self.check_filters():
             gen.prints.print_openflow_header(self.of_h)
             if self.of_h['version'] is 1:
                 of10.prints.print_body(self)
@@ -134,8 +145,6 @@ class Packet:
 
     def get_of_message_length(self):
         of_h = get_openflow_header(self.packet, self.offset)
-        print of_h['type']
-        print self.l1['caplen']
         return of_h['length']
 
     # OpenFlow messages
@@ -153,21 +162,47 @@ class Packet:
             # self.this_packet is the OpenFlow message
             # let's remove the current OpenFlow message from the packet
             length = self.get_of_message_length()
+            if length < 8:
+                # MalFormed Packet
+                return 0
             self.this_packet = self.packet[self.offset:self.offset+length]
             # Instantiate the OpenFlow message in the ofmsgs array
             # Process the content, using cur_msg position of the array of msgs
             self.ofmsgs.insert(self.cur_msg, OFMessage(self))
-            self.ofmsgs[self.cur_msg].process_openflow_body()
+            version = self.ofmsgs[self.cur_msg].process_openflow_body()
+            if version is 0:
+                return 0
+            elif version is -1:
+                break
             self.remaining_bytes -= length
             self.offset += length
             # If there is another OpenFlow message, instantiate another OFMsg
             if (self.remaining_bytes >= 8):
                 self.cur_msg += 1
                 self.qtd_of_msg += 1
-        return
+
+        return 1
 
     def print_packet(self):
-        gen.prints.print_headers(self)
-        for msg in self.ofmsgs:
-            msg.print_packet()
-        #print
+        if not self.check_filters():
+            gen.prints.print_headers(self)
+            for msg in self.ofmsgs:
+                msg.print_packet()
+
+    def check_filters(self):
+        # Was -F submitted?
+        if self.print_options['filters'] is 0:
+            return False
+        # Check if there is any limitation for printing
+        name_version = gen.tcpip.get_ofp_version(self.of_h['version'])
+        supported_versions = []
+        for version in self.sanitizer['allowed_of_versions']:
+            supported_versions.append(version)
+        if name_version not in supported_versions:
+            return True
+        # OF Types to be ignored through json file (-F)
+        rejected_types = self.sanitizer['allowed_of_versions'][name_version]
+        if self.of_h['type'] in rejected_types['rejected_of_types']:
+            return True
+
+        return False

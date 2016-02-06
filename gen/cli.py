@@ -3,7 +3,7 @@ import getopt
 import json
 
 
-VERSION = '0.2'
+VERSION = '0.3-dev'
 NO_COLOR = False
 
 
@@ -23,6 +23,7 @@ def usage(file):
             '\t -o or --print-ovs : print using ovs-ofctl format\n'
             '\t -h or --help : prints this guidance\n'
             '\t -c or --no-colors: removes colors\n'
+            '\t -d or --debug: enable debug\n'
             '\t -v or --version : prints version\n') % file)
 
     sys.exit(0)
@@ -44,9 +45,10 @@ def read_sanitizer(sanitizer_file):
 
 def get_params(argv):
     # Handle all input params
-    letters = 'f:F:i:r:p:ohvc'
+    letters = 'f:F:i:r:p:ohvcd'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
-                'src-file=', 'print-ovs', 'help', 'version', 'no-colors']
+                'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
+                'debug']
 
     # Default Values
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
@@ -57,7 +59,7 @@ def get_params(argv):
         print str(err)
         usage(argv[0])
 
-    print_options = {'min': 1, 'ovs': 0, 'colors': 0, 'filters': 0}
+    print_options = {'min': 1, 'debug': 0, 'ovs': 0, 'colors': 0, 'filters': 0}
 
     for option, param in opts:
         if option in ['-p', '--print']:
@@ -84,6 +86,8 @@ def get_params(argv):
         elif option in ['-c', '--no-colors']:
             global NO_COLOR
             NO_COLOR = True
+        elif option in ['-d', '--debub']:
+            print_options['debug'] = 1
         else:
             usage(argv[0])
 

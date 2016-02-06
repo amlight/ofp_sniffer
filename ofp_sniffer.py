@@ -42,15 +42,19 @@ def main(argv):
         # start sniffing packets
         while(1):
             (header, packet) = cap.next()
-            time = datetime.datetime.now()
-            pkt = Packet(packet, print_options, sanitizer)
-            pkt.process_header(header.getlen(), header.getcaplen(), time)
-            if pkt.openflow_packet:
-                print 'Packet #' + str(ctr)
-                ctr += 1
-                pkt.process_openflow_messages()
-                pkt.print_packet()
-            del pkt
+            if len(packet) >= 62:
+                time = datetime.datetime.now()
+                pkt = Packet(packet, print_options, sanitizer)
+                pkt.process_header(header.getlen(), header.getcaplen(), time)
+                if pkt.openflow_packet:
+                    print 'Packet #' + str(ctr)
+                    result = pkt.process_openflow_messages()
+                    if result is 1:
+                        pkt.print_packet()
+                del pkt
+            elif len(packet) is 0:
+                sys.exit(0)
+            ctr += 1
 
     except KeyboardInterrupt:
         print 'Exiting...'
