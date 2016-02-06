@@ -56,8 +56,8 @@ def print_string(pkt):
 
 
 def print_type_unknown(pkt):
-    string = '%s OpenFlow OFP_Type %s unknown \n'
-    print string % (pkt.of_h['xid'], pkt.of_h['type'])
+    string = 'OpenFlow OFP_Type %s unknown \n'
+    print string % (pkt.of_h['type'])
 
 
 def print_of_hello(pkt):
@@ -555,39 +555,11 @@ def print_packetInOut_vlan(of_xid, vlan):
 
 def print_packetIn(pkt):
     packetIn = pkt.of_body['print_packetIn']
-
-    # If we have filters (-F)
-    # filters = pkt.sanitizer['packetIn_filter']
-
-    # if len(filters) > 0:
-    #    if filters['switch_dpid'] == "any":
-    #    should_print = True _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-    #    elif filters['switch_dpid'] == lldp['c_id']:
-    #        if (filters['in_port'] == "any" or
-    #           filters['in_port'] == lldp['in_port']):
-    #            _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-    # else:
-    #    _print_packetIn(of_xid, packetIn, eth, vlan, lldp)
-
     print ('PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
            'pad: %s' %
            (hex(packetIn['buffer_id']), packetIn['total_len'],
             green(packetIn['in_port']), green(packetIn['reason']),
             packetIn['pad']))
-
-
-# a print_lldp function was created on gen.prints
-# remove this
-def print_packetInOut_lldp(of_xid, lldp):
-    print ('%s LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
-           '%s LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'
-           '%s LLDP: TTL(%s) Length: %s Seconds: %s\n'
-           '%s LLDP: END(%s) Length: %s' %
-           (of_xid, lldp['c_type'], lldp['c_length'], lldp['c_subtype'],
-            green(lldp['c_id']), of_xid, lldp['p_type'], lldp['p_length'],
-            lldp['p_subtype'], green(lldp['p_id']), of_xid, lldp['t_type'],
-            lldp['t_length'], lldp['t_ttl'], of_xid, lldp['e_type'],
-            lldp['e_length']))
 
 
 def print_packetOut(pkt):

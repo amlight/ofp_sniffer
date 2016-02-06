@@ -38,6 +38,7 @@ def main(argv):
         main_filter = " port 6633 "
         cap.setfilter(main_filter + infilter)
 
+        ctr = 1
         # start sniffing packets
         while(1):
             (header, packet) = cap.next()
@@ -45,8 +46,10 @@ def main(argv):
             pkt = Packet(packet, print_options, sanitizer)
             pkt.process_header(header.getlen(), header.getcaplen(), time)
             if pkt.openflow_packet:
-                pkt.process_openflow_body()
-            # Prints
+                print 'Packet #' + str(ctr)
+                ctr += 1
+                pkt.process_openflow_messages()
+                pkt.print_packet()
             del pkt
 
     except KeyboardInterrupt:
@@ -55,33 +58,6 @@ def main(argv):
     except Exception as exception:
         print exception
         return
-
-
-#def sanitizer_filters(of_header, date, getlen, caplen, header_size,
-#                      eth, ip, tcp, sanitizer):
-#    '''
-#        If -F was provided, use filters specified
-#    '''
-#    if (of_header['version'] == -1):
-#        print ('h_size : %s - caplen: %s ' % (header_size, caplen))
-#        print_headers(1, date, getlen, caplen, eth, ip, tcp)
-#        print 'OpenFlow header not complete. Ignoring packet.'
-#        return 0
-#
-#    # OF Versions supported through json file (-F)
-#    name_version = of10.dissector.get_ofp_version(of_header['version'])
-#    supported_versions = []
-#    for version in sanitizer['allowed_of_versions']:
-#        supported_versions.append(version)
-#    if name_version not in supported_versions:
-#        return 0
-#
-#    # OF Types to be ignored through json file (-F)
-#    rejected_types = sanitizer['allowed_of_versions'][name_version]
-#    if of_header['type'] in rejected_types['rejected_of_types']:
-#        return 0
-#
-#    return 1
 
 
 if __name__ == "__main__":

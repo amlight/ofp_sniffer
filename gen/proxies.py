@@ -8,11 +8,12 @@ name = {"cc4e249102000000": "andes2",
         "24389406000000": "mct01"}
 
 
-def support_fsfw(print_options, lldp):
+def support_fsfw(pkt, lldp):
+
     global NET
 
-    ip = print_options['device_ip']
-    port = print_options['device_port']
+    ip = pkt.main_packet.l3['d_addr']
+    port = pkt.main_packet.l4['dest_port']
     dpid = lldp['c_id'].split(':')[1]
 
     name = get_name_dpid(dpid)

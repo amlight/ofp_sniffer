@@ -179,10 +179,17 @@ def get_lldp(packet):
     length = p_length - 1
     # Get P_ID
     port_raw = packet[start+3:start+3+length]
-    string = '!%ss' % length
+    # string = '!%ss' % length
+    if length is 1:
+        string = '!B'
+    elif length is 2:
+        string = '!H'
+    elif length is 4:
+        string = '!L'
+    else:
+        string = '!%ss' % length
     port = unpack(string, port_raw)
     p_id = port[0]
-
     start = start + 3 + length
 
     # TTL
