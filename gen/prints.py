@@ -67,22 +67,28 @@ def get_ip_from_long(long_ip):
 
 def print_headers(pkt):
     if pkt.print_options['min'] == 1:
-        print_minimal(pkt.l1['time'], pkt.l1['caplen'], pkt.l3, pkt.l4)
+        print_minimal(pkt.position, pkt.l1['time'], pkt.l1['caplen'], pkt.l3,
+                      pkt.l4)
     else:
+        print_position(pkt.position)
         print_layer1(pkt.l1['time'], pkt.l1['caplen'], pkt.l1['truncate_len'])
         print_layer2(pkt.l2)
         print_layer3(pkt.l3)
         print_tcp(pkt.l4)
 
 
-def print_minimal(date, getlen, ip, tcp):
-    string = '%s %s:%s -> %s:%s Size: %s Bytes'
+def print_minimal(position, date, getlen, ip, tcp):
+    string = 'Packet #%s - %s %s:%s -> %s:%s Size: %s Bytes'
 
     source = gen.proxies.get_ip_name(ip['s_addr'], tcp['source_port'])
     dest = gen.proxies.get_ip_name(ip['d_addr'], tcp['dest_port'])
 
-    print string % (date, cyan(source), cyan(tcp['source_port']),
+    print string % (position, date, cyan(source), cyan(tcp['source_port']),
                     cyan(dest), cyan(tcp['dest_port']), getlen)
+
+
+def print_position(position):
+    print ('Position # %s' % position)
 
 
 def print_layer1(date, getlen, caplen):

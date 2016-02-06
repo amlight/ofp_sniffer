@@ -109,53 +109,54 @@ def _dont_print_0(printed):
 
 
 def print_of_feature_res_ports(pkt):
-    ports = pkt.of_body['print_of_feature_res_ports']
-    print ('FeatureRes - port_id: %s hw_addr: %s name: %s' % (
-           green(ports['port_id']), green(ports['hw_addr']),
-           green(ports['name'])))
-    print ('FeatureRes - config:'),
-    printed = False
-    for i in ports['config']:
-        print of10.dissector.get_phy_config(i),
-        printed = True
-    else:
-        printed = _dont_print_0(printed)
-    print
-    print ('FeatureRes - state:'),
-    for i in ports['state']:
-        print of10.dissector.get_phy_state(i),
-        printed = True
-    else:
-        printed = _dont_print_0(printed)
-    print
-    print ('FeatureRes - curr:'),
-    for i in ports['curr']:
-        print of10.dissector.get_phy_feature(i),
-        printed = True
-    else:
-        printed = _dont_print_0(printed)
-    print
-    print ('FeatureRes - advertised:'),
-    for i in ports['advertised']:
-        print of10.dissector.get_phy_feature(i),
-        printed = True
-    else:
-        printed = _dont_print_0(printed)
-    print
-    print ('FeatureRes - supported:'),
-    for i in ports['supported']:
-        print of10.dissector.get_phy_feature(i),
-        printed = True
-    else:
-        printed = _dont_print_0(printed)
-    print
-    print ('FeatureRes - peer:'),
-    for i in ports['peer']:
-        print of10.dissector.get_phy_feature(i),
-        printed = True
-    else:
-        printed = _dont_print_0(printed)
-    print
+    ports_array = pkt.of_body['print_of_feature_res_ports']
+    for ports in ports_array:
+        print ('FeatureRes - port_id: %s hw_addr: %s name: %s' % (
+               green(ports['port_id']), green(ports['hw_addr']),
+               green(ports['name'])))
+        print ('FeatureRes - config:'),
+        printed = False
+        for i in ports['config']:
+            print of10.dissector.get_phy_config(i),
+            printed = True
+        else:
+            printed = _dont_print_0(printed)
+        print
+        print ('FeatureRes - state:'),
+        for i in ports['state']:
+            print of10.dissector.get_phy_state(i),
+            printed = True
+        else:
+            printed = _dont_print_0(printed)
+        print
+        print ('FeatureRes - curr:'),
+        for i in ports['curr']:
+            print of10.dissector.get_phy_feature(i),
+            printed = True
+        else:
+            printed = _dont_print_0(printed)
+        print
+        print ('FeatureRes - advertised:'),
+        for i in ports['advertised']:
+            print of10.dissector.get_phy_feature(i),
+            printed = True
+        else:
+            printed = _dont_print_0(printed)
+        print
+        print ('FeatureRes - supported:'),
+        for i in ports['supported']:
+            print of10.dissector.get_phy_feature(i),
+            printed = True
+        else:
+            printed = _dont_print_0(printed)
+        print
+        print ('FeatureRes - peer:'),
+        for i in ports['peer']:
+            print of10.dissector.get_phy_feature(i),
+            printed = True
+        else:
+            printed = _dont_print_0(printed)
+        print
 
 
 def print_ofp_match(pkt):

@@ -188,11 +188,12 @@ def parse_FeatureRes(pkt):
 
     # Ports description?
     start = 24
+    ports_array = []
     while len(pkt.packet[start:]) > 0:
         ports = _parse_phy_ports(pkt.packet[start:start+48])
-        pkt.prepare_printing('print_of_feature_res_ports', ports)
+        ports_array.append(ports)
         start = start + 48
-
+    pkt.prepare_printing('print_of_feature_res_ports', ports_array)
     return 1
 
 

@@ -2,7 +2,7 @@
   "allowed_of_versions": {
     "1.0": {
           "rejected_of_types": [
-            13
+            11, 14, 18, 19, 10, 13, 16, 17
          ]
     },
     "1.3": {

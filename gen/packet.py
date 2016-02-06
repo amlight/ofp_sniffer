@@ -88,11 +88,12 @@ class Packet:
     '''
         Used to save all data about the packet
     '''
-    def __init__(self, packet, print_options, sanitizer):
+    def __init__(self, packet, print_options, sanitizer, ctr):
         # Raw packet
         self.packet = packet
 
         # Controls
+        self.position = ctr
         self.offset = 0
         self.openflow_packet = False
         self.qtd_of_msg = 1

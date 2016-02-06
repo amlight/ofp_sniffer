@@ -44,10 +44,9 @@ def main(argv):
             (header, packet) = cap.next()
             if len(packet) >= 62:
                 time = datetime.datetime.now()
-                pkt = Packet(packet, print_options, sanitizer)
+                pkt = Packet(packet, print_options, sanitizer, ctr)
                 pkt.process_header(header.getlen(), header.getcaplen(), time)
                 if pkt.openflow_packet:
-                    print 'Packet #' + str(ctr)
                     result = pkt.process_openflow_messages()
                     if result is 1:
                         pkt.print_packet()
