@@ -3,6 +3,7 @@ from gen.tcpip import get_ethernet_frame, get_ip_packet, get_tcp_stream, \
 from of10.parser import process_ofp_type
 import gen.prints
 import of10.prints
+import gen.filters
 
 
 IP_PROTOCOL = 8
@@ -46,7 +47,8 @@ class OFMessage:
         if self.of_h['version'] is 1:
             try:
                 if not process_ofp_type(self):
-                    of10.prints.print_type_unknown(self)
+                    # of10.prints.print_type_unknown(self)
+                    return 0
                 return 1
             except:
                 self.handle_malformed_pkts()
@@ -57,31 +59,17 @@ class OFMessage:
         self.of_body[string] = values
         self.seq_of_print(string)
 
-    def print_packet(self):
-        # if not self.check_filters():
+    def print_packet(self, pkt):
+        if not gen.filters.filter_OF_type(self):
+            if pkt.printed_header is False:
+                gen.prints.print_headers(pkt)
+                pkt.printed_header = True
             gen.prints.print_openflow_header(self.of_h)
             if self.of_h['version'] is 1:
                 of10.prints.print_body(self)
             # elif self.of_h['version'] is 4:
             #   print of13.prints.print_body(self)
             print
-
-    def check_filters(self):
-        # Was -F submitted?
-        if self.print_options['filters'] is 0:
-            return False
-        # Check if there is any limitation for printing
-        name_version = gen.tcpip.get_ofp_version(self.of_h['version'])
-        supported_versions = []
-        for version in self.sanitizer['allowed_of_versions']:
-            supported_versions.append(version)
-        if name_version not in supported_versions:
-            return True
-
-        # OF Types to be ignored through json file (-F)
-        rejected_types = self.sanitizer['allowed_of_versions'][name_version]
-        if self.of_h['type'] in rejected_types['rejected_of_types']:
-            return True
 
 
 class Packet:
@@ -98,6 +86,7 @@ class Packet:
         self.openflow_packet = False
         self.qtd_of_msg = 1
         self.cur_msg = 0
+        self.printed_header = False
 
         # Filters
         self.print_options = print_options
@@ -185,25 +174,6 @@ class Packet:
         return 1
 
     def print_packet(self):
-        if not self.check_filters():
-            gen.prints.print_headers(self)
+        if not gen.filters.filter_OF_version(self):
             for msg in self.ofmsgs:
-                msg.print_packet()
-
-    def check_filters(self):
-        # Was -F submitted?
-        if self.print_options['filters'] is 0:
-            return False
-        # Check if there is any limitation for printing
-        name_version = gen.tcpip.get_ofp_version(self.of_h['version'])
-        supported_versions = []
-        for version in self.sanitizer['allowed_of_versions']:
-            supported_versions.append(version)
-        if name_version not in supported_versions:
-            return True
-        # OF Types to be ignored through json file (-F)
-        rejected_types = self.sanitizer['allowed_of_versions'][name_version]
-        if self.of_h['type'] in rejected_types['rejected_of_types']:
-            return True
-
-        return False
+                msg.print_packet(self)

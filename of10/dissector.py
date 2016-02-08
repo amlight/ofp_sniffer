@@ -130,6 +130,7 @@ def get_vlan(vlan):
     except:
         return vlan
 
+
 def get_ofp_flags(flag):
     flags = {0: 'NoFlagSet(0)',
              1: 'SendFlowRem(1)',

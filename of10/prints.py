@@ -417,7 +417,7 @@ def print_ofp_statResDesc(pkt):
 def print_ofp_statResFlowArray(pkt):
     flows = pkt.of_body['print_ofp_statResFlowArray']
     if len(flows) == 0:
-        print ('StatRes Type: Flow(1)\nNo Content')
+        print ('StatRes Type: Flow(1)\nNo Flows')
         return
 
     for flow_stats in flows:
