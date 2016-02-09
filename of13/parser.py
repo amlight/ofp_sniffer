@@ -3,133 +3,134 @@ import of13.prints
 import netaddr
 
 
-def process_ofp_type13(of_type, packet, h_size, of_xid, print_options,
-                       sanitizer):
-    if of_type == 0:
-        result = parse_Hello(packet, h_size, of_xid)
-    elif of_type == 1:
-        result = parse_Error(packet, h_size, of_xid)
-    elif of_type == 2:
-        result = parse_EchoReq(packet, h_size, of_xid)
-    elif of_type == 3:
-        result = parse_EchoRes(packet, h_size, of_xid)
-    elif of_type == 4:
-        result = parse_Experimenter(packet, h_size, of_xid)
-    elif of_type == 5:
-        result = parse_FeatureReq(packet, h_size, of_xid)
-    elif of_type == 6:
-        result = parse_FeatureRes(packet, h_size, of_xid)
-    elif of_type == 7:
-        result = parse_GetConfigReq(packet, h_size, of_xid)
-    elif of_type == 8:
-        result = parse_GetConfigRes(packet, h_size, of_xid)
-    elif of_type == 9:
-        result = parse_SetConfig(packet, h_size, of_xid)
-    elif of_type == 10:
-        result = parse_PacketIn(packet, h_size, of_xid, sanitizer)
-    elif of_type == 11:
-        result = parse_FlowRemoved(packet, h_size, of_xid)
-    elif of_type == 12:
-        result = parse_PortStatus(packet, h_size, of_xid)
-    elif of_type == 13:
-        result = parse_PacketOut(packet, h_size, of_xid, sanitizer,
-                                 print_options)
-    elif of_type == 14:
-        result = parse_FlowMod(packet, h_size, of_xid, print_options)
-    elif of_type == 15:
-        result = parse_GroupMod(packet, h_size, of_xid)
-    elif of_type == 16:
-        result = parse_PortMod(packet, h_size, of_xid)
-    elif of_type == 17:
-        result = parse_TableMod(packet, h_size, of_xid)
-    elif of_type == 18:
-        result = parse_MultipartReq(packet, h_size, of_xid)
-    elif of_type == 19:
-        result = parse_MultipartRes(packet, h_size, of_xid)
-    elif of_type == 20:
-        result = parse_BarrierReq(packet, h_size, of_xid)
-    elif of_type == 21:
-        result = parse_BarrierRes(packet, h_size, of_xid)
-    elif of_type == 22:
-        result = parse_QueueGetConfigReq(packet, h_size, of_xid)
-    elif of_type == 23:
-        result = parse_QueueGetConfigRes(packet, h_size, of_xid)
-    elif of_type == 24:
-        result = parse_RoleReq(packet, h_size, of_xid)
-    elif of_type == 25:
-        result = parse_RoleRes(packet, h_size, of_xid)
-    elif of_type == 26:
-        result = parse_GetAsyncReq(packet, h_size, of_xid)
-    elif of_type == 27:
-        result = parse_GetAsyncRes(packet, h_size, of_xid)
-    elif of_type == 28:
-        result = parse_SetAsync(packet, h_size, of_xid)
-    elif of_type == 29:
-        result = parse_MeterMod(packet, h_size, of_xid)
+def process_ofp_type13(pkt):
+    if pkt.of_h['type'] == 0:
+        result = parse_Hello(pkt)
+    elif pkt.of_h['type'] == 1:
+        result = parse_Error(pkt)
+    elif pkt.of_h['type'] == 2:
+        result = parse_EchoReq(pkt)
+    elif pkt.of_h['type'] == 3:
+        result = parse_EchoRes(pkt)
+    elif pkt.of_h['type'] == 4:
+        result = parse_Experimenter(pkt)
+    elif pkt.of_h['type'] == 5:
+        result = parse_FeatureReq(pkt)
+    elif pkt.of_h['type'] == 6:
+        result = parse_FeatureRes(pkt)
+    elif pkt.of_h['type'] == 7:
+        result = parse_GetConfigReq(pkt)
+    elif pkt.of_h['type'] == 8:
+        result = parse_GetConfigRes(pkt)
+    elif pkt.of_h['type'] == 9:
+        result = parse_SetConfig(pkt)
+    elif pkt.of_h['type'] == 10:
+        result = parse_PacketIn(pkt)
+    elif pkt.of_h['type'] == 11:
+        result = parse_FlowRemoved(pkt)
+    elif pkt.of_h['type'] == 12:
+        result = parse_PortStatus(pkt)
+    elif pkt.of_h['type'] == 13:
+        result = parse_PacketOut(pkt)
+    elif pkt.of_h['type'] == 14:
+        result = parse_FlowMod(pkt)
+    elif pkt.of_h['type'] == 15:
+        result = parse_GroupMod(pkt)
+    elif pkt.of_h['type'] == 16:
+        result = parse_PortMod(pkt)
+    elif pkt.of_h['type'] == 17:
+        result = parse_TableMod(pkt)
+    elif pkt.of_h['type'] == 18:
+        result = parse_MultipartReq(pkt)
+    elif pkt.of_h['type'] == 19:
+        result = parse_MultipartRes(pkt)
+    elif pkt.of_h['type'] == 20:
+        result = parse_BarrierReq(pkt)
+    elif pkt.of_h['type'] == 21:
+        result = parse_BarrierRes(pkt)
+    elif pkt.of_h['type'] == 22:
+        result = parse_QueueGetConfigReq(pkt)
+    elif pkt.of_h['type'] == 23:
+        result = parse_QueueGetConfigRes(pkt)
+    elif pkt.of_h['type'] == 24:
+        result = parse_RoleReq(pkt)
+    elif pkt.of_h['type'] == 25:
+        result = parse_RoleRes(pkt)
+    elif pkt.of_h['type'] == 26:
+        result = parse_GetAsyncReq(pkt)
+    elif pkt.of_h['type'] == 27:
+        result = parse_GetAsyncRes(pkt)
+    elif pkt.of_h['type'] == 28:
+        result = parse_SetAsync(pkt)
+    elif pkt.of_h['type'] == 29:
+        result = parse_MeterMod(pkt)
     else:
         return 0
     return result
 
 
 # *************** Hello *****************
-def parse_Hello(packet, h_size, of_xid):
+def parse_Hello(pkt):
 
-    def process_bitmap(of_xid, bitmap):
-        of13.prints.print_hello_bitmap(of_xid, bitmap)
-
-    start = h_size
+    start = 0
     count = 0
-    while len(packet[start:]) > 0:
+    while len(pkt.packet[start:]) > 0:
         # Get element[]
         count += 1
-        elem_raw = packet[start:start+4]
-        el_type, el_length = unpack('!HH', elem_raw)
-        of13.prints.print_hello_elememnts(of_xid, el_type, el_length, count)
+        elem_raw = pkt.packet[start:start+4]
+        hello_raw = unpack('!HH', elem_raw)
+        hello = {'type': hello_raw[0], 'length': hello_raw[1], 'count': count}
+        pkt.prepare_printing('print_hello_elements', hello)
 
-        bitmaps = packet[start+4:start+el_length]
+        bitmaps = pkt.packet[start+4:start+hello['length']]
         start_bit = 0
 
+        bmps = []
         while len(bitmaps[start_bit:]) > 0:
-            bitmap_raw = packet[start_bit:start_bit+4]
+            bitmap_raw = pkt.packet[start_bit:start_bit+4]
             bitmap = unpack('!L', bitmap_raw)
-            process_bitmap(of_xid, bitmap[0])
+            bmps.append(bitmap[0])
             start_bit = start_bit + 4
 
-        start = start + el_length
+        pkt.prepare_printing('print_hello_bitmap', bmps)
+
+        start = start + hello['length']
 
     return 1
 
 
 # ************** Error *****************
-def parse_Error(packet, h_size, of_xid):
-    of_error = packet[h_size:h_size+4]
+def parse_Error(pkt):
+    of_error = pkt.packet[0:4]
     ofe = unpack('!HH', of_error)
     ofe_type = ofe[0]
     ofe_code = ofe[1]
 
-    nameCode, typeCode = of13.dissector.get_ofp_error(ofe_type, ofe_code)
-    of13.prints.print_of_error(of_xid, nameCode, typeCode)
+    codes = {}
+    codes['name'], codes['type'] = of13.dissector.get_ofp_error(ofe_type,
+                                                                ofe_code)
+    pkt.prepare_printing('print_of_error', codes)
     return 1
 
 
 # ************ EchoReq *****************
-def parse_EchoReq(packet, h_size, of_xid):
-    of13.prints.print_echoreq(of_xid)
+def parse_EchoReq(pkt):
+    pkt.prepare_printing('print_echoreq', None)
     return 1
 
 
 # ************ EchoRes *****************
-def parse_EchoRes(packet, h_size, of_xid):
-    of13.prints.print_echores(of_xid)
+def parse_EchoRes(pkt):
+    pkt.prepare_printing('print_echores', None)
     return 1
 
 
-def parse_Experimenter(packet, h_size, of_xid):
+def parse_Experimenter(pkt):
     return 0
 
 
-def parse_FeatureReq(packet, h_size, of_xid):
-    of13.prints.print_of_feature_req(of_xid)
+def parse_FeatureReq(pkt):
+    pkt.prepare_printing('print_of_feature_req', None)
     return 1
 
 
@@ -149,8 +150,8 @@ def _parse_capabilities(capabilities):
     return _parse_bitmask(capabilities, caps)
 
 
-def parse_FeatureRes(packet, h_size, of_xid):
-    of_fres = packet[h_size:h_size+24]
+def parse_FeatureRes(pkt):
+    of_fres = pkt.packet[0:24]
     ofrs = unpack('!8sLBBHLL', of_fres)
     caps = []
     caps = _parse_capabilities(ofrs[5])
@@ -159,13 +160,13 @@ def parse_FeatureRes(packet, h_size, of_xid):
              'auxiliary_id': ofrs[3], 'pad': ofrs[4], 'caps': caps,
              'reserved': ofrs[6]}
 
-    of13.prints.print_of_feature_res(of_xid, f_res)
+    pkt.prepare_printing('print_of_feature_res', f_res)
     return 1
 
 
 # ***************** GetConfigReq *********************
-def parse_GetConfigReq(packet, h_size, of_xid):
-    of13.prints.print_of_getconfig_req(of_xid)
+def parse_GetConfigReq(pkt):
+    pkt.prepare_printing('print_of_getconfig_req', None)
     return 1
 
 
@@ -178,32 +179,34 @@ def _parse_SetGetConfig(packet, h_size):
     return flag, miss_send_len
 
 
-def parse_GetConfigRes(packet, h_size, of_xid):
-    flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
-    of13.prints.print_of_getConfigRes(of_xid, flag, miss_send_len)
+def parse_GetConfigRes(pkt):
+    configres = {}
+    configres['flag'], configres['miss'] = _parse_SetGetConfig(pkt.packet, 0)
+    pkt.prepare_printing('print_of_getConfigRes', configres)
     return 1
 
 
 # ******************* SetConfig **********************
-def parse_SetConfig(packet, h_size, of_xid):
-    flag, miss_send_len = _parse_SetGetConfig(packet, h_size)
-    of13.prints.print_of_setConfig(of_xid, flag, miss_send_len)
+def parse_SetConfig(pkt):
+    setconfig = {}
+    setconfig['flag'], setconfig['miss'] = _parse_SetGetConfig(pkt.packet, 0)
+    pkt.prepare_printing('print_of_setConfig', setconfig)
     return 1
 
 
-def parse_PacketIn(packet, h_size, of_xid, sanitizer):
+def parse_PacketIn(pkt):
     return 0
 
 
-def parse_FlowRemoved(packet, h_size, of_xid):
+def parse_FlowRemoved(pkt):
     return 0
 
 
-def parse_PortStatus(packet, h_size, of_xid):
+def parse_PortStatus(pkt):
     return 0
 
 
-def parse_PacketOut(packet, h_size, of_xid, sanitizer, print_options):
+def parse_PacketOut(pkt):
     return 0
 
 
@@ -260,34 +263,27 @@ def unpack_oxm_content(content_length, oxm_content, oxm):
     return oxm
 
 
-def print_oxm(of_xid, oxm, content_length, x_content):
+def prepare_oxm(pkt, oxm, x_content):
+    content_length = len(x_content)
     oxm = unpack_oxm_content(content_length, x_content, oxm)
-
-    of13.prints.print_match_generic(of_xid, oxm)
-    of13.prints.print_match(oxm)
+    return oxm
 
 
-def print_padding(padding):
-    for i in range(0, padding):
-        print '\b0',
-    print
+def _parse_matches(pkt, start):
+    matches_raw = pkt.packet[start:start+4]
+    matches = {}
+    matches['type'], matches['length'] = unpack('!HH', matches_raw)
 
+    pkt.prepare_printing('print_match_type', matches)
 
-def _parse_matches(of_xid, packet, start):
-    matches_raw = packet[start:start+4]
-    matches = unpack('!HH', matches_raw)
-    m_type = matches[0]
-    m_length = matches[1]
-
-    of13.prints.print_match_type(of_xid, m_type, m_length)
-
-    length_oxm = (m_length - 4)
-    padding = (((m_length + 7)/8*8 - m_length))
+    length_oxm = (matches['length'] - 4)
+    padding = (((matches['length'] + 7)/8*8 - matches['length']))
 
     start = start + 4
-    oxms = packet[start:start+length_oxm]
+    oxms = pkt.packet[start:start+length_oxm]
     start_2 = 0
 
+    oxm_array = []
     while len(oxms[start_2:]) > 0:
         oxm_raw = oxms[start_2:start_2+4]
         oxm = unpack('!L', oxm_raw)
@@ -299,18 +295,23 @@ def _parse_matches(of_xid, packet, start):
                    'length': x_length}
 
         oxm_content = oxms[start_2+4:start_2+4+x_length]
-        print_oxm(of_xid, oxm_tlv, len(oxm_content), oxm_content)
+        # insert print_oxm into an array for printing.
+        oxm_processed = prepare_oxm(pkt, oxm_tlv, oxm_content)
+        oxm_array.append(oxm_processed)
         start_2 = start_2 + 4 + x_length
 
-    print ('%s Flow Matches - Padding: ' % of_xid),
-    print_padding(padding)
+    pkt.prepare_printing('print_match', oxm_array)
+
+    pads = {'message': padding}
+    pkt.prepare_printing('print_padding', pads)
 
     # Return offset for Instructions
     return start + length_oxm + padding
 
 
-def _parse_actions(of_xid, packet, length):
-    print '%s Actions: ' % (of_xid)
+def _parse_actions(packet, length):
+    return
+    print 'Actions: '
 
 
 def _inst_goto_table(packet, start, i_len):
@@ -325,13 +326,15 @@ def _inst_write_actions(packet, start, i_len):
     print
 
 
-def _inst_apply_actions(of_xid, packet, start, i_len):
-    print 'APPLY_ACTIONS'
+def _inst_apply_actions(pkt, start, i_len):
+    string = {'message': 'APPLY_ACTIONS'}
+    pkt.prepare_printing('print_string', string)
 
-    apply_raw = packet[start:start+4]
+    apply_raw = pkt.packet[start:start+4]
     apply_padding = unpack('!L', apply_raw)
-    print '%s Padding: %s' % (of_xid, apply_padding[0])
-    _parse_actions(of_xid, packet[start+4:], i_len-8)
+    string = {'message': apply_padding[0]}
+    pkt.prepare_printing('print_padding', string)
+    _parse_actions(pkt.packet[start+4:], i_len-8)
 
 
 def _inst_clear_actions(packet, start, i_len):
@@ -346,39 +349,40 @@ def _inst_experimenter(packet, start, i_len):
     print
 
 
-def _parse_instructions(of_xid, packet, instructions_start):
+def _parse_instructions(pkt, instructions_start):
 
     start = instructions_start
 
-    while len(packet[start:]) > 0:
-        instructions_raw = packet[instructions_start:instructions_start+4]
+    while len(pkt.packet[start:]) > 0:
+        instructions_raw = pkt.packet[instructions_start:instructions_start+4]
         instructions = unpack('!HH', instructions_raw)
         i_type = instructions[0]
         i_len = instructions[1]
         start = start + 4
 
-        print ('%s Instructions:' % of_xid),
+        string = {'message': 'Instructions:'}
+        pkt.prepare_printing('print_instruction', string)
         # Call proper instruction
         if i_type == 1:
-            _inst_goto_table(packet, start, i_len)
+            _inst_goto_table(pkt, start, i_len)
         elif i_type == 2:
-            _inst_write_metadata(packet, start, i_len)
+            _inst_write_metadata(pkt, start, i_len)
         elif i_type == 3:
-            _inst_write_actions(packet, start, i_len)
+            _inst_write_actions(pkt, start, i_len)
         elif i_type == 4:
-            _inst_apply_actions(of_xid, packet, start, i_len)
+            _inst_apply_actions(pkt, start, i_len)
         elif i_type == 5:
-            _inst_clear_actions(packet, start, i_len)
+            _inst_clear_actions(pkt, start, i_len)
         elif i_type == 6:
-            _inst_meter(packet, start, i_len)
+            _inst_meter(pkt, start, i_len)
         elif i_type == 65535:
-            _inst_experimenter(packet, start, i_len)
+            _inst_experimenter(pkt, start, i_len)
 
         start = start + i_len - 4
 
 
-def parse_FlowMod(packet, h_size, of_xid, print_options):
-    flow_mod_raw = packet[h_size:h_size+40]
+def parse_FlowMod(pkt):
+    flow_mod_raw = pkt.packet[0:40]
     ofmod = unpack('!QQBBHHHLLLHH', flow_mod_raw)
 
     cookie = ofmod[0] if ofmod[0] > 0 else 0
@@ -395,72 +399,72 @@ def parse_FlowMod(packet, h_size, of_xid, print_options):
                 'out_port': port, 'out_group': ofmod[9],
                 'flags': ofmod[10], 'padding': ofmod[11]}
 
-    of13.prints.print_flow_mod(of_xid, flow_mod)
+    pkt.prepare_printing('print_flow_mod', flow_mod)
 
-    instructions_start = _parse_matches(of_xid, packet, h_size+40)
+    instructions_start = _parse_matches(pkt, 40)
 
-    _parse_instructions(of_xid, packet, instructions_start)
+    _parse_instructions(pkt, instructions_start)
 
     return 1
 
 
-def parse_GroupMod(packet, h_size, of_xid):
+def parse_GroupMod(pkt):
     return 0
 
 
-def parse_PortMod(packet, h_size, of_xid):
+def parse_PortMod(pkt):
     return 0
 
 
-def parse_TableMod(packet, h_size, of_xid):
+def parse_TableMod(pkt):
     return 0
 
 
-def parse_MultipartReq(packet, h_size, of_xid):
+def parse_MultipartReq(pkt):
     return 0
 
 
-def parse_MultipartRes(packet, h_size, of_xid):
+def parse_MultipartRes(pkt):
     return 0
 
 
-def parse_BarrierReq(packet, h_size, of_xid):
-    of13.prints.print_of_BarrierReq(of_xid)
+def parse_BarrierReq(pkt):
+    pkt.prepare_printing('print_of_BarrierReq', None)
     return 1
 
 
-def parse_BarrierRes(packet, h_size, of_xid):
-    of13.prints.print_of_BarrierReply(of_xid)
+def parse_BarrierRes(pkt):
+    pkt.prepare_printing('print_of_BarrierReply', None)
     return 1
 
 
-def parse_QueueGetConfigReq(packet, h_size, of_xid):
+def parse_QueueGetConfigReq(pkt):
     return 0
 
 
-def parse_QueueGetConfigRes(packet, h_size, of_xid):
+def parse_QueueGetConfigRes(pkt):
     return 0
 
 
-def parse_RoleReq(packet, h_size, of_xid):
+def parse_RoleReq(pkt):
     return 0
 
 
-def parse_RoleRes(packet, h_size, of_xid):
+def parse_RoleRes(pkt):
     return 0
 
 
-def parse_GetAsyncReq(packet, h_size, of_xid):
+def parse_GetAsyncReq(pkt):
     return 0
 
 
-def parse_GetAsyncRes(packet, h_size, of_xid):
+def parse_GetAsyncRes(pkt):
     return 0
 
 
-def parse_SetAsync(packet, h_size, of_xid):
+def parse_SetAsync(pkt):
     return 0
 
 
-def parse_MeterMod(packet, h_size, of_xid):
+def parse_MeterMod(pkt):
     return 0

@@ -1,9 +1,11 @@
 from gen.tcpip import get_ethernet_frame, get_ip_packet, get_tcp_stream, \
     get_openflow_header
 from of10.parser import process_ofp_type
+from of13.parser import process_ofp_type13
 import gen.prints
 import of10.prints
 import gen.filters
+import of13.prints
 
 
 IP_PROTOCOL = 8
@@ -53,6 +55,15 @@ class OFMessage:
             except:
                 self.handle_malformed_pkts()
                 return -1
+        if self.of_h['version'] is 4:
+            try:
+                if not process_ofp_type13(self):
+                    # of10.prints.print_type_unknown(self)
+                    return 0
+                return 1
+            except:
+                self.handle_malformed_pkts()
+                return -1
         return 0
 
     def prepare_printing(self, string, values):
@@ -67,8 +78,8 @@ class OFMessage:
             gen.prints.print_openflow_header(self.of_h)
             if self.of_h['version'] is 1:
                 of10.prints.print_body(self)
-            # elif self.of_h['version'] is 4:
-            #   print of13.prints.print_body(self)
+            elif self.of_h['version'] is 4:
+                of13.prints.print_body(self)
             print
 
 
