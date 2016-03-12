@@ -45,17 +45,15 @@ def main(argv):
     '''
         This is the main function
     '''
-    try:
-	cap.loop(-1, process_packet)
+    cap.loop(-1, process_packet)
+    return
 
+if __name__ == "__main__":
+    cap, print_options, sanitizer = gen.cli.get_params(sys.argv)
+    try:
+        main(sys.argv)
     except KeyboardInterrupt:
         print 'Exiting...'
         sys.exit(0)
     except Exception as exception:
         print exception
-        return
-
-
-if __name__ == "__main__":
-    cap, print_options, sanitizer = gen.cli.get_params(sys.argv)
-    main(sys.argv)

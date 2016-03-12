@@ -27,6 +27,8 @@ class OFMessage:
         self.offset = 0
         self.print_options = self.main_packet.print_options
         self.sanitizer = self.main_packet.sanitizer
+        #
+        self.message = None
 
     def seq_of_print(self, function):
         self.printing_seq.append(function)
@@ -52,7 +54,8 @@ class OFMessage:
                     # of10.prints.print_type_unknown(self)
                     return 0
                 return 1
-            except:
+            except Exception as e:
+                print e
                 self.handle_malformed_pkts()
                 return -1
         if self.of_h['version'] is 4:

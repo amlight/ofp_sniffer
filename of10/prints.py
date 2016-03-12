@@ -32,7 +32,7 @@ def print_layer2_pktIn(pkt):
 
 
 def print_tcp(pkt):
-    gen.prints.print_tcp(pkt.l4)
+    gen.prints.print_tcp(pkt.of_body['print_tcp'])
 
 
 def print_layer3(pkt):

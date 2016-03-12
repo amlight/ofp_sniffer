@@ -9,13 +9,14 @@ name = {"cc4e249102000000": "andes2",
 
 
 def support_fsfw(pkt, lldp):
-
     global NET
 
     ip = pkt.main_packet.l3['d_addr']
     port = pkt.main_packet.l4['dest_port']
-    dpid = lldp['c_id'].split(':')[1]
-
+    try:
+        dpid = lldp['c_id'].split(':')[1]
+    except:
+        dpid = lldp['c_id']
     name = get_name_dpid(dpid)
     NET[ip, port] = name
     return

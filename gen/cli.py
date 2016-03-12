@@ -53,8 +53,9 @@ def start_capture(capfile, infilter, dev):
             print "Sniffing device %s" % dev
             cap = pcapy.open_live(dev, 65536, 1, 0)
 
-        main_filter = " port 6633 "
-        cap.setfilter(main_filter + infilter)
+	if len(infilter) is 0:
+	    infilter = " port 6633 "
+        cap.setfilter(infilter)
         return cap
 
     except Exception as exception:
