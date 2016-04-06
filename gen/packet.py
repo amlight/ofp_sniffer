@@ -1,11 +1,13 @@
 from gen.tcpip import get_ethernet_frame, get_ip_packet, get_tcp_stream, \
     get_openflow_header
-from of10.parser import process_ofp_type
-from of13.parser import process_ofp_type13
+# from of13.parser import process_ofp_type13
 import gen.prints
 import of10.prints
 import gen.filters
 import of13.prints
+
+# new approach
+import of10.packet
 
 
 IP_PROTOCOL = 8
@@ -15,9 +17,9 @@ OF_HEADER_SIZE = 8
 
 
 class OFMessage:
-    '''
+    """
         Used to all all data regarding an OpenFlow message
-    '''
+    """
     def __init__(self, pkt):
         self.main_packet = pkt
         self.packet = pkt.this_packet
@@ -29,14 +31,34 @@ class OFMessage:
         self.sanitizer = self.main_packet.sanitizer
         #
         self.message = None
+        # new approad
+        self.ofp = None
 
     def seq_of_print(self, function):
         self.printing_seq.append(function)
 
     def process_openflow_header(self):
+        # remove line below
         self.of_h = get_openflow_header(self.packet, self.offset)
+        # keep line below
+        of_header = get_openflow_header(self.packet, self.offset)
+        # instantiate packet
+        if of_header['version'] is 1:
+            self.ofp = of10.packet.instantiate(self, of_header)
+            # If type is not recognized, return 0
+            if type(self.ofp) is type(int()):
+                print 'Debug: Type not recognized'
+                self.offset += 8
+                self.packet = self.packet[8:]
+                return 0
+        # elif self.of_h is 4:
+        #     of13.packet.instantiate_class(self)
+        else:
+            return 0
+
         self.offset += 8
         self.packet = self.packet[8:]
+        return 1
 
     def handle_malformed_pkts(self):
         string = ('!!! MalFormed Packet - Packet Len: %s Informed: %s '
@@ -47,26 +69,26 @@ class OFMessage:
         self.prepare_printing('print_string', message)
 
     def process_openflow_body(self):
-        self.process_openflow_header()
-        if self.of_h['version'] is 1:
+        if not self.process_openflow_header():
+            return 0
+        # are those options needed?
+        if self.ofp.version is 1:
             try:
-                if not process_ofp_type(self):
-                    # of10.prints.print_type_unknown(self)
-                    return 0
+                self.ofp.process_msg(self.packet)
                 return 1
             except Exception as e:
                 print e
                 self.handle_malformed_pkts()
                 return -1
-        if self.of_h['version'] is 4:
-            try:
-                if not process_ofp_type13(self):
-                    # of10.prints.print_type_unknown(self)
-                    return 0
-                return 1
-            except:
-                self.handle_malformed_pkts()
-                return -1
+        # if self.ofp.version is 4:
+        #     try:
+        #         if not process_ofp_type13(self):
+        #             # of10.prints.print_type_unknown(self)
+        #             return 0
+        #         return 1
+        #     except:
+        #         self.handle_malformed_pkts()
+        #         return -1
         return 0
 
     def prepare_printing(self, string, values):
@@ -78,18 +100,19 @@ class OFMessage:
             if pkt.printed_header is False:
                 gen.prints.print_headers(pkt)
                 pkt.printed_header = True
-            gen.prints.print_openflow_header(self.of_h)
-            if self.of_h['version'] is 1:
-                of10.prints.print_body(self)
-            elif self.of_h['version'] is 4:
-                of13.prints.print_body(self)
+            gen.prints.print_openflow_header(self.ofp)
+            # if self.of_h['version'] is 1:
+                # of10.prints.print_body(self)
+            self.ofp.prints()
+            #elif self.of_h['version'] is 4:
+            #    of13.prints.print_body(self)
             print
 
 
 class Packet:
-    '''
+    """
         Used to save all data about the packet
-    '''
+    """
     def __init__(self, packet, print_options, sanitizer, ctr):
         # Raw packet
         self.packet = packet
@@ -162,7 +185,7 @@ class Packet:
 
     def process_openflow_messages(self):
         self.remaining_bytes = self.get_remaining_bytes()
-        while (self.remaining_bytes >= 8):
+        while self.remaining_bytes >= 8:
             # self.this_packet is the OpenFlow message
             # let's remove the current OpenFlow message from the packet
             length = self.get_of_message_length()
@@ -173,7 +196,9 @@ class Packet:
             # Instantiate the OpenFlow message in the ofmsgs array
             # Process the content, using cur_msg position of the array of msgs
             self.ofmsgs.insert(self.cur_msg, OFMessage(self))
+
             version = self.ofmsgs[self.cur_msg].process_openflow_body()
+
             if version is 0:
                 return 0
             elif version is -1:
@@ -181,13 +206,15 @@ class Packet:
             self.remaining_bytes -= length
             self.offset += length
             # If there is another OpenFlow message, instantiate another OFMsg
-            if (self.remaining_bytes >= 8):
+            if self.remaining_bytes >= 8:
                 self.cur_msg += 1
                 self.qtd_of_msg += 1
 
         return 1
 
     def print_packet(self):
-        if not gen.filters.filter_OF_version(self):
-            for msg in self.ofmsgs:
-                msg.print_packet(self)
+        # fix it
+        #if not gen.filters.filter_OF_version(self):
+
+        for msg in self.ofmsgs:
+            msg.print_packet(self)

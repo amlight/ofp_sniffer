@@ -135,20 +135,20 @@ def print_tcp(tcp):
             tcp['flag_rst'], tcp['flag_syn'], tcp['flag_fyn']))
 
 
-def print_openflow_header(of):
-    version = gen.tcpip.get_ofp_version(of['version'])
-    name_version = '%s(%s)' % (version, of['version'])
+def print_openflow_header(ofp):
+    version = gen.tcpip.get_ofp_version(ofp.version)
+    name_version = '%s(%s)' % (version, ofp.version)
     if version == '1.0':
-        name = of10.dissector.get_ofp_type(of['type'])
-        name_type = '%s(%s)' % (name, of['type'])
+        name = of10.dissector.get_ofp_type(ofp.type)
+        name_type = '%s(%s)' % (name, ofp.type)
     elif version == '1.3':
-        name = of13.dissector.get_ofp_type(of['type'])
-        name_type = '%s(%s)' % (name, of['type'])
+        name = of13.dissector.get_ofp_type(ofp.type)
+        name_type = '%s(%s)' % (name, ofp.type)
     else:
-        name_type = '%s' % (of['type'])
+        name_type = '%s' % (ofp.type)
 
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
-           (name_version, yellow(name_type), of['length'], red(of['xid'])))
+           (name_version, yellow(name_type), ofp.length, red(ofp.xid)))
 
 
 def print_lldp(pkt):

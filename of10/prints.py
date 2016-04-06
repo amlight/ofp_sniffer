@@ -5,6 +5,7 @@ import of10.dissector
 import of10.parser
 import gen.prints
 import gen.packet
+import gen.tcpip
 
 
 def red(string):
@@ -60,46 +61,37 @@ def print_type_unknown(pkt):
     print string % (pkt.of_h['type'])
 
 
-def print_of_hello(pkt):
+def print_of_hello(msg):
     print 'OpenFlow Hello'
 
 
-def print_of_error(pkt):
-    error = pkt.of_body['print_of_error']
-    nCode, tCode = of10.dissector.get_ofp_error(error['type'], error['code'])
+def print_of_error(msg):
+    nCode, tCode = of10.dissector.get_ofp_error(msg.type, msg.code)
     print ('OpenFlow Error - Type: %s Code: %s' % (red(nCode), red(tCode)))
 
 
-def print_of_feature_req(pkt):
+def print_of_feature_req(msg):
     print 'OpenFlow Feature Request'
 
 
-def print_of_getconfig_req(pkt):
+def print_of_getconfig_req(msg):
     print 'OpenFlow GetConfig Request'
 
 
-def print_of_feature_res(pkt):
-    f_res = pkt.of_body['print_of_feature_res']
+def print_of_feature_res(msg):
     print 'OpenFlow Feature Reply'
-    dpid = datapath_id(f_res['datapath_id'])
+    dpid = datapath_id(msg.datapath_id)
     print ('FeatureRes - datapath_id: %s n_buffers: %s n_tbls: %s, pad: %s'
-           % (green(dpid), f_res['n_buffers'], f_res['n_tbls'], f_res['pad']))
-
-
-def print_of_feature_res_caps(pkt):
-    caps = pkt.of_body['print_of_feature_res_caps']
+           % (green(dpid), msg.n_buffers, msg.n_tbls, msg.pad))
     print ('FeatureRes - Capabilities:'),
-    for i in caps:
+    for i in msg.capabilities:
         print of10.dissector.get_feature_res_capabilities(i),
     print
-
-
-def print_of_feature_res_actions(pkt):
-    actions = pkt.of_body['print_of_feature_res_actions']
     print ('FeatureRes - Actions:'),
-    for i in actions:
+    for i in msg.actions:
         print of10.dissector.get_feature_res_actions(i),
     print
+    print_of_ports(msg)
 
 
 def _dont_print_0(printed):
@@ -108,12 +100,13 @@ def _dont_print_0(printed):
     return False
 
 
-def print_port_field(port, field):
-    port_id = '%s' % green(port['port_id'])
+def print_port_field(port_id, variable, name):
+    port_id = '%s' % green(port_id)
     printed = False
 
-    print ('Port_id: %s - %s curr:' % (port_id, field)),
-    for i in port[field]:
+    print ('Port_id: %s - %s curr:' % (port_id, name)),
+    a = []
+    for i in variable:
         print of10.dissector.get_phy_feature(i),
         printed = True
     else:
@@ -122,14 +115,14 @@ def print_port_field(port, field):
 
 
 def print_ofp_phy_port(port):
-    port_id = '%s' % green(port['port_id'])
+    port_id = '%s' % green(port.port_id)
 
     print ('Port_id: %s - hw_addr: %s name: %s' % (
-           port_id, green(port['hw_addr']), green(port['name'])))
+           port_id, green(port.hw_addr), green(port.name)))
 
     print ('Port_id: %s - config:' % port_id),
     printed = False
-    for i in port['config']:
+    for i in port.config:
         print of10.dissector.get_phy_config(i),
         printed = True
     else:
@@ -137,21 +130,21 @@ def print_ofp_phy_port(port):
     print
 
     print ('Port_id: %s - state:' % port_id),
-    for i in port['state']:
+    for i in port.state:
         print of10.dissector.get_phy_state(i),
         printed = True
     else:
         printed = _dont_print_0(printed)
     print
 
-    following_fields = ['curr', 'advertised', 'supported', 'peer']
+    # fix it
+    print_port_field(port.id, port.curr, 'curr')
+    print_port_field(port.id, port.advertised, 'advertised')
+    print_port_field(port.id, port.supported, 'supported')
+    print_port_field(port.id, port.peer, 'peer')
 
-    for field in following_fields:
-        print_port_field(port, field)
 
-
-def print_of_ports(pkt):
-    ports = pkt.of_body['print_of_ports']
+def print_of_ports(ports):
     if type(ports) is not list:
         print_ofp_phy_port(ports)
     else:
@@ -159,52 +152,50 @@ def print_of_ports(pkt):
             print_ofp_phy_port(port)
 
 
-def print_ofp_match(pkt):
-    ofmatch = pkt.of_body['print_ofp_match']
+def print_ofp_match(msg):
     print 'Match -',
-    for K in ofmatch:
-        value = ofmatch[K]
-        if K is 'dl_vlan':
-            value = of10.dissector.get_vlan(value)
-        elif K is 'wildcards':
-            value = hex(value)
-        elif K is 'dl_type':
-            value = gen.tcpip.get_ethertype(int(value, 16))
+    # Collect all variables from class ofp_match
+    # print those that are not 'None'
+    for match_item in msg.match.__dict__:
+        match_item_value = msg.match.__dict__[match_item]
+        if match_item_value is not None:
+             if match_item is 'dl_vlan':
+                 match_item_value = of10.dissector.get_vlan(match_item_value)
+             elif match_item is 'wildcards':
+                 match_item_value = hex(match_item_value)
+             elif match_item is 'dl_type':
+                 match_item_value = gen.tcpip.get_ethertype(match_item_value)
 
-        print ("%s: %s" % (K, green(value))),
-
+             print ("%s: %s" % (match_item, green(match_item_value))),
     print
 
 
-def print_ofp_body(pkt):
-    ofbody = pkt.of_body['print_ofp_body']
+def print_ofp_body(msg):
     string = ('Body - Cookie: %s Command: %s Idle/Hard Timeouts: '
               '%s/%s\nBody - Priority: %s Buffer ID: %s Out Port: %s Flags: %s')
-    command = green(of10.dissector.get_ofp_command(ofbody['command']))
-    flags = green(of10.dissector.get_ofp_flags(ofbody['flags']))
-    out_port = green(of10.dissector.get_phy_port_id(ofbody['out_port']))
+    command = green(of10.dissector.get_ofp_command(msg.command))
+    flags = green(of10.dissector.get_ofp_flags(msg.flags))
+    out_port = green(of10.dissector.get_phy_port_id(msg.out_port))
 
-    print string % (ofbody['cookie'], command, ofbody['idle_timeout'],
-                    ofbody['hard_timeout'], ofbody['priority'],
-                    ofbody['buffer_id'], out_port, flags)
+    print string % (msg.cookie, command, msg.idle_timeout, msg.hard_timeout,
+                    msg.priority, msg.buffer_id, out_port, flags)
 
 
-def print_ofp_flow_removed(pkt):
-    ofrem = pkt.of_body['print_ofp_flow_removed']
+def print_ofp_flow_removed(msg):
+    print_ofp_match(msg)
+
     string = ('Body - Cookie: %s Priority: %s Reason: %s Pad: %s\nBody - '
               'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2/Pad3: %s/%s'
               ' Packet Count: %s Byte Count: %s')
 
-    print string % (ofrem['cookie'], ofrem['priority'],
-                    red(ofrem['reason']), ofrem['pad'], ofrem['duration_sec'],
-                    ofrem['duration_nsec'], ofrem['idle_timeout'],
-                    ofrem['pad2'], ofrem['pad3'], ofrem['packet_count'],
-                    ofrem['byte_count'])
+    print string % (msg.cookie, msg.priority, red(msg.reason), msg.pad,
+                    msg.duration_sec, msg.duration_nsec, msg.idle_timeout,
+                    msg.pad2, msg.pad3, msg.packet_count, msg.byte_count)
 
 
-def print_actions(pkt):
-    for action in pkt.of_body['print_actions']:
-        print_ofp_action(action['type'], action['length'], action['payload'])
+def print_actions(msg):
+    for action in msg.actions:
+        print_ofp_action(action.type, action.length, action.payload)
 
 
 def print_ofp_action(action_type, length, payload):
@@ -321,10 +312,17 @@ def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command, prio):
     return
 
 
-def _print_portMod_config_mask(array, name):
+def print_of_FlowMod(msg):
+    print_ofp_match(msg)
+    print_ofp_body(msg)
+    print_actions(msg)
+
+
+def _print_portMod_config_mask(variable, name):
+
     print ('PortMod %s:' % (name)),
     printed = False
-    for i in array[name]:
+    for i in variable:
         print of10.dissector.get_phy_config(i),
         printed = True
     else:
@@ -332,26 +330,24 @@ def _print_portMod_config_mask(array, name):
     print
 
 
-def print_PortMod(pkt):
-    portMod = pkt.of_body['print_PortMod']
-    print ('PortMod Port: %s HW Addr %s Pad: %s' %
-           (portMod['port'], eth_addr(portMod['hw_addr']), portMod['pad']))
-    _print_portMod_config_mask(portMod, 'config')
-    _print_portMod_config_mask(portMod, 'mask')
-    _print_portMod_config_mask(portMod, 'advertise')
+def print_of_PortMod(msg):
+    print ('PortMod Port_no: %s HW_Addr %s Pad: %s' %
+           (msg.port_no, eth_addr(msg.hw_addr), msg.pad))
+    _print_portMod_config_mask(msg.config, 'config')
+    _print_portMod_config_mask(msg.mask, 'mask')
+    _print_portMod_config_mask(msg.advertise, 'advertise')
 
 
-def print_of_BarrierReq(pkt):
+def print_of_BarrierReq(msg):
     print 'OpenFlow Barrier Request'
 
 
-def print_of_BarrierReply(pkt):
+def print_of_BarrierReply(msg):
     print 'OpenFlow Barrier Reply'
 
 
-def print_of_vendor(pkt):
-    of_vendor = pkt.of_body['print_of_vendor']
-    vendor = of10.dissector.get_ofp_vendor(of_vendor)
+def print_of_vendor(msg):
+    vendor = of10.dissector.get_ofp_vendor(msg.vendor)
     print ('OpenFlow Vendor: %s' % vendor)
 
 
@@ -518,30 +514,29 @@ def print_ofp_statResVendorData(pkt):
     hexdump.hexdump(data)
 
 
-def print_ofp_getConfigRes(pkt):
+def print_ofp_getConfigRes(msg):
     print ('OpenFlow GetConfigRes - Flag: %s Miss_send_len: %s' %
-           (pkt.of_body['print_ofp_getConfigRes']['flag'],
-            pkt.of_body['print_ofp_getConfigRes']['miss_send_len']))
+           (msg.flag, msg.miss_send_len))
 
 
 def print_ofp_setConfig(pkt):
     print ('OpenFlow SetConfig - Flag: %s Miss_send_len: %s' %
-           (pkt.of_body['print_ofp_setConfig']['flag'],
-            pkt.of_body['print_ofp_setConfig']['miss_send_len']))
+           (msg.flag, msg.miss_send_len))
 
 
-def print_echoreq(pkt):
+def print_of_echoreq(msg):
+    # print data
     print 'OpenFlow Echo Request'
 
 
-def print_echores(pkt):
+def print_of_echores(msg):
+    # print data
     print 'OpenFlow Echo Reply'
 
 
-def print_portStatus(pkt):
-    reason = pkt.of_body['print_portStatus']['reason']
-    pad = pkt.of_body['print_portStatus']['pad']
-    print ('OpenFlow PortStatus - Reason: %s Pad: %s' % (reason, pad))
+def print_portStatus(msg):
+    print ('OpenFlow PortStatus - Reason: %s Pad: %s' % (msg.reason, msg.pad))
+    print_of_ports(msg.desc)
 
 
 def print_packetInOut_layer2(of_xid, eth):
@@ -554,21 +549,25 @@ def print_packetInOut_vlan(of_xid, vlan):
     gen.prints.print_vlan(vlan)
 
 
-def print_packetIn(pkt):
-    packetIn = pkt.of_body['print_packetIn']
+def print_data(data):
+    # what to do with data?
+    pass
+
+
+def print_of_packetIn(msg):
     print ('PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
            'pad: %s' %
-           (hex(packetIn['buffer_id']), packetIn['total_len'],
-            green(packetIn['in_port']), green(packetIn['reason']),
-            packetIn['pad']))
+           (hex(msg.buffer_id), msg.total_len, green(msg.in_port), green(msg.reason),
+            msg.pad))
+    print_data(msg.data)
 
 
-def print_packetOut(pkt):
-    packetOut = pkt.of_body['print_packetOut']
+def print_of_packetOut(msg):
     print ('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
-           (hex(packetOut['buffer_id']),
-            green(of10.dissector.get_phy_port_id(packetOut['in_port'])),
-            packetOut['actions_len']))
+           (hex(msg.buffer_id), green(of10.dissector.get_phy_port_id(msg.in_port)),
+            msg.actions_len))
+    print_actions(msg)
+    # print_data(msg.data)
 
 
 def print_queueReq(pkt):

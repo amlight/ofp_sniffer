@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
     This code acts as an OpenFlow troubleshoot toolkit: it acts as a sniffer,
     a topology validator and as an OpenFlow message checker, to make sure the
     ONF standards are being followed.
@@ -13,10 +13,9 @@
     Current version: 0.3
 
     Author: Jeronimo Bezerra <jab@amlight.net>
+"""
 
-'''
 import datetime
-import pcapy
 import sys
 import gen.cli
 from gen.packet import Packet
@@ -42,18 +41,18 @@ def process_packet(header, packet):
 
 
 def main(argv):
-    '''
+    """
         This is the main function
-    '''
+    """
     cap.loop(-1, process_packet)
     return
 
 if __name__ == "__main__":
-    cap, print_options, sanitizer = gen.cli.get_params(sys.argv)
-    try:
+#    try:
+        cap, print_options, sanitizer = gen.cli.get_params(sys.argv)
         main(sys.argv)
-    except KeyboardInterrupt:
-        print 'Exiting...'
-        sys.exit(0)
-    except Exception as exception:
-        print exception
+#    except KeyboardInterrupt:
+#        print 'Exiting...'
+#        sys.exit(0)
+#    except Exception as exception:
+#        print exception
