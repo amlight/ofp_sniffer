@@ -12,6 +12,8 @@ import of10.vendors
 import gen.proxies
 from of10.packet import OFP_Phy_port
 from of10.packet import OFP_Action
+from of10.packet import OFP_Match
+
 
 # *************** Hello *****************
 def parse_Hello(msg, packet):
@@ -140,8 +142,8 @@ def parse_GetConfigReq(msg, packet):
 def _parse_SetGetConfig(packet, h_size):
     pkt_raw = packet[h_size:h_size+4]
     pkt_list = unpack('!HH', pkt_raw)
-    flag = of10.dissector.get_configres_flags(pkt_list[0])
-    return flag, pkt_list[1]
+    flags = of10.dissector.get_configres_flags(pkt_list[0])
+    return flags, pkt_list[1]
 
 
 def parse_GetConfigRes(msg, packet):
@@ -238,7 +240,7 @@ def parse_PacketIn(msg, packet):
 
 # ******************** FlowRemoved ***************************
 def parse_FlowRemoved(msg, packet):
-    _parse_OFMatch(msg, packet, 0)
+    msg.match = _parse_OFMatch(msg, packet, 0)
 
     of_rem_body = packet[40:40+40]
     ofrem = unpack('!QHBBLLHBBQQ', of_rem_body)
@@ -330,6 +332,7 @@ def get_ip_from_long(long_ip):
 
 
 def _parse_OFMatch(msg, packet, h_size):
+    match_tmp = OFP_Match()
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
     wildcard = ofm[0]
@@ -346,11 +349,13 @@ def _parse_OFMatch(msg, packet, h_size):
                'tp_dst': ofm[14]}
 
     if wildcard >= ((1 << 22) - 1):
-        msg.match.wildcards = 4194303
-        return
+        # msg.match.wildcards = 4194303
+        match_tmp.wildcards = 4194303
+        return match_tmp
     elif wildcard == 0:
-        msg.match.wildcards = 0
-        return
+        # msg.match.wildcards = 0
+        match_tmp.wildcards = 0
+        return match_tmp
     else:
         src_netmask = process_src_subnet(wildcard)
         if src_netmask == 0:
@@ -380,8 +385,15 @@ def _parse_OFMatch(msg, packet, h_size):
     # For each item on ofmatch, associate the value to the equivalent on
     # class ofp_match. For example, if there is an ofmatch['in_port']
     # msg.match.inport = ofmatch['in_port']. Others will be None
+    require_str = ['dl_src', 'dl_dst', 'nw_src', 'nw_dst']
     for match in ofmatch:
-        exec ('msg.match.%s=%s') % (match, ofmatch.get(match))
+        if match in require_str:
+            action = 'match_tmp.%s="%s"'
+        else:
+            action = 'match_tmp.%s=%s'
+        exec (action) % (match, ofmatch.get(match))
+
+    return match_tmp
 
 
 def _parse_OFBody(msg, packet, h_size):
@@ -408,7 +420,7 @@ def get_action(action_type, length, payload):
         return type_0[0], type_0[1]
     # 1 - SetVLANID. Returns VID and pad
     elif action_type == 1:
-        type_1 = unpack('!HH', payload)
+        type_1 = unpack('!H2s', payload)
         return type_1[0], type_1[1]
     # 2 - SetVLANPCP
     elif action_type == 2:
@@ -439,11 +451,11 @@ def get_action(action_type, length, payload):
         return type_8[0], type_8[1]
     # 9 - SetTPSrc
     elif action_type == 9:
-        type_9 = unpack('!HH', payload)
+        type_9 = unpack('!H2s', payload)
         return type_9[0], type_9[1]
     # a - SetTPDst
     elif action_type == int('a', 16):
-        type_a = unpack('!HH', payload)
+        type_a = unpack('!H2s', payload)
         return type_a[0], type_a[1]
     # b - Enqueue
     elif action_type == int('b', 16):
@@ -467,7 +479,6 @@ def _parse_OFAction(packet, start):
     action_header = 4
     # Add all actions to a list for future printing
     actions_list = []
-    action = OFP_Action()
     while (1):
         ofp_action = packet[start:start + action_header]
         if len(ofp_action) > 0:
@@ -479,17 +490,18 @@ def _parse_OFAction(packet, start):
             start = start + action_header
             if ofa_type == 4 or ofa_type == 5 or ofa_type == int('b', 16):
                 total_length = 12
-                ofa_action_payload = packet[start:start + 12]
             else:
                 total_length = 4
-                ofa_action_payload = packet[start:start + 4]
 
+            ofa_action_payload = packet[start:start + total_length]
+            action = OFP_Action()
             action.type = ofa_type
             action.length = ofa_length
             action.payload = ofa_action_payload
             actions_list.append(action)
             # Next packet would start at..
             start = start + total_length
+            del action
         else:
             break
 
@@ -497,7 +509,7 @@ def _parse_OFAction(packet, start):
 
 
 def parse_FlowMod(msg, packet):
-    _parse_OFMatch(msg, packet, 0)
+    msg.match = _parse_OFMatch(msg, packet, 0)
     _parse_OFBody(msg, packet, 0)
     # Actions: Header = 4 , plus each possible action
     actions_start = 64
@@ -529,74 +541,58 @@ def parse_StatsReq(msg, packet):
     '''
     # Get type = 16bits
     # Get flags = 16bits
-    pass
-    # of_stat_req = pkt.packet[0:4]
-    # ofstat = unpack('!HH', of_stat_req)
-    # stat_type = ofstat[0]
-    # # FLags were not defined yet. Ignoring.
-    # # flags = ofstat[1]
-    # start = 4
-    #
-    # # 7 Types available
-    # if stat_type == 0:
-    #     # Description
-    #     # No extra fields
-    #     pkt.prepare_printing('print_ofp_statReqDesc', stat_type)
-    #
-    # elif stat_type == 1 or stat_type == 2:
-    #     # Flow(1) or Aggregate(2)
-    #     # Fields: match(40), table_id(8), pad(8), out_port(16)
-    #     of_match = _parse_OFMatch(pkt.packet, start)
-    #     # 44 Bytes (40B from Match, 4 from header)
-    #     of_stat_req = pkt.packet[start+40:start+40+4]
-    #     ofstat = unpack('!BBH', of_stat_req)
-    #     table_id = ofstat[0]
-    #     pad = ofstat[1]
-    #     out_port = ofstat[2]
-    #     stats = {'type': stat_type, 'match': of_match, 'table_id': table_id,
-    #              'pad': pad, 'out_port': out_port}
-    #     pkt.prepare_printing('print_ofp_statReqFlowAggregate', stats)
-    #
-    # elif stat_type == 3:
-    #     # Table
-    #     # No extra fields
-    #     pkt.prepare_printing('print_ofp_statReqTable', stat_type)
-    #
-    # elif stat_type == 4:
-    #     # Port
-    #     # Fields: port_number(16), pad(48)
-    #     of_stat_req = pkt.packet[start:start+8]
-    #     ofstat = unpack('!H6s', of_stat_req)
-    #     port_number = ofstat[0]
-    #     pad = ofstat[1]
-    #     stats = {'type': stat_type, 'port_number': port_number, 'pad': pad}
-    #     pkt.prepare_printing('print_ofp_statReqPort', stats)
-    #
-    # elif stat_type == 5:
-    #     # Queue
-    #     # Fields: port_number(16), pad(16), queue_id(32)
-    #     of_stat_req = pkt.packet[start:start+8]
-    #     ofstat = unpack('!HHL', of_stat_req)
-    #     port_number = ofstat[0]
-    #     pad = ofstat[1]
-    #     queue_id = ofstat[2]
-    #     stats = {'type': stat_type, 'port_number': port_number, 'pad': pad,
-    #              'queue_id': queue_id}
-    #     pkt.prepare_printing('print_ofp_statReqQueue', stats)
-    #
-    # elif stat_type == 65535:
-    #     # Vendor
-    #     # Fields: vendor_id(32) + data
-    #     of_stat_req = pkt.packet[start:start+4]
-    #     ofstat = unpack('!L', of_stat_req)
-    #     vendor_id = ofstat[0]
-    #     stats = {'type': stat_type, 'vendor_id': vendor_id}
-    #     pkt.prepare_printing('print_ofp_statReqVendor', stats)
-    #
-    # else:
-    #     print 'StatReq: Unknown Type: %s' % stat_type
-    #
-    # return 1
+    of_stat_req = packet[0:4]
+    ofstat = unpack('!HH', of_stat_req)
+    msg.stat_type = ofstat[0]
+    msg.flags = ofstat[1]
+
+    start = 4
+
+    # 7 Types available
+    if msg.stat_type == 0:
+        # Description
+        # No extra fields
+        pass
+
+    elif msg.stat_type == 1 or msg.stat_type == 2:
+        # Flow(1) or Aggregate(2)
+        # Fields: match(40), table_id(8), pad(8), out_port(16)
+        match = _parse_OFMatch(msg, packet, start)
+        # 44 Bytes (40B from Match, 4 from header)
+        of_stat_req = packet[start+40:start+40+4]
+        table_id, pad, out_port = unpack('!BBH', of_stat_req)
+        msg.instantiate(match, table_id, pad, out_port)
+
+    elif msg.stat_type == 3:
+        # Table
+        # No extra fields
+        pass
+
+    elif msg.stat_type == 4:
+        # Port
+        # Fields: port_number(16), pad(48)
+        of_stat_req = packet[start:start+8]
+        port_number, pad = unpack('!H6s', of_stat_req)
+        msg.instantiate(port_number, pad)
+
+    elif msg.stat_type == 5:
+        # Queue
+        # Fields: port_number(16), pad(16), queue_id(32)
+        of_stat_req = packet[start:start+8]
+        port_number, pad, queue_id = unpack('!HHL', of_stat_req)
+        msg.instantiate(port_number, pad, queue_id)
+
+    elif msg.stat_type == 65535:
+        # Vendor
+        # Fields: vendor_id(32) + data
+        of_stat_req = packet[start:start+4]
+        vendor_id = unpack('!L', of_stat_req)[0]
+        msg.instantiate(vendor_id)
+
+    else:
+        print 'StatReq: Unknown Type: %s' % msg.stat_type
+
+    return 1
 
 
 # *********************** StatsRes ****************************

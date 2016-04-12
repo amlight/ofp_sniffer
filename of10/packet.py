@@ -316,12 +316,25 @@ class OFPT_STATS_REQ(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
+        self.stat_type = None
+        self.flags = None
+        self.stats = None
+
+    def instantiate(self, *args):
+        if self.stat_type in [1,2]:
+            self.stats = OFP_STATSRES_FLOWAGG(*args)
+        elif self.stat_type == 4:
+            self.stats = OFP_STATRES_PORT(*args)
+        elif self.stat_type == 5:
+            self.stats = OFP_STATRES_QUEUE(*args)
+        elif self.stat_type == 65535:
+            self.stats = OFP_STATRES_VENDOR(*args)
 
     def process_msg(self, packet):
         parser.parse_StatsReq(self, packet)
 
     def prints(self):
-        pass
+        prints.print_ofp_statReq(self)
 
 
 class OFPT_STATS_RES(OFPHeader):
@@ -430,3 +443,29 @@ class OFP_Action:
         self.length = None
         self.payload = None
 
+
+class OFP_STATSRES_FLOWAGG:
+
+    def __init__(self, match, table_id, pad, out_port):
+        self.match = match
+        self.table_id = table_id
+        self.pad = pad
+        self.out_port = out_port
+
+class OFP_STATRES_PORT:
+
+    def __init__(self, port_number, pad):
+        self.port_number = port_number
+        self.pad = pad
+
+class OFP_STATRES_QUEUE:
+
+    def __init__(self, port_number, pad, queue_id):
+        self.port_number = port_number
+        self.pad = pad
+        self.queue_id = queue_id
+
+class OFP_STATRES_VENDOR:
+
+    def __init__(self, vendor_id):
+        self.vendor_id = vendor_id

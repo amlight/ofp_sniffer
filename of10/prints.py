@@ -79,7 +79,6 @@ def print_of_getconfig_req(msg):
 
 
 def print_of_feature_res(msg):
-    print 'OpenFlow Feature Reply'
     dpid = datapath_id(msg.datapath_id)
     print ('FeatureRes - datapath_id: %s n_buffers: %s n_tbls: %s, pad: %s'
            % (green(dpid), msg.n_buffers, msg.n_tbls, msg.pad))
@@ -91,7 +90,7 @@ def print_of_feature_res(msg):
     for i in msg.actions:
         print of10.dissector.get_feature_res_actions(i),
     print
-    print_of_ports(msg)
+    print_of_ports(msg.ports)
 
 
 def _dont_print_0(printed):
@@ -105,7 +104,6 @@ def print_port_field(port_id, variable, name):
     printed = False
 
     print ('Port_id: %s - %s curr:' % (port_id, name)),
-    a = []
     for i in variable:
         print of10.dissector.get_phy_feature(i),
         printed = True
@@ -138,10 +136,10 @@ def print_ofp_phy_port(port):
     print
 
     # fix it
-    print_port_field(port.id, port.curr, 'curr')
-    print_port_field(port.id, port.advertised, 'advertised')
-    print_port_field(port.id, port.supported, 'supported')
-    print_port_field(port.id, port.peer, 'peer')
+    print_port_field(port_id, port.curr, 'curr')
+    print_port_field(port_id, port.advertised, 'advertised')
+    print_port_field(port_id, port.supported, 'supported')
+    print_port_field(port_id, port.peer, 'peer')
 
 
 def print_of_ports(ports):
@@ -152,12 +150,12 @@ def print_of_ports(ports):
             print_ofp_phy_port(port)
 
 
-def print_ofp_match(msg):
+def print_ofp_match(match):
     print 'Match -',
     # Collect all variables from class ofp_match
     # print those that are not 'None'
-    for match_item in msg.match.__dict__:
-        match_item_value = msg.match.__dict__[match_item]
+    for match_item in match.__dict__:
+        match_item_value = match.__dict__[match_item]
         if match_item_value is not None:
              if match_item is 'dl_vlan':
                  match_item_value = of10.dissector.get_vlan(match_item_value)
@@ -178,11 +176,11 @@ def print_ofp_body(msg):
     out_port = green(of10.dissector.get_phy_port_id(msg.out_port))
 
     print string % (msg.cookie, command, msg.idle_timeout, msg.hard_timeout,
-                    msg.priority, msg.buffer_id, out_port, flags)
+                    green(msg.priority), msg.buffer_id, out_port, flags)
 
 
 def print_ofp_flow_removed(msg):
-    print_ofp_match(msg)
+    print_ofp_match(msg.match)
 
     string = ('Body - Cookie: %s Priority: %s Reason: %s Pad: %s\nBody - '
               'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2/Pad3: %s/%s'
@@ -313,7 +311,7 @@ def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command, prio):
 
 
 def print_of_FlowMod(msg):
-    print_ofp_match(msg)
+    print_ofp_match(msg.match)
     print_ofp_body(msg)
     print_actions(msg)
 
@@ -351,56 +349,59 @@ def print_of_vendor(msg):
     print ('OpenFlow Vendor: %s' % vendor)
 
 
-def print_ofp_statReqDesc(pkt):
-    print 'StatReq Type: Description(%s)' % pkt.of_body['print_ofp_statReqDesc']
+def print_ofp_statReq(msg):
+    if msg.stat_type == 0:
+        print_ofp_statReqDesc(msg)
+    elif msg.stat_type == 1 or msg.type == 2:
+        print_ofp_statReqFlowAggregate(msg)
+    elif msg.stat_type == 3:
+        print_ofp_statReqTable(msg)
+    elif msg.stat_type == 4:
+        print_ofp_statReqPort(msg)
+    elif msg.stat_type == 5:
+        print_ofp_statReqQueue(msg)
+    elif msg.stat_type == 65535:
+        print_ofp_statReqVendor(msg)
 
 
-def print_ofp_statReqFlowAggregate(pkt):
-    stats = pkt.of_body['print_ofp_statReqFlowAggregate']
-    if stats['type'] == 1:
+def print_ofp_statReqDesc(msg):
+    print 'StatReq Type: Description(%s)' % msg.stat_type
+
+
+def print_ofp_statReqFlowAggregate(msg):
+    if msg.stat_type == 1:
         type_name = 'Flow'
     else:
         type_name = 'Aggregate'
-
-    print ('StatReq Type: %s(%s)' % (type_name, stats['type']))
-    pkt.of_body['print_ofp_match'] = stats['match']
-    print_ofp_match(pkt)
-    print ('StatReq Table_id: %s Pad: %d Out_Port: %s' % (stats['table_id'],
-           stats['pad'], stats['out_port']))
-
-
-def print_ofp_statReqTable(pkt):
-    print 'StatReq Type: Table(%s)' % pkt.of_body['print_ofp_statReqTable']
+    print ('StatReq Type: %s(%s)' % (type_name, msg.stat_type))
+    print_ofp_match(msg.stats.match)
+    out_port = of10.dissector.get_phy_port_id(msg.stats.out_port)
+    print ('StatReq Table_id: %s Pad: %d Out_Port: %s' % (msg.stats.table_id,
+           msg.stats.pad, out_port))
 
 
-def print_ofp_statReqPort(pkt):
-    stats = pkt.of_body['print_ofp_statReqPort']
-    stat_type = stats['type']
-    port_number = of10.dissector.get_phy_port_id(stats['port_number'])
-    pad = stats['pad']
+def print_ofp_statReqTable(msg):
+    print 'StatReq Type: Table(%s)' % msg.stat_type
+
+
+def print_ofp_statReqPort(msg):
+    port_number = of10.dissector.get_phy_port_id(msg.stats.port_number)
     print ('StatReq Type: Port(%s): Port_Number: %s Pad: %s' %
-           (stat_type, green(port_number), pad))
+           (msg.stat_type, green(port_number), msg.stats.pad))
 
 
-def print_ofp_statReqQueue(pkt):
-    stats = pkt.of_body['print_ofp_statReqQueue']
-    stat_type = stats['type']
-    port_number = of10.dissector.get_phy_port_id(stats['port_number'])
-    pad = stats['pad']
-    queue_id = stats['queue_id']
+def print_ofp_statReqQueue(msg):
+    port_number = of10.dissector.get_phy_port_id(msg.stats.port_number)
     print ('StatReq Type: Queue(%s): Port_Number: %s Pad: %s Queue_id: %s' %
-           (stat_type, green(port_number), pad, queue_id))
+           (msg.stat_type, green(port_number), msg.stats.pad, msg.stats.queue_id))
 
 
-def print_ofp_statReqVendor(pkt):
-    stats = pkt.of_body['print_ofp_statReqVendor']
-    stat_type = stats['type']
-    vendor_id = stats['vendor_id']
-    print ('StatReq Type: Vendor(%s): Vendor_ID: %s' % (stat_type,
-           vendor_id))
+def print_ofp_statReqVendor(msg):
+    print ('StatReq Type: Vendor(%s): Vendor_ID: %s' % (msg.stat_type,
+           msg.stats.vendor_id))
 
 
-def print_ofp_statResDesc(pkt):
+def print_ofp_statResDesc(msg):
     stats = pkt.of_body['print_ofp_statResDesc']
     print ('StatRes Type: Description(%s)' % (stats['type']))
     print ('StatRes mfr_desc: %s' % (stats['mfr_desc']))
@@ -410,7 +411,7 @@ def print_ofp_statResDesc(pkt):
     print ('StatRes dp_desc: %s' % (stats['dp_desc']))
 
 
-def print_ofp_statResFlowArray(pkt):
+def print_ofp_statResFlowArray(msg):
     flows = pkt.of_body['print_ofp_statResFlowArray']
     if len(flows) == 0:
         print ('StatRes Type: Flow(1)\nNo Flows')
@@ -420,7 +421,7 @@ def print_ofp_statResFlowArray(pkt):
         print_ofp_statResFlow(pkt, flow_stats)
 
 
-def print_ofp_statResFlow(pkt, stats):
+def print_ofp_statResFlow(msg, stats):
     stat_type = stats['type']
     res_flow = stats['res_flow']
     print ('StatRes Type: Flow(%s)' % (stat_type))
@@ -519,9 +520,9 @@ def print_ofp_getConfigRes(msg):
            (msg.flag, msg.miss_send_len))
 
 
-def print_ofp_setConfig(pkt):
+def print_ofp_setConfig(msg):
     print ('OpenFlow SetConfig - Flag: %s Miss_send_len: %s' %
-           (msg.flag, msg.miss_send_len))
+           (msg.flags, msg.miss_send_len))
 
 
 def print_of_echoreq(msg):
