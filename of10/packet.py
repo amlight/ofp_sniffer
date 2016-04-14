@@ -509,7 +509,7 @@ class OFP_STATSRES_DESC:
 class OFP_STATSRES_FLOW:
 
     def __init__(self, flows):
-        self.flows = flows
+        self.flows = flows  # Class OFP_STAT_FLOW[]
 
 
 class OFP_STATSRES_AGG:
@@ -537,23 +537,8 @@ class OFP_STATSRES_TABLE:
 
 class OFP_STATRES_PORT:
 
-    def __init__(self, port_number, pad, rx_packets, tx_packets, rx_bytes,
-                 tx_bytes, rx_dropped, tx_dropped, rx_errors, tx_errors,
-                 rx_frame_err, rx_over_err, rx_crc_err, collisions):
-        self.port_number = port_number
-        self.pad = pad
-        self.rx_packets = rx_packets
-        self.tx_packets = tx_packets
-        self.rx_bytes = rx_bytes
-        self.tx_bytes = tx_bytes
-        self.rx_dropped = rx_dropped
-        self.tx_dropped = tx_dropped
-        self.rx_errors = rx_errors
-        self.tx_errors = tx_errors
-        self.rx_frame_err = rx_frame_err
-        self.rx_over_err = rx_over_err
-        self.rx_crc_err = rx_crc_err
-        self.collisions = collisions
+    def __init__(self, ports):
+        self.ports = ports  # Class OFP_STAT_PORT[]
 
 class OFP_STATRES_QUEUE:
 
@@ -591,3 +576,22 @@ class OFP_STAT_FLOW:
         self.packet_count = None
         self.byte_count = None
         self.actions = None
+
+
+class OFP_STAT_PORT:
+
+    def __init__(self):
+        self.port_number = None
+        self.pad = None
+        self.rx_packets = None
+        self.tx_packets = None
+        self.rx_bytes = None
+        self.tx_bytes = None
+        self.rx_dropped = None
+        self.tx_dropped = None
+        self.rx_errors = None
+        self.tx_errors = None
+        self.rx_frame_err = None
+        self.rx_over_err = None
+        self.rx_crc_err = None
+        self.collisions = None

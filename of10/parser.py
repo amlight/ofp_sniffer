@@ -2,18 +2,20 @@
    Parser for OpenFlow 1.0
 """
 
-from struct import unpack
-import of10.dissector
-import of10.prints
 import socket
 import struct
-import gen.tcpip
-import of10.vendors
+from struct import unpack
 import gen.proxies
-from of10.packet import OFP_Phy_port
+import gen.tcpip
+import of10.dissector
+import of10.prints
+import of10.vendors
+
 from of10.packet import OFP_Action
+from of10.packet import OFP_Phy_port
 from of10.packet import OFP_Match
 from of10.packet import OFP_STAT_FLOW
+from of10.packet import OFP_STAT_PORT
 
 
 # *************** Hello *****************
@@ -598,17 +600,28 @@ def parse_StatsReq(msg, packet):
 
 # *********************** StatsRes ****************************
 def parse_StatsRes(msg, packet):
-    # Get type = 16bits
+    """ Parses OFP_STAT_RES OpenFlow messages
+
+    Args:
+        msg: instantiated packet class from of10/packet.py
+        packet: OpenFlow message to be processed
+
+    Returns: 1
+
+    """
+
+    # Get type = 16bits - 7 Types available
     # Get flags = 16bits
     of_stat_req = packet[0:4]
     msg.stat_type, msg.flags = unpack('!HH', of_stat_req)
 
     start = 4
-    # 7 Types available
+
     if msg.stat_type == 0:
-        # Description
-        # Fields: mfr_desc(2048), hw_desc(2048), sw_desc(2048), serial_num(256),
-        # dp_desc(2048)
+        """ Parses Description(0)
+            Fields: mfr_desc(2048), hw_desc(2048), sw_desc(2048), serial_num(256),
+            dp_desc(2048) = 1056 Bytes
+        """
         desc_raw = packet[start:start+1056]
         desc = unpack('!256s256s256s32s256s', desc_raw)
         mfr_desc = desc[0]
@@ -619,10 +632,11 @@ def parse_StatsRes(msg, packet):
         msg.instantiate(mfr_desc, hw_desc, sw_desc, serial_num, dp_desc)
 
     elif msg.stat_type == 1:
-        # Flow(1)
-        # Fields: length(16), table_id(8), pad(8), match(40), duration_sec(32),
-        #  duration_nsec(32), priority(16), idle_timeout(16), hard_timeout(16),
-        #  pad(48), cookie(64), packet_count(64), byte_count(64), actions[]
+        """ Parses Flow(1)
+            Fields: length(16), table_id(8), pad(8), match(40), duration_sec(32),
+            duration_nsec(32), priority(16), idle_timeout(16), hard_timeout(16),
+            pad(48), cookie(64), packet_count(64), byte_count(64), actions[]
+        """
         count = len(packet[0:]) - 4
         flows = []
         while (count > 0):
@@ -667,8 +681,10 @@ def parse_StatsRes(msg, packet):
 
 
     elif msg.stat_type == 2:
-        # Aggregate(2)
-        # Fields: packet_count(64), byte_count(64), flow_count(32), pad(32)
+        """
+            Parses Aggregate(2)
+            Fields: packet_count(64), byte_count(64), flow_count(32), pad(32) = 24 Bytes
+        """
         flow_raw = packet[start:start+24]
         flow = unpack('!QQLL', flow_raw)
         packet_count = flow[0]
@@ -677,63 +693,82 @@ def parse_StatsRes(msg, packet):
         pad = flow[3]
         msg.instantiate(packet_count, byte_count, flow_count, pad)
 
-    # elif msg.stat_type == 3:
-    #     # Table
-    #     # Fields: table_id(8), pad(24), name(256), wildcards(32),
-    #     #  max_entries(32), active_count(32), lookup_count(64),
-    #     #  matched_count(64)
-    #     flow_raw = pkt.packet[start:start+64]
-    #     flow = unpack('!B3s32sLLLQQ', flow_raw)
-    #     res_flow = {'type': stat_type, 'table_id': flow[0], 'pad': flow[1],
-    #                 'name': flow[2], 'wildcards': flow[3],
-    #                 'max_entries': flow[4], 'active_count': flow[5],
-    #                 'lookup_count': flow[6], 'matched_count': flow[7]}
-    #     pkt.prepare_printing('print_ofp_statResTable', res_flow)
-    #
-    # elif msg.stat_type == 4:
-    #     # Port
-    #     # Fields: port_number(16), pad(48), rx_packets(64), tx_packets(64),
-    #     #  rx_bytes(64), tx_bytes(64), rx_dropped(64), tx_dropped(64),
-    #     #  rx_errors(64), tx_errors(64), rx_frame_err(64), rx_over_err(64),
-    #     #  rx_crc_err(64), collisions(64)
-    #     count = len(pkt.packet[0:]) - 4
-    #     ports = []
-    #     while (count > 0):
-    #         flow_raw = pkt.packet[start:start+104]
-    #         flow = unpack('!H6sQQQQQQQQQQQQ', flow_raw)
-    #         port = {'type': stat_type, 'port_no': flow[0], 'pad': flow[1],
-    #                 'rx_packets': flow[2], 'tx_packets': flow[3],
-    #                 'rx_bytes': flow[4], 'tx_bytes': flow[5],
-    #                 'rx_dropped': flow[6], 'tx_dropped': flow[7],
-    #                 'rx_errors': flow[8], 'tx_errors': flow[9],
-    #                 'rx_frame_err': flow[10], 'rx_over_err': flow[11],
-    #                 'rx_crc_err': flow[12], 'collisions': flow[13]}
-    #
-    #         ports.append(port)
-    #
-    #         count = count - 104
-    #         start = start + 104
-    #
-    #     pkt.prepare_printing('print_ofp_statResPortArray', ports)
-    #
-    # elif msg.stat_type == 5:
-    #     # Queue
-    #     # Fields: length(16), pad(16), queue_id(32), tx_bytes(64),
-    #     #  tx_packets(64), tx_errors(64)
-    #     count = len(pkt.packet[0:]) - 4
-    #     queues = []
-    #     while (count > 0):
-    #         flow_raw = pkt.packet[start:start+32]
-    #         flow = unpack('!HHLQQQ', flow_raw)
-    #         queue = {'length': flow[0], 'pad': flow[1], 'queue_id': flow[2],
-    #                  'tx_bytes': flow[3], 'tx_packets': flow[4],
-    #                  'tx_errors': flow[5], 'type': stat_type}
-    #         queues.append(queue)
-    #         count = count - 32
-    #         start = start + 32
-    #
-    #     pkt.prepare_printing('print_ofp_statResQueueArray', queues)
-    #
+    elif msg.stat_type == 3:
+        """ Parsers Table(3)
+            Fields: table_id(8), pad(24), name(256), wildcards(32),
+            max_entries(32), active_count(32), lookup_count(64),
+            matched_count(64) = 64 Bytes
+        """
+        flow_raw = packet[start:start+64]
+        flow = unpack('!B3s32sLLLQQ', flow_raw)
+        table_id = flow[0]
+        pad = flow[1]
+        name = flow[2]
+        wildcards = flow[3]
+        max_entries = flow[4]
+        active_count = flow[5]
+        lookup_count = flow[6]
+        matched_count = flow[7]
+        msg.instantiate(table_id, pad, name, wildcards, max_entries,
+                        active_count, lookup_count, matched_count)
+
+    elif msg.stat_type == 4:
+        """ Parses Port(4)
+            Fields: port_number(16), pad(48), rx_packets(64), tx_packets(64),
+            rx_bytes(64), tx_bytes(64), rx_dropped(64), tx_dropped(64),
+            rx_errors(64), tx_errors(64), rx_frame_err(64), rx_over_err(64),
+            rx_crc_err(64), collisions(64) = 104 Bytes
+        """
+        count = len(packet[0:]) - 4
+        ports = []
+        while (count > 0):
+            flow_raw = packet[start:start+104]
+            flow = unpack('!H6sQQQQQQQQQQQQ', flow_raw)
+
+            eport = OFP_STAT_PORT()
+            eport.port_number = flow[0]
+            eport.pad = flow[1]
+            eport.rx_packets = flow[2]
+            eport.tx_packets = flow[3]
+            eport.rx_bytes = flow[4]
+            eport.tx_bytes = flow[5]
+            eport.rx_dropped = flow[6]
+            eport.tx_dropped = flow[7]
+            eport.rx_errors = flow[8]
+            eport.tx_errors = flow[9]
+            eport.rx_frame_err = flow[10]
+            eport.rx_over_err = flow[11]
+            eport.rx_crc_err = flow[12]
+            eport.collisions = flow[13]
+
+            ports.append(eport)
+            del eport
+
+            count = count - 104
+            start = start + 104
+
+        msg.instantiate(ports)
+
+    elif msg.stat_type == 5:
+        """ Parses Queue(5)
+            Fields: length(16), pad(16), queue_id(32), tx_bytes(64),
+            tx_packets(64), tx_errors(64) = Bytes 32
+        """
+
+        count = len(packet[0:]) - 4
+        queues = []
+        while (count > 0):
+            flow_raw = packet[start:start+32]
+            flow = unpack('!HHLQQQ', flow_raw)
+            queue = {'length': flow[0], 'pad': flow[1], 'queue_id': flow[2],
+                     'tx_bytes': flow[3], 'tx_packets': flow[4],
+                     'tx_errors': flow[5], 'type': stat_type}
+            queues.append(queue)
+            count = count - 32
+            start = start + 32
+
+        msg.instantiate(queues)
+
     # elif msg.stat_type == 65535:
     #     # Vendor
     #     # Fields: vendor_id(32), data(?)

@@ -408,10 +408,10 @@ def print_ofp_statRes(msg):
         print_ofp_statResFlowArray(msg)
     elif msg.stat_type == 2:
         print_ofp_statResAggregate(msg)
-    # elif msg.stat_type == 3:
-    #     print_ofp_statResTable(msg)
-    # elif msg.stat_type == 4:
-    #     print_ofp_statResPortArray(msg)
+    elif msg.stat_type == 3:
+        print_ofp_statResTable(msg)
+    elif msg.stat_type == 4:
+        print_ofp_statResPortArray(msg)
     # elif msg.stat_type == 5:
     #     print_ofp_statResQueue(msg)
     # elif msg.stat_type == 65535:
@@ -433,7 +433,6 @@ def print_ofp_statResFlowArray(msg):
         return
 
     for flow in msg.stats.flows:
-
         print_ofp_statResFlow(flow)
 
 
@@ -464,34 +463,35 @@ def print_ofp_statResAggregate(msg):
 
 
 def print_ofp_statResTable(msg):
-    res_flow = pkt.of_body['print_ofp_statResTable']
-    print ('StatRes Type: Table(%s)' % (res_flow['type']))
+    print ('StatRes Type: Table(3)')
     print ('StatRes table_id: %s, pad: %s, name: "%s", wildcards: %s, '
            'max_entries: %s, active_count: %s, lookup_count: %s, '
            'matched_count: %s' %
-           (res_flow['table_id'], res_flow['pad'],
-            res_flow['name'], hex(res_flow['wildcards']),
-            res_flow['max_entries'], res_flow['active_count'],
-            res_flow['lookup_count'], res_flow['matched_count']))
+           (msg.table_id, msg.pad, msg.name, hex(msg.wildcards),
+            msg.max_entries, msg.active_count,
+            msg.lookup_count, msg.matched_count))
 
 
-def print_ofp_statResPortArray(pkt):
-    for port_stats in pkt.of_body['print_ofp_statResPortArray']:
-        print_ofp_statResPort(port_stats)
+def print_ofp_statResPortArray(msg):
+     if len(msg.stats.ports) == 0:
+        print ('StatRes Type: Port(4)\nNo Ports')
+        return
+     for port in msg.stats.ports:
+        print_ofp_statResPort(port)
 
 
 def print_ofp_statResPort(port):
-    print ('StatRes Type: Port(%s)' % (port['type']))
-    print ('StatRes port_no: %s rx_packets: %s rx_bytes: %s rx_errors: %s'
+    print ('StatRes Type: Port(4)')
+    print ('StatRes port_number: %s rx_packets: %s rx_bytes: %s rx_errors: %s'
            ' rx_crc_err: %s rx_dropped: %s rx_over_err: %s rx_frame_err: %s\n'
-           'StatRes port_no: %s tx_packets: %s tx_bytes: %s tx_errors: %s'
+           'StatRes port_number: %s tx_packets: %s tx_bytes: %s tx_errors: %s'
            ' tx_dropped: %s collisions: %s pad: %s' %
-           (red(port['port_no']), port['rx_packets'],
-            port['rx_bytes'], port['rx_errors'], port['rx_crc_err'],
-            port['rx_dropped'], port['rx_over_err'],
-            port['rx_frame_err'], red(port['port_no']),
-            port['tx_packets'], port['tx_bytes'], port['tx_errors'],
-            port['tx_dropped'], port['collisions'], port['pad']))
+           (red(port.port_number), port.rx_packets,
+            port.rx_bytes, port.rx_errors, port.rx_crc_err,
+            port.rx_dropped, port.rx_over_err,
+            port.rx_frame_err, red(port.port_number),
+            port.tx_packets, port.tx_bytes, port.tx_errors,
+            port.tx_dropped, port.collisions, port.pad))
 
 
 def print_ofp_statResQueueArray(pkt):
