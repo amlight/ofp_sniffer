@@ -191,8 +191,8 @@ def print_ofp_flow_removed(msg):
                     msg.pad2, msg.pad3, msg.packet_count, msg.byte_count)
 
 
-def print_actions(msg):
-    for action in msg.actions:
+def print_actions(actions):
+    for action in actions:
         print_ofp_action(action.type, action.length, action.payload)
 
 
@@ -313,7 +313,7 @@ def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command, prio):
 def print_of_FlowMod(msg):
     print_ofp_match(msg.match)
     print_ofp_body(msg)
-    print_actions(msg)
+    print_actions(msg.actions)
 
 
 def _print_portMod_config_mask(variable, name):
@@ -355,7 +355,7 @@ def print_ofp_statReq(msg):
     elif msg.stat_type == 1 or msg.type == 2:
         print_ofp_statReqFlowAggregate(msg)
     elif msg.stat_type == 3:
-        print_ofp_statReqTable(msg)
+        print_ofp_statResTable(msg)
     elif msg.stat_type == 4:
         print_ofp_statReqPort(msg)
     elif msg.stat_type == 5:
@@ -401,57 +401,69 @@ def print_ofp_statReqVendor(msg):
            msg.stats.vendor_id))
 
 
+def print_ofp_statRes(msg):
+    if msg.stat_type == 0:
+        print_ofp_statResDesc(msg)
+    elif msg.stat_type == 1:
+        print_ofp_statResFlowArray(msg)
+    elif msg.stat_type == 2:
+        print_ofp_statResAggregate(msg)
+    # elif msg.stat_type == 3:
+    #     print_ofp_statResTable(msg)
+    # elif msg.stat_type == 4:
+    #     print_ofp_statResPortArray(msg)
+    # elif msg.stat_type == 5:
+    #     print_ofp_statResQueue(msg)
+    # elif msg.stat_type == 65535:
+    #     print_ofp_statResVendor(msg)
+
+
 def print_ofp_statResDesc(msg):
-    stats = pkt.of_body['print_ofp_statResDesc']
-    print ('StatRes Type: Description(%s)' % (stats['type']))
-    print ('StatRes mfr_desc: %s' % (stats['mfr_desc']))
-    print ('StatRes hw_desc: %s' % (stats['hw_desc']))
-    print ('StatRes sw_desc: %s' % (stats['sw_desc']))
-    print ('StatRes serial_num: %s' % (stats['serial_num']))
-    print ('StatRes dp_desc: %s' % (stats['dp_desc']))
+    print ('StatRes Type: Description(%s)' % (msg.stat_type))
+    print ('StatRes mfr_desc: %s' % (msg.stats.mfr_desc))
+    print ('StatRes hw_desc: %s' % (msg.stats.hw_desc))
+    print ('StatRes sw_desc: %s' % (msg.stats.sw_desc))
+    print ('StatRes serial_num: %s' % (msg.stats.serial_num))
+    print ('StatRes dp_desc: %s' % (msg.stats.dp_desc))
 
 
 def print_ofp_statResFlowArray(msg):
-    flows = pkt.of_body['print_ofp_statResFlowArray']
-    if len(flows) == 0:
+    if len(msg.stats.flows) == 0:
         print ('StatRes Type: Flow(1)\nNo Flows')
         return
 
-    for flow_stats in flows:
-        print_ofp_statResFlow(pkt, flow_stats)
+    for flow in msg.stats.flows:
+
+        print_ofp_statResFlow(flow)
 
 
-def print_ofp_statResFlow(msg, stats):
-    stat_type = stats['type']
-    res_flow = stats['res_flow']
-    print ('StatRes Type: Flow(%s)' % (stat_type))
+def print_ofp_statResFlow(flow):
+    print ('StatRes Type: Flow(1)')
     print ('StatRes Length: %s Table_id: %s Pad: %s ' %
-           (res_flow['length'], res_flow['table_id'], res_flow['pad']))
+           (flow.length, flow.table_id, flow.pad))
     print ('StatRes'),
-    pkt.of_body['print_ofp_match'] = stats['match']
-    print_ofp_match(pkt)
+    print_ofp_match(flow.match)
     print ('StatRes duration_sec: %s, duration_nsec: %s, priority: %s,'
            ' idle_timeout: %s, hard_timeout: %s, pad: %s, cookie: %s,'
            ' packet_count: %s, byte_count: %s' %
-           (res_flow['duration_sec'], res_flow['duration_nsec'],
-            res_flow['priority'], res_flow['idle_timeout'],
-            res_flow['hard_timeout'], res_flow['pad'],
-            res_flow['cookie'],
-            res_flow['packet_count'], res_flow['byte_count']))
-    pkt.of_body['print_actions'] = stats['print_actions']
-    print_actions(pkt)
+           (flow.duration_sec, flow.duration_nsec,
+            flow.priority, flow.idle_timeout,
+            flow.hard_timeout, flow.pad,
+            flow.cookie,
+            flow.packet_count, flow.byte_count))
+    print ('StatRes'),
+    print_actions(flow.actions)
 
 
-def print_ofp_statResAggregate(pkt):
-    res_flow = pkt.of_body['print_ofp_statResAggregate']
-    print ('StatRes Type: Aggregate(%s)' % (res_flow['type']))
+def print_ofp_statResAggregate(msg):
+    print ('StatRes Type: Aggregate(2)')
     print ('StatRes packet_count: %s, byte_count: %s flow_count: %s '
            'pad: %s' %
-           (res_flow['packet_count'], res_flow['byte_count'],
-            res_flow['flow_count'], res_flow['pad']))
+           (msg.stats.packet_count, msg.stats.byte_count,
+            msg.stats.flow_count, msg.stats.pad))
 
 
-def print_ofp_statResTable(pkt):
+def print_ofp_statResTable(msg):
     res_flow = pkt.of_body['print_ofp_statResTable']
     print ('StatRes Type: Table(%s)' % (res_flow['type']))
     print ('StatRes table_id: %s, pad: %s, name: "%s", wildcards: %s, '
@@ -567,7 +579,7 @@ def print_of_packetOut(msg):
     print ('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
            (hex(msg.buffer_id), green(of10.dissector.get_phy_port_id(msg.in_port)),
             msg.actions_len))
-    print_actions(msg)
+    print_actions(msg.actions)
     # print_data(msg.data)
 
 

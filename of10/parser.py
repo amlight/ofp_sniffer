@@ -13,6 +13,7 @@ import gen.proxies
 from of10.packet import OFP_Phy_port
 from of10.packet import OFP_Action
 from of10.packet import OFP_Match
+from of10.packet import OFP_STAT_FLOW
 
 
 # *************** Hello *****************
@@ -597,80 +598,86 @@ def parse_StatsReq(msg, packet):
 
 # *********************** StatsRes ****************************
 def parse_StatsRes(msg, packet):
-    pass
     # Get type = 16bits
     # Get flags = 16bits
-    # of_stat_req = pkt.packet[0:4]
-    # ofstat = unpack('!HH', of_stat_req)
-    # stat_type = ofstat[0]
-    # # flags = ofstat[1]
-    # start = 4
-    #
-    # # 7 Types available
-    # if stat_type == 0:
-    #     # Description
-    #     # Fields: mfr_desc(2048), hw_desc(2048), sw_desc(2048), serial_num(256),
-    #     #  dp_desc(2048)
-    #     desc_raw = pkt.packet[start:start+1056]
-    #     desc = unpack('!256s256s256s32s256s', desc_raw)
-    #     stats = {'mfr_desc': desc[0],
-    #              'hw_desc': desc[1],
-    #              'sw_desc': desc[2],
-    #              'serial_num': desc[3],
-    #              'dp_desc': desc[4],
-    #              'type': stat_type}
-    #     pkt.prepare_printing('print_ofp_statResDesc', stats)
-    #
-    # elif stat_type == 1:
-    #     # Flow(1)
-    #     # Fields: length(16), table_id(8), pad(8), match(40), duration_sec(32),
-    #     #  duration_nsec(32), priority(16), idle_timeout(16), hard_timeout(16),
-    #     #  pad(48), cookie(64), packet_count(64), byte_count(64), actions[]
-    #     count = len(pkt.packet[0:]) - 4
-    #     flows = []
-    #     while (count > 0):
-    #         flow_raw = pkt.packet[start:start+4]
-    #         flow = unpack('!HBB', flow_raw)
-    #         res_flow = {'length': flow[0], 'table_id': flow[1], 'pad': flow[2]}
-    #         of_match = _parse_OFMatch(pkt.packet, start+4)
-    #
-    #         flow_raw = pkt.packet[start+44:start+44+44]
-    #         flow = unpack('!LLHHH6sQQQ', flow_raw)
-    #         res_flow.update({'duration_sec': flow[0], 'duration_nsec': flow[1],
-    #                          'priority': flow[2], 'idle_timeout': flow[3],
-    #                          'hard_timeout': flow[4], 'pad2': flow[5],
-    #                          'cookie': flow[6], 'packet_count': flow[7],
-    #                          'byte_count': flow[8]})
-    #         stats = {'type': stat_type, 'match': of_match, 'res_flow': res_flow}
-    #
-    #         # Process Actions[]
-    #         end = res_flow['length'] - (4 + 40 + 44)
-    #         actions = pkt.packet[start+88:start+88+end]
-    #         actions_dict = _parse_OFAction(actions, 0)
-    #
-    #         stats = {'type': stat_type, 'match': of_match,
-    #                  'res_flow': res_flow, 'print_actions': actions_dict}
-    #
-    #         flows.append(stats)
-    #
-    #         count = count - int(res_flow['length'])
-    #         start = start + int(res_flow['length'])
-    #
-    #     # important to have a sequencial list here because there are multiple
-    #     # flows. So, print_ofp_statResFlow will print a list of flows.
-    #     pkt.prepare_printing('print_ofp_statResFlowArray', flows)
-    #
-    # elif stat_type == 2:
-    #     # Aggregate(2)
-    #     # Fields: packet_count(64), byte_count(64), flow_count(32), pad(32)
-    #     flow_raw = pkt.packet[start:start+24]
-    #     flow = unpack('!QQLL', flow_raw)
-    #     res_flow = {'type': stat_type, 'packet_count': flow[0],
-    #                 'byte_count': flow[1], 'flow_count': flow[2],
-    #                 'pad': flow[3]}
-    #     pkt.prepare_printing('print_ofp_statResAggregate', res_flow)
-    #
-    # elif stat_type == 3:
+    of_stat_req = packet[0:4]
+    msg.stat_type, msg.flags = unpack('!HH', of_stat_req)
+
+    start = 4
+    # 7 Types available
+    if msg.stat_type == 0:
+        # Description
+        # Fields: mfr_desc(2048), hw_desc(2048), sw_desc(2048), serial_num(256),
+        # dp_desc(2048)
+        desc_raw = packet[start:start+1056]
+        desc = unpack('!256s256s256s32s256s', desc_raw)
+        mfr_desc = desc[0]
+        hw_desc = desc[1]
+        sw_desc = desc[2]
+        serial_num = desc[3]
+        dp_desc = desc[4]
+        msg.instantiate(mfr_desc, hw_desc, sw_desc, serial_num, dp_desc)
+
+    elif msg.stat_type == 1:
+        # Flow(1)
+        # Fields: length(16), table_id(8), pad(8), match(40), duration_sec(32),
+        #  duration_nsec(32), priority(16), idle_timeout(16), hard_timeout(16),
+        #  pad(48), cookie(64), packet_count(64), byte_count(64), actions[]
+        count = len(packet[0:]) - 4
+        flows = []
+        while (count > 0):
+            flow_raw = packet[start:start+4]
+            flow = unpack('!HBB', flow_raw)
+
+            eflow = OFP_STAT_FLOW()
+
+            eflow.length =  flow[0]
+            eflow.table_id = flow[1]
+            eflow.pad = flow[2]
+
+            eflow.match = _parse_OFMatch(msg, packet, start+4)
+
+            flow_raw = packet[start+44:start+44+44]
+            flow = unpack('!LLHHH6sQQQ', flow_raw)
+
+            eflow.duration_sec = flow[0]
+            eflow.duration_nsec = flow[1]
+            eflow.priority = flow[2]
+            eflow.idle_timeout = flow[3]
+            eflow.hard_timeout = flow[4]
+            eflow.pad2 = flow[5]
+            cookie = flow[6] if flow[6] > 0 else 0
+            cookie = '0x' + format(cookie, '02x')
+            eflow.cookie = cookie
+            eflow.packet_count = flow[7]
+            eflow.byte_count = flow[8]
+
+            # Process Actions[]
+            end = eflow.length - (4 + 40 + 44)
+            actions = packet[start+88:start+88+end]
+            eflow.actions = _parse_OFAction(actions, 0)
+
+            flows.append(eflow)
+
+            count = count - int(eflow.length)
+            start = start + int(eflow.length)
+            del eflow
+
+        msg.instantiate(flows)
+
+
+    elif msg.stat_type == 2:
+        # Aggregate(2)
+        # Fields: packet_count(64), byte_count(64), flow_count(32), pad(32)
+        flow_raw = packet[start:start+24]
+        flow = unpack('!QQLL', flow_raw)
+        packet_count = flow[0]
+        byte_count = flow[1]
+        flow_count = flow[2]
+        pad = flow[3]
+        msg.instantiate(packet_count, byte_count, flow_count, pad)
+
+    # elif msg.stat_type == 3:
     #     # Table
     #     # Fields: table_id(8), pad(24), name(256), wildcards(32),
     #     #  max_entries(32), active_count(32), lookup_count(64),
@@ -683,7 +690,7 @@ def parse_StatsRes(msg, packet):
     #                 'lookup_count': flow[6], 'matched_count': flow[7]}
     #     pkt.prepare_printing('print_ofp_statResTable', res_flow)
     #
-    # elif stat_type == 4:
+    # elif msg.stat_type == 4:
     #     # Port
     #     # Fields: port_number(16), pad(48), rx_packets(64), tx_packets(64),
     #     #  rx_bytes(64), tx_bytes(64), rx_dropped(64), tx_dropped(64),
@@ -709,7 +716,7 @@ def parse_StatsRes(msg, packet):
     #
     #     pkt.prepare_printing('print_ofp_statResPortArray', ports)
     #
-    # elif stat_type == 5:
+    # elif msg.stat_type == 5:
     #     # Queue
     #     # Fields: length(16), pad(16), queue_id(32), tx_bytes(64),
     #     #  tx_packets(64), tx_errors(64)
@@ -727,7 +734,7 @@ def parse_StatsRes(msg, packet):
     #
     #     pkt.prepare_printing('print_ofp_statResQueueArray', queues)
     #
-    # elif stat_type == 65535:
+    # elif msg.stat_type == 65535:
     #     # Vendor
     #     # Fields: vendor_id(32), data(?)
     #     flow_raw = pkt.packet[start:start+4]
@@ -751,9 +758,9 @@ def parse_StatsRes(msg, packet):
     #     #    start = start + 1
     #     # pkt.prepare_printing('print_ofp_statResVendorData', ''.join(data))
     #
-    # else:
-    #     print ('StatRes: Unknown Type: %s' % (stat_type))
-    # return 1
+    else:
+        print ('StatRes: Unknown Type: %s' % (msg.stat_type))
+    return 1
 
 
 # ********************** BarrierReq ***********************
@@ -769,10 +776,10 @@ def parse_BarrierRes(msg, packet):
 # ******************* QueueGetConfigReq *******************
 def parse_QueueGetConfigReq(msg, packet):
     queue_raw = packet[0:4]
-    # queue = unpack('!HH', queue_raw)
-    # queueConfReq = {'port': queue[0], 'pad': queue[1]}
+    queue = unpack('!HH', queue_raw)
+    queueConfReq = {'port': queue[0], 'pad': queue[1]}
     # pkt.prepare_printing('print_queueReq', queueConfReq)
-    # return 1
+    return 1
 
 
 # ****************** QueueGetConfigRes ********************

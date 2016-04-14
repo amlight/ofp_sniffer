@@ -322,13 +322,13 @@ class OFPT_STATS_REQ(OFPHeader):
 
     def instantiate(self, *args):
         if self.stat_type in [1,2]:
-            self.stats = OFP_STATSRES_FLOWAGG(*args)
+            self.stats = OFP_STATSREQ_FLOWAGG(*args)
         elif self.stat_type == 4:
-            self.stats = OFP_STATRES_PORT(*args)
+            self.stats = OFP_STATREQ_PORT(*args)
         elif self.stat_type == 5:
-            self.stats = OFP_STATRES_QUEUE(*args)
+            self.stats = OFP_STATREQ_QUEUE(*args)
         elif self.stat_type == 65535:
-            self.stats = OFP_STATRES_VENDOR(*args)
+            self.stats = OFP_STATREQ_VENDOR(*args)
 
     def process_msg(self, packet):
         parser.parse_StatsReq(self, packet)
@@ -341,12 +341,31 @@ class OFPT_STATS_RES(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
+        self.stat_type = None
+        self.flags = None
+        self.stats = None
+
+    def instantiate(self, *args):
+        if self.stat_type == 0:
+            self.stats = OFP_STATSRES_DESC(*args)
+        elif self.stat_type == 1:
+            self.stats = OFP_STATSRES_FLOW(*args)
+        elif self.stat_type == 2:
+            self.stats = OFP_STATSRES_AGG(*args)
+        elif self.stat_type == 3:
+            self.stats = OFP_STATSRES_TABLE(*args)
+        elif self.stat_type == 4:
+            self.stats = OFP_STATRES_PORT(*args)
+        elif self.stat_type == 5:
+            self.stats = OFP_STATRES_QUEUE(*args)
+        elif self.stat_type == 65535:
+            self.stats = OFP_STATRES_VENDOR(*args)
 
     def process_msg(self, packet):
         parser.parse_StatsRes(self, packet)
 
     def prints(self):
-        pass
+        prints.print_ofp_statRes(self)
 
 
 class OFPT_BARRIER_REQ(OFPHeader):
@@ -443,8 +462,9 @@ class OFP_Action:
         self.length = None
         self.payload = None
 
+# OFP_STATS_REQ Auxiliary Classes
 
-class OFP_STATSRES_FLOWAGG:
+class OFP_STATSREQ_FLOWAGG:
 
     def __init__(self, match, table_id, pad, out_port):
         self.match = match
@@ -452,20 +472,122 @@ class OFP_STATSRES_FLOWAGG:
         self.pad = pad
         self.out_port = out_port
 
-class OFP_STATRES_PORT:
+
+class OFP_STATREQ_PORT:
 
     def __init__(self, port_number, pad):
         self.port_number = port_number
         self.pad = pad
 
-class OFP_STATRES_QUEUE:
+
+class OFP_STATREQ_QUEUE:
 
     def __init__(self, port_number, pad, queue_id):
         self.port_number = port_number
         self.pad = pad
         self.queue_id = queue_id
 
+
+class OFP_STATREQ_VENDOR:
+
+    def __init__(self, vendor_id):
+        self.vendor_id = vendor_id
+
+
+# OFP_STATS_RES Auxiliary Classes
+
+class OFP_STATSRES_DESC:
+
+    def __init__(self, mfr_desc, hw_desc, sw_desc, serial_num, dp_desc):
+        self.mfr_desc = mfr_desc
+        self.hw_desc = hw_desc
+        self.sw_desc = sw_desc
+        self.serial_num = serial_num
+        self.dp_desc = dp_desc
+
+
+class OFP_STATSRES_FLOW:
+
+    def __init__(self, flows):
+        self.flows = flows
+
+
+class OFP_STATSRES_AGG:
+
+    def __init__(self, packet_count, byte_count, flow_count, pad):
+        self.packet_count = packet_count
+        self.byte_count = byte_count
+        self.flow_count = flow_count
+        self.pad = pad
+
+
+class OFP_STATSRES_TABLE:
+
+    def __init__(self, table_id, pad, name, wildcards, max_entries,
+                 active_count, lookup_count, matched_count):
+        self.table_id = table_id
+        self.pad = pad
+        self.name = name
+        self.wildcards = wildcards
+        self.max_entries = max_entries
+        self.active_count = active_count
+        self.lookup_count = lookup_count
+        self.matched_count = matched_count
+
+
+class OFP_STATRES_PORT:
+
+    def __init__(self, port_number, pad, rx_packets, tx_packets, rx_bytes,
+                 tx_bytes, rx_dropped, tx_dropped, rx_errors, tx_errors,
+                 rx_frame_err, rx_over_err, rx_crc_err, collisions):
+        self.port_number = port_number
+        self.pad = pad
+        self.rx_packets = rx_packets
+        self.tx_packets = tx_packets
+        self.rx_bytes = rx_bytes
+        self.tx_bytes = tx_bytes
+        self.rx_dropped = rx_dropped
+        self.tx_dropped = tx_dropped
+        self.rx_errors = rx_errors
+        self.tx_errors = tx_errors
+        self.rx_frame_err = rx_frame_err
+        self.rx_over_err = rx_over_err
+        self.rx_crc_err = rx_crc_err
+        self.collisions = collisions
+
+class OFP_STATRES_QUEUE:
+
+    def __init__(self, length, pad, queue_id, tx_bytes, tx_packets,
+                 tx_errors):
+        self.length = length
+        self.pad = pad
+        self.queue_id = queue_id
+        self.tx_bytes = tx_bytes
+        self.tx_packets = tx_packets
+        self.tx_errors = tx_errors
+
 class OFP_STATRES_VENDOR:
 
     def __init__(self, vendor_id):
         self.vendor_id = vendor_id
+
+
+### STAT_RES Auxiliary Classes ####
+
+class OFP_STAT_FLOW:
+
+    def __init__(self):
+        self.length = None
+        self.table_id = None
+        self.pad = None
+        self.match = None
+        self.duration_sec = None
+        self.duration_nsec = None
+        self.priority = None
+        self.idle_timeout = None
+        self.hard_timeout = None
+        self.pad2 = None
+        self.cookie = None
+        self.packet_count = None
+        self.byte_count = None
+        self.actions = None
