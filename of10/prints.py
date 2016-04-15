@@ -1,11 +1,13 @@
 '''
     Prints for OpenFlow 1.0 only
 '''
+from hexdump import hexdump
 import of10.dissector
 import of10.parser
 import gen.prints
 import gen.packet
 import gen.tcpip
+
 
 
 def red(string):
@@ -412,10 +414,10 @@ def print_ofp_statRes(msg):
         print_ofp_statResTable(msg)
     elif msg.stat_type == 4:
         print_ofp_statResPortArray(msg)
-    # elif msg.stat_type == 5:
-    #     print_ofp_statResQueue(msg)
-    # elif msg.stat_type == 65535:
-    #     print_ofp_statResVendor(msg)
+    elif msg.stat_type == 5:
+        print_ofp_statResQueueArray(msg)
+    elif msg.stat_type == 65535:
+        print_ofp_statResVendor(msg)
 
 
 def print_ofp_statResDesc(msg):
@@ -494,37 +496,32 @@ def print_ofp_statResPort(port):
             port.tx_dropped, port.collisions, port.pad))
 
 
-def print_ofp_statResQueueArray(pkt):
-    queues = pkt.of_body['print_ofp_statResQueueArray']
-    if len(queues) == 0:
+def print_ofp_statResQueueArray(msg):
+    if len(msg.queues) == 0:
         print 'StatRes Type: Queue(5)\nNo Queues'
         return
 
-    for queue_stats in queues:
-        print_ofp_statResQueue(queue_stats)
+    for queue in msg.queues:
+        print_ofp_statResQueue(queue)
 
 
 def print_ofp_statResQueue(queue):
-    print ('StatRes Type: Queue(%s)' % (queue['type']))
+    print 'StatRes Type: Queue(5)'
     print ('StatRes queue_id: %s length: %s pad: %s'
            ' tx_bytes: %s tx_packets: %s tx_errors: %s' %
-           (queue['queue_id'], queue['length'], queue['pad'],
-            queue['tx_bytes'], queue['tx_packets'],
-            queue['tx_errors']))
+           (queue.queue_id, queue.length, queue.pad,
+            queue.tx_bytes, queue.tx_packets, queue.tx_errors))
 
 
-def print_ofp_statResVendor(pkt):
-    vendor = pkt.of_body['print_ofp_statResVendor']
-    print ('StatRes Type: Vendor(%s)' % (vendor['type']))
-    print ('StatRes vendor_id: %s' % (vendor['vendor_id']))
+def print_ofp_statResVendor(msg):
+    print ('StatRes Type: Vendor(%s)' % (hex(65535)))
+    print ('StatRes vendor_id: %s' % (msg.stats.vendor_id))
+    print_ofp_statResVendorData(msg.stats.data)
 
 
-def print_ofp_statResVendorData(pkt):
-    data = pkt.of_body['print_ofp_statResVendorData']
-    # print 'StatRes Vendor Data: %s' % (data)
+def print_ofp_statResVendorData(data):
     print ('StatRes Vendor Data: ')
-    import hexdump
-    hexdump.hexdump(data)
+    hexdump(data)
 
 
 def print_ofp_getConfigRes(msg):
@@ -562,11 +559,6 @@ def print_packetInOut_vlan(of_xid, vlan):
     gen.prints.print_vlan(vlan)
 
 
-def print_data(data):
-    # what to do with data?
-    pass
-
-
 def print_of_packetIn(msg):
     print ('PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
            'pad: %s' %
@@ -580,32 +572,45 @@ def print_of_packetOut(msg):
            (hex(msg.buffer_id), green(of10.dissector.get_phy_port_id(msg.in_port)),
             msg.actions_len))
     print_actions(msg.actions)
-    # print_data(msg.data)
+    print_data(msg.data)
 
 
-def print_queueReq(pkt):
-    queueConfReq = pkt.of_body['print_queueReq']
+def print_data(data):
+    # what to do with data?
+    pass
+
+
+def print_queueReq(msg):
     print ('QueueGetConfigReq Port: %s Pad: %s' %
-           (queueConfReq['port'], queueConfReq['pad']))
+           (msg.port, msg.pad))
 
 
-def print_queueRes(pkt):
-    queueConfRes = pkt.of_body['print_queueRes']
+def print_queueRes(msg):
     print ('QueueGetConfigRes Port: %s Pad: %s' %
-           (queueConfRes['port'], queueConfRes['pad']))
+           (msg.port, msg.pad))
+    if len(msg.queues) == 0:
+        print 'QueueGetConfigRes: No Queues'
+        return
+    for queue in msg.queues:
+        print_queueRes_queue(queue)
 
 
-def print_queueRes_queues(of_xid, queues):
-    print ('%s Queue_ID: %s Length: %s Pad: %s' %
-           (of_xid, queues['queue_id'], queues['length'], queues['pad']))
+def print_queueRes_queue(queue):
+    print ('Queue_ID: %s Length: %s Pad: %s' %
+           (queue.queue_id, queue.length, queue.pad))
+    if len(queue.properties) == 0:
+        print 'QueueGetConfigRes: No Properties'
+        return
+    for property in queue.properties:
+        print_queueRes_properties(property)
 
 
-def print_queueRes_properties(of_xid, properties):
-    print ('%s Property: %s Length: %s Pad: %s Rate: %s Pad: %s' %
-           (of_xid, properties['type'], properties['length'], properties['pad'],
-            properties['rate'], properties['pad2']))
+def print_queueRes_properties(property):
+    print ('Property: %s Length: %s Pad: %s' %
+           (property.property, property.length, property.pad))
+    print_queueRes_prop_payload(property.payload)
 
 
-def print_body(pkt):
-    for f in pkt.printing_seq:
-        eval(f)(pkt)
+def print_queueRes_prop_payload(payload):
+    print ('Payload: Rate %s Pad: %s' %
+           (payload.rate, payload.pad))

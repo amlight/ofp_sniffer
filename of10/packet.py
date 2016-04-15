@@ -403,7 +403,7 @@ class OFPT_QUEUE_GET_CONFIG_REQ(OFPHeader):
         parser.parse_QueueGetConfigReq(self, packet)
 
     def prints(self):
-        pass
+        prints.print_queueReq(self)
 
 
 class OFPT_QUEUE_GET_CONFIG_RES(OFPHeader):
@@ -412,13 +412,13 @@ class OFPT_QUEUE_GET_CONFIG_RES(OFPHeader):
         OFPHeader.__init__(self, of_header)
         self.port = None
         self.pad = []  # 0 - 6 Bytes
-        self.queues = []  # Class ofp_packet_queue
+        self.queues = []  # Class OFP_QUEUE[]
 
     def process_msg(self, packet):
         parser.parse_QueueGetConfigRes(self, packet)
 
     def prints(self):
-        pass
+        prints.print_queueRes(self)
 
 
 # Auxiliary Data Structures
@@ -540,24 +540,19 @@ class OFP_STATRES_PORT:
     def __init__(self, ports):
         self.ports = ports  # Class OFP_STAT_PORT[]
 
+
 class OFP_STATRES_QUEUE:
 
-    def __init__(self, length, pad, queue_id, tx_bytes, tx_packets,
-                 tx_errors):
-        self.length = length
-        self.pad = pad
-        self.queue_id = queue_id
-        self.tx_bytes = tx_bytes
-        self.tx_packets = tx_packets
-        self.tx_errors = tx_errors
+    def __init__(self, queues):
+        self.queues = queues  # Class OFP_STAT_QUEUE[]
+
 
 class OFP_STATRES_VENDOR:
 
-    def __init__(self, vendor_id):
+    def __init__(self, vendor_id, data):
         self.vendor_id = vendor_id
+        self.data = data
 
-
-### STAT_RES Auxiliary Classes ####
 
 class OFP_STAT_FLOW:
 
@@ -595,3 +590,39 @@ class OFP_STAT_PORT:
         self.rx_over_err = None
         self.rx_crc_err = None
         self.collisions = None
+
+
+class OFP_STAT_QUEUE:
+
+    def __init__(self):
+        self.length = None
+        self.pad = None
+        self.queue_id = None
+        self.tx_bytes = None
+        self.tx_packets = None
+        self.tx_errors = None
+
+
+class OFP_QUEUE:
+
+    def __init__(self):
+        self.queue_id = None
+        self.length = None
+        self.pad = None
+        self.properties = None
+
+
+class OFP_QUEUE_PROPERTIES:
+
+    def __init__(self):
+        self.property = None
+        self.length = None
+        self.pad = None
+        self.payload = None
+
+
+class OFP_QUEUE_PROP_PAYLOAD:
+
+    def __init__(self):
+        self.rate = None
+        self.pad = None

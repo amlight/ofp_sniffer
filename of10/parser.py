@@ -16,6 +16,8 @@ from of10.packet import OFP_Phy_port
 from of10.packet import OFP_Match
 from of10.packet import OFP_STAT_FLOW
 from of10.packet import OFP_STAT_PORT
+from of10.packet import OFP_STAT_QUEUE
+from of10.packet import OFP_QUEUE, OFP_QUEUE_PROPERTIES, OFP_QUEUE_PROP_PAYLOAD
 
 
 # *************** Hello *****************
@@ -539,9 +541,16 @@ def parse_PortMod(msg, packet):
 
 # ******************** StatReq ****************************
 def parse_StatsReq(msg, packet):
-    '''
-        Process the StatsReq
-    '''
+    """ Parse StatReq messages
+
+    Args:
+        msg:
+        packet:
+
+    Returns:
+
+    """
+
     # Get type = 16bits
     # Get flags = 16bits
     of_stat_req = packet[0:4]
@@ -757,42 +766,38 @@ def parse_StatsRes(msg, packet):
 
         count = len(packet[0:]) - 4
         queues = []
-        while (count > 0):
+        while count > 0:
             flow_raw = packet[start:start+32]
             flow = unpack('!HHLQQQ', flow_raw)
-            queue = {'length': flow[0], 'pad': flow[1], 'queue_id': flow[2],
-                     'tx_bytes': flow[3], 'tx_packets': flow[4],
-                     'tx_errors': flow[5], 'type': stat_type}
+
+            queue = OFP_STAT_QUEUE()
+            queue.length = flow[0]
+            queue.pad = flow[1]
+            queue.queue_id = flow[2]
+            queue.tx_bytes = flow[3]
+            queue.tx_packets = flow[4]
+            queue.tx_errors = flow[5]
             queues.append(queue)
+
             count = count - 32
             start = start + 32
+            del queue
 
         msg.instantiate(queues)
 
-    # elif msg.stat_type == 65535:
-    #     # Vendor
-    #     # Fields: vendor_id(32), data(?)
-    #     flow_raw = pkt.packet[start:start+4]
-    #     flow = unpack('!L', flow_raw)
-    #     vendor_flow = {'type': stat_type, 'vendor_id': flow[0]}
-    #     pkt.prepare_printing('print_ofp_statResVendor', vendor_flow)
-    #
-    #     pkt.prepare_printing('print_ofp_statResVendorData',
-    #                          pkt.packet[start+4:])
-    #     # start = start + 4
-    #     # data = []
-    #     # count = len(packet[0:])
-    #
-    #     # import hexdump
-    #     # hexdump.hexdump(pkt.packet[start:])
-    #     # print
-    #     # while (start < count):
-    #     #    flow_raw = pkt.packet[start:start+1]
-    #     #    flow = unpack('!B', flow_raw)
-    #     #    data.append(str(flow[0]))
-    #     #    start = start + 1
-    #     # pkt.prepare_printing('print_ofp_statResVendorData', ''.join(data))
-    #
+    elif msg.stat_type == 65535:
+        """
+            Parse STAT_RES Vendor message
+            Fields: vendor_id(32), data(?)
+        """
+
+        flow_raw = packet[start:start+4]
+        flow = unpack('!L', flow_raw)
+        vendor_id = flow[0]
+        data = packet[start+4:]
+
+        msg.instantiate(vendor_id, data)
+
     else:
         print ('StatRes: Unknown Type: %s' % (msg.stat_type))
     return 1
@@ -812,41 +817,56 @@ def parse_BarrierRes(msg, packet):
 def parse_QueueGetConfigReq(msg, packet):
     queue_raw = packet[0:4]
     queue = unpack('!HH', queue_raw)
-    queueConfReq = {'port': queue[0], 'pad': queue[1]}
-    # pkt.prepare_printing('print_queueReq', queueConfReq)
-    return 1
+    msg.port = queue[0]
+    msg.pad = queue[1]
 
 
 # ****************** QueueGetConfigRes ********************
 def parse_QueueGetConfigRes(msg, packet):
     queue_raw = packet[0:8]
     queue = unpack('!H6s', queue_raw)
-    queueConfRes = {'port': queue[0], 'pad': queue[1]}
+    msg.port = queue[0]
+    msg.pad = queue[1]
 
-    # pkt.prepare_printing('print_queueRes', queueConfRes)
-    #
-    # start = 8
-    # while (pkt.packet[start:] > 0):
-    #     # Queues - it could be multiple
-    #     # queue_id(32), length(16), pad(16)
-    #     queue_raw = pkt.packet[start:start+8]
-    #     queue = unpack('!LHH', queue_raw)
-    #     queues = {'queue_id': queue[0], 'length': queue[1], 'pad': queue[2]}
-    #     of10.prints.print_queues(queues)
+    start = 8
+    queues = []
+    while (packet[start:] > 0):
+        # Queues - it could be multiple
+        # queue_id(32), length(16), pad(16)
+        queue_raw = packet[start:start+8]
+        queue = unpack('!LHH', queue_raw)
 
-    #     q_start = start + 8
-    #
-    #     # Look of properties
-    #     # property(16), length(16), pad(32), rate(16), pad(48)
-    #     properties = pkt.packet[q_start:q_start+queues['length']-8]
-    #
-    #     while (len(properties[q_start:]) > 0):
-    #         prop_raw = pkt.packet[q_start:q_start+8]
-    #         prop = unpack('!HHLH6s', prop_raw)
-    #         properties = {'type': prop[0], 'length': prop[1],
-    #                       'pad': prop[2], 'rate': prop[3], 'pad2': prop[4]}
-    #         of10.prints.print_queueRes_properties(properties)
-    #
-    #     start = start + queues['length']
-    #
-    # return 1
+        equeue = OFP_QUEUE()
+        equeue.queue_id = queue[0]
+        equeue.length = queue[1]
+        equeue.pad = queue[2]
+
+        q_start = start + 8
+
+        # Look of properties
+        # property(16), length(16), pad(32), rate(16), pad(48)
+        properties = packet[q_start:q_start+equeue.length-8]
+        properties_list = []
+
+        while (len(properties[q_start:]) > 0):
+            prop_raw = packet[q_start:q_start+8]
+            prop = unpack('!HHLH6s', prop_raw)
+
+            property = OFP_QUEUE_PROPERTIES()
+            property.property = prop[0]
+            property.length = prop[1]
+            property.pad = prop[2]
+            property.payload = OFP_QUEUE_PROP_PAYLOAD()
+            property.payload.rate = prop[3]
+            property.payload.pad = prop[4]
+
+            properties_list.append(property)
+            del property
+
+        equeue.properties = properties_list
+
+        start = start + equeue.length
+
+        queues.append(equeue)
+
+    msg.queues = queues
