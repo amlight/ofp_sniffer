@@ -17,6 +17,22 @@ def print_type_unknown(pkt):
     print string % (pkt.of_h['type'])
 
 
+def print_pad(pad):
+    """
+        Used to print pads as a sequence of 0s: 0, 00, 000..
+    Args:
+        pad: pad in str format
+    Returns: string with '0'
+    """
+    pad_len = len(pad)
+    string = '0'
+    if pad_len == 1:
+        return '0'
+    for item in range(0,pad_len-1):
+        string += '0'
+    return string
+
+
 def print_of_hello(msg):
     print 'OpenFlow Hello'
 
@@ -37,7 +53,7 @@ def print_of_getconfig_req(msg):
 def print_of_feature_res(msg):
     dpid = datapath_id(msg.datapath_id)
     print ('FeatureRes - datapath_id: %s n_buffers: %s n_tbls: %s, pad: %s'
-           % (green(dpid), msg.n_buffers, msg.n_tbls, msg.pad))
+           % (green(dpid), msg.n_buffers, msg.n_tbls, print_pad(msg.pad)))
     print ('FeatureRes - Capabilities:'),
     for i in msg.capabilities:
         print of10.dissector.get_feature_res_capabilities(i),
@@ -59,7 +75,7 @@ def print_port_field(port_id, variable, name):
     port_id = '%s' % green(port_id)
     printed = False
 
-    print ('Port_id: %s - %s curr:' % (port_id, name)),
+    print ('Port_id: %s - %s:' % (port_id, name)),
     for i in variable:
         print of10.dissector.get_phy_feature(i),
         printed = True
@@ -142,9 +158,10 @@ def print_ofp_flow_removed(msg):
               'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2/Pad3: %s/%s'
               ' Packet Count: %s Byte Count: %s')
 
-    print string % (msg.cookie, msg.priority, red(msg.reason), msg.pad,
-                    msg.duration_sec, msg.duration_nsec, msg.idle_timeout,
-                    msg.pad2, msg.pad3, msg.packet_count, msg.byte_count)
+    print string % (msg.cookie, msg.priority, red(msg.reason),
+                    print_pad(msg.pad), msg.duration_sec, msg.duration_nsec,
+                    msg.idle_timeout, print_pad(msg.pad2),
+                    print_pad(msg.pad3), msg.packet_count, msg.byte_count)
 
 
 def print_actions(actions):
@@ -165,13 +182,13 @@ def print_ofp_action(action_type, length, payload):
     elif action_type == 1:
         vlan, pad = of10.parser.get_action(action_type, length, payload)
         print ('Action - Type: %s Length: %s VLAN ID: %s Pad: %s' %
-               (green('SetVLANID'), length, green(str(vlan)), pad))
+               (green('SetVLANID'), length, green(str(vlan)), print_pad(pad)))
         return 'mod_vlan_vid:' + str(vlan)
 
     elif action_type == 2:
         vlan_pc, pad = of10.parser.get_action(action_type, length, payload)
         print ('Action - Type: %s Length: %s VLAN PCP: %s Pad: %s' %
-               (green('SetVLANPCP'), length, green(str(vlan_pc)), pad))
+               (green('SetVLANPCP'), length, green(str(vlan_pc)), print_pad(pad)))
         return 'mod_vlan_pcp:' + str(vlan_pc)
 
     elif action_type == 3:
@@ -183,14 +200,14 @@ def print_ofp_action(action_type, length, payload):
         setDLSrc, pad = of10.parser.get_action(action_type, length, payload)
         print ('Action - Type: %s Length: %s SetDLSrc: %s Pad: %s' %
                (green('SetDLSrc'), length, green(str(eth_addr(setDLSrc))),
-                pad))
+                print_pad(pad)))
         return 'mod_dl_src:' + str(eth_addr(setDLSrc))
 
     elif action_type == 5:
         setDLDst, pad = of10.parser.get_action(action_type, length, payload)
         print ('Action - Type: %s Length: %s SetDLDst: %s Pad: %s' %
                (green('SetDLDst'), length, green(str(eth_addr(setDLDst))),
-                pad))
+                print_pad(pad)))
         return 'mod_dl_dst:' + str(eth_addr(setDLDst))
 
     elif action_type == 6:
@@ -208,19 +225,19 @@ def print_ofp_action(action_type, length, payload):
     elif action_type == 8:
         nw_tos, pad = of10.parser.get_action(action_type, length, payload)
         print ('Action - Type: %s Length: %s SetNWTos: %s Pad: %s' %
-               (green('SetNWTos'), length, green(str(nw_tos)), pad))
+               (green('SetNWTos'), length, green(str(nw_tos)), print_pad(pad)))
         return 'mod_nw_tos:' + str(nw_tos)
 
     elif action_type == 9:
         port, pad = of10.parser.get_action(action_type, length, payload)
         print ('Action - Type: %s Length: %s SetTPSrc: %s Pad: %s' %
-               (green('SetTPSrc'), length, green(str(port)), pad))
+               (green('SetTPSrc'), length, green(str(port)), print_pad(pad)))
         return 'mod_tp_src:' + str(port)
 
     elif action_type == int('a', 16):
         port, pad = of10.parser.get_action(action_type, length, payload)
         print ('Action - Type: %s Length: %s SetTPDst: %s Pad: %s' %
-               (green('SetTPDst'), length, green(str(port)), pad))
+               (green('SetTPDst'), length, green(str(port)), print_pad(pad)))
         return 'mod_tp_dst:' + str(port)
 
     elif action_type == int('b', 16):
@@ -228,7 +245,7 @@ def print_ofp_action(action_type, length, payload):
                                                      payload)
         print (('Action - Type: %s Length: %s Enqueue: %s Pad: %s'
                 ' Queue: %s') %
-               (green('Enqueue'), length, green(str(port)), pad,
+               (green('Enqueue'), length, green(str(port)), print_pad(pad),
                 green(str(queue_id))))
         return 'set_queue:' + str(queue_id)
 
@@ -286,7 +303,7 @@ def _print_portMod_config_mask(variable, name):
 
 def print_of_PortMod(msg):
     print ('PortMod Port_no: %s HW_Addr %s Pad: %s' %
-           (msg.port_no, eth_addr(msg.hw_addr), msg.pad))
+           (msg.port_no, eth_addr(msg.hw_addr), print_pad(msg.pad)))
     _print_portMod_config_mask(msg.config, 'config')
     _print_portMod_config_mask(msg.mask, 'mask')
     _print_portMod_config_mask(msg.advertise, 'advertise')
@@ -311,7 +328,7 @@ def print_ofp_statReq(msg):
     elif msg.stat_type == 1 or msg.type == 2:
         print_ofp_statReqFlowAggregate(msg)
     elif msg.stat_type == 3:
-        print_ofp_statResTable(msg)
+        print_ofp_statReqTable(msg)
     elif msg.stat_type == 4:
         print_ofp_statReqPort(msg)
     elif msg.stat_type == 5:
@@ -332,8 +349,8 @@ def print_ofp_statReqFlowAggregate(msg):
     print ('StatReq Type: %s(%s)' % (type_name, msg.stat_type))
     print_ofp_match(msg.stats.match)
     out_port = of10.dissector.get_phy_port_id(msg.stats.out_port)
-    print ('StatReq Table_id: %s Pad: %d Out_Port: %s' % (msg.stats.table_id,
-           msg.stats.pad, out_port))
+    print ('StatReq Table_id: %s Pad: %s Out_Port: %s' % (msg.stats.table_id,
+           print_pad(msg.stats.pad), out_port))
 
 
 def print_ofp_statReqTable(msg):
@@ -343,18 +360,20 @@ def print_ofp_statReqTable(msg):
 def print_ofp_statReqPort(msg):
     port_number = of10.dissector.get_phy_port_id(msg.stats.port_number)
     print ('StatReq Type: Port(%s): Port_Number: %s Pad: %s' %
-           (msg.stat_type, green(port_number), msg.stats.pad))
+           (msg.stat_type, green(port_number), print_pad(msg.stats.pad)))
 
 
 def print_ofp_statReqQueue(msg):
     port_number = of10.dissector.get_phy_port_id(msg.stats.port_number)
     print ('StatReq Type: Queue(%s): Port_Number: %s Pad: %s Queue_id: %s' %
-           (msg.stat_type, green(port_number), msg.stats.pad, msg.stats.queue_id))
+           (msg.stat_type, green(port_number), print_pad(msg.stats.pad),
+            msg.stats.queue_id))
 
 
 def print_ofp_statReqVendor(msg):
+    vendor = of10.dissector.get_ofp_vendor(msg.stats.vendor_id)
     print ('StatReq Type: Vendor(%s): Vendor_ID: %s' % (msg.stat_type,
-           msg.stats.vendor_id))
+           vendor))
 
 
 def print_ofp_statRes(msg):
@@ -365,7 +384,7 @@ def print_ofp_statRes(msg):
     elif msg.stat_type == 2:
         print_ofp_statResAggregate(msg)
     elif msg.stat_type == 3:
-        print_ofp_statResTable(msg)
+        print_ofp_statResTableArray(msg)
     elif msg.stat_type == 4:
         print_ofp_statResPortArray(msg)
     elif msg.stat_type == 5:
@@ -395,7 +414,7 @@ def print_ofp_statResFlowArray(msg):
 def print_ofp_statResFlow(flow):
     print ('StatRes Type: Flow(1)')
     print ('StatRes Length: %s Table_id: %s Pad: %s ' %
-           (flow.length, flow.table_id, flow.pad))
+           (flow.length, flow.table_id, print_pad(flow.pad)))
     print ('StatRes'),
     print_ofp_match(flow.match)
     print ('StatRes duration_sec: %s, duration_nsec: %s, priority: %s,'
@@ -403,7 +422,7 @@ def print_ofp_statResFlow(flow):
            ' packet_count: %s, byte_count: %s' %
            (flow.duration_sec, flow.duration_nsec,
             flow.priority, flow.idle_timeout,
-            flow.hard_timeout, flow.pad,
+            flow.hard_timeout, print_pad(flow.pad),
             flow.cookie,
             flow.packet_count, flow.byte_count))
     print ('StatRes'),
@@ -415,17 +434,26 @@ def print_ofp_statResAggregate(msg):
     print ('StatRes packet_count: %s, byte_count: %s flow_count: %s '
            'pad: %s' %
            (msg.stats.packet_count, msg.stats.byte_count,
-            msg.stats.flow_count, msg.stats.pad))
+            msg.stats.flow_count, print_pad(msg.stats.pad)))
 
 
-def print_ofp_statResTable(msg):
+def print_ofp_statResTableArray(msg):
+    if len(msg.stats.tables) == 0:
+        print ('StatRes Type: Table(3)\nNo Tables')
+        return
+
     print ('StatRes Type: Table(3)')
+    for table in msg.stats.tables:
+        print_ofp_statResTable(table)
+
+
+def print_ofp_statResTable(table):
     print ('StatRes table_id: %s, pad: %s, name: "%s", wildcards: %s, '
            'max_entries: %s, active_count: %s, lookup_count: %s, '
            'matched_count: %s' %
-           (msg.table_id, msg.pad, msg.name, hex(msg.wildcards),
-            msg.max_entries, msg.active_count,
-            msg.lookup_count, msg.matched_count))
+           (table.table_id, print_pad(table.pad), table.name, hex(table.wildcards),
+            table.max_entries, table.active_count,
+            table.lookup_count, table.matched_count))
 
 
 def print_ofp_statResPortArray(msg):
@@ -447,11 +475,11 @@ def print_ofp_statResPort(port):
             port.rx_dropped, port.rx_over_err,
             port.rx_frame_err, red(port.port_number),
             port.tx_packets, port.tx_bytes, port.tx_errors,
-            port.tx_dropped, port.collisions, port.pad))
+            port.tx_dropped, port.collisions, print_pad(port.pad)))
 
 
 def print_ofp_statResQueueArray(msg):
-    if len(msg.queues) == 0:
+    if len(msg.stats.queues) == 0:
         print 'StatRes Type: Queue(5)\nNo Queues'
         return
 
@@ -463,7 +491,7 @@ def print_ofp_statResQueue(queue):
     print 'StatRes Type: Queue(5)'
     print ('StatRes queue_id: %s length: %s pad: %s'
            ' tx_bytes: %s tx_packets: %s tx_errors: %s' %
-           (queue.queue_id, queue.length, queue.pad,
+           (queue.queue_id, queue.length, print_pad(queue.pad),
             queue.tx_bytes, queue.tx_packets, queue.tx_errors))
 
 
@@ -480,7 +508,7 @@ def print_ofp_statResVendorData(data):
 
 def print_ofp_getConfigRes(msg):
     print ('OpenFlow GetConfigRes - Flag: %s Miss_send_len: %s' %
-           (msg.flag, msg.miss_send_len))
+           (msg.flags, msg.miss_send_len))
 
 
 def print_ofp_setConfig(msg):
@@ -489,17 +517,16 @@ def print_ofp_setConfig(msg):
 
 
 def print_of_echoreq(msg):
-    # print data
     print 'OpenFlow Echo Request'
 
 
 def print_of_echores(msg):
-    # print data
     print 'OpenFlow Echo Reply'
 
 
 def print_portStatus(msg):
-    print ('OpenFlow PortStatus - Reason: %s Pad: %s' % (msg.reason, msg.pad))
+    print ('OpenFlow PortStatus - Reason: %s Pad: %s' % (msg.reason,
+                                                         print_pad(msg.pad)))
     print_of_ports(msg.desc)
 
 
@@ -517,7 +544,7 @@ def print_of_packetIn(msg):
     print ('PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
            'pad: %s' %
            (hex(msg.buffer_id), msg.total_len, green(msg.in_port),
-            green(msg.reason), msg.pad))
+            green(msg.reason), print_pad(msg.pad)))
     print_data(msg.data)
 
 
@@ -563,12 +590,12 @@ def print_data(data):
 
 def print_queueReq(msg):
     print ('QueueGetConfigReq Port: %s Pad: %s' %
-           (msg.port, msg.pad))
+           (msg.port, print_pad(msg.pad)))
 
 
 def print_queueRes(msg):
     print ('QueueGetConfigRes Port: %s Pad: %s' %
-           (msg.port, msg.pad))
+           (msg.port, print_pad(msg.pad)))
     if len(msg.queues) == 0:
         print 'QueueGetConfigRes: No Queues'
         return
@@ -578,7 +605,7 @@ def print_queueRes(msg):
 
 def print_queueRes_queue(queue):
     print ('Queue_ID: %s Length: %s Pad: %s' %
-           (queue.queue_id, queue.length, queue.pad))
+           (queue.queue_id, queue.length, print_pad(queue.pad)))
     if len(queue.properties) == 0:
         print 'QueueGetConfigRes: No Properties'
         return
@@ -588,10 +615,10 @@ def print_queueRes_queue(queue):
 
 def print_queueRes_properties(property):
     print ('Property: %s Length: %s Pad: %s' %
-           (property.property, property.length, property.pad))
+           (property.property, property.length, print_pad(property.pad)))
     print_queueRes_prop_payload(property.payload)
 
 
 def print_queueRes_prop_payload(payload):
     print ('Payload: Rate %s Pad: %s' %
-           (payload.rate, payload.pad))
+           (payload.rate, print_pad(payload.pad)))

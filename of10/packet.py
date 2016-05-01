@@ -124,7 +124,7 @@ class OFPT_VENDOR(OFPHeader):
         parser.parse_Vendor(self, packet)
 
     def prints(self):
-        prints.print_of_echores(self)
+        prints.print_of_vendor(self)
 
 
 class OFPT_FEATURE_REQ(OFPHeader):
@@ -181,7 +181,7 @@ class OFPT_GET_CONFIG_RES(OFPHeader):
         parser.parse_GetConfigRes(self, packet)
 
     def prints(self):
-        prints.print_of_getconfig_req(self)
+        prints.print_ofp_getConfigRes(self)
 
 
 class OFPT_SET_CONFIG(OFPHeader):
@@ -523,16 +523,8 @@ class OFP_STATSRES_AGG:
 
 class OFP_STATSRES_TABLE:
 
-    def __init__(self, table_id, pad, name, wildcards, max_entries,
-                 active_count, lookup_count, matched_count):
-        self.table_id = table_id
-        self.pad = pad
-        self.name = name
-        self.wildcards = wildcards
-        self.max_entries = max_entries
-        self.active_count = active_count
-        self.lookup_count = lookup_count
-        self.matched_count = matched_count
+    def __init__(self, tables):
+        self.tables = tables  # Class OFP_STAT_TABLE[]
 
 
 class OFP_STATRES_PORT:
@@ -590,6 +582,19 @@ class OFP_STAT_PORT:
         self.rx_over_err = None
         self.rx_crc_err = None
         self.collisions = None
+
+
+class OFP_STAT_TABLE:
+
+    def __init__(self):
+        self.table_id = None
+        self.pad = None
+        self.name = None
+        self.wildcards = None
+        self.max_entries = None
+        self.active_count = None
+        self.lookup_count = None
+        self.matched_count = None
 
 
 class OFP_STAT_QUEUE:

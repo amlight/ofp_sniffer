@@ -163,7 +163,6 @@ class Packet:
     def get_remaining_bytes(self):
         return self.l1.caplen - self.offset
 
-    # TODO: This method has to be removed - uses dictionaries
     def get_of_message_length(self):
         of_h = get_openflow_header(self.packet, self.offset)
         return of_h, of_h['length']

@@ -44,10 +44,3 @@ def get_ip_name(ip, port):
         if i == (ip, port):
             return '%s(%s)' % (ip, j)
     return ip
-
-
-def close():
-    print '\n'
-    # Future: send to a file to import faster
-    # for i, j in NET.iteritems():
-    #   print i, j

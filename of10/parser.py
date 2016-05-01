@@ -224,7 +224,7 @@ def process_data(packet, start, msg):
 def parse_PacketIn(msg, packet):
     # buffer_id(32), total_len(16), in_port(16), reason(8), pad(8)
     pkt_raw = packet[0:10]
-    p_in = unpack('!LHHBB', pkt_raw)
+    p_in = unpack('!LHHB1s', pkt_raw)
     reason = of10.dissector.get_packetIn_reason(p_in[3])
     msg.buffer_id = p_in[0]
     msg.total_len = p_in[1]
@@ -240,7 +240,7 @@ def parse_FlowRemoved(msg, packet):
     msg.match = _parse_OFMatch(msg, packet, 0)
 
     of_rem_body = packet[40:40+40]
-    ofrem = unpack('!QHBBLLHBBQQ', of_rem_body)
+    ofrem = unpack('!QHB1sLLH1s1sQQ', of_rem_body)
     cookie = ofrem[0] if ofrem[0] > 0 else 0
     cookie = '0x' + format(cookie, '02x')
     reason = of10.dissector.get_flow_removed_reason(ofrem[2])
@@ -517,7 +517,7 @@ def parse_FlowMod(msg, packet):
 def parse_PortMod(msg, packet):
     # port(16), hw_addr(48), config(32), mask(32), advertise(32), pad(32)
     pmod_raw = packet[0:24]
-    pmod = unpack('!H6sLLLL', pmod_raw)
+    pmod = unpack('!H6sLLL4s', pmod_raw)
 
     config = _parse_phy_config(pmod[2])
     mask = _parse_phy_config(pmod[3])
@@ -564,7 +564,7 @@ def parse_StatsReq(msg, packet):
         match = _parse_OFMatch(msg, packet, start)
         # 44 Bytes (40B from Match, 4 from header)
         of_stat_req = packet[start+40:start+40+4]
-        table_id, pad, out_port = unpack('!BBH', of_stat_req)
+        table_id, pad, out_port = unpack('!B1sH', of_stat_req)
         msg.instantiate(match, table_id, pad, out_port)
 
     elif msg.stat_type == 3:
@@ -583,7 +583,7 @@ def parse_StatsReq(msg, packet):
         # Queue
         # Fields: port_number(16), pad(16), queue_id(32)
         of_stat_req = packet[start:start+8]
-        port_number, pad, queue_id = unpack('!HHL', of_stat_req)
+        port_number, pad, queue_id = unpack('!H2sL', of_stat_req)
         msg.instantiate(port_number, pad, queue_id)
 
     elif msg.stat_type == 65535:
@@ -642,7 +642,7 @@ def parse_StatsRes(msg, packet):
         flows = []
         while count > 0:
             flow_raw = packet[start:start+4]
-            flow = unpack('!HBB', flow_raw)
+            flow = unpack('!HB1s', flow_raw)
 
             eflow = of10.packet.OFP_STAT_FLOW()
 
@@ -687,7 +687,7 @@ def parse_StatsRes(msg, packet):
             Fields: packet_count(64), byte_count(64), flow_count(32), pad(32) = 24 Bytes
         """
         flow_raw = packet[start:start+24]
-        flow = unpack('!QQLL', flow_raw)
+        flow = unpack('!QQL4s', flow_raw)
         packet_count = flow[0]
         byte_count = flow[1]
         flow_count = flow[2]
@@ -700,18 +700,29 @@ def parse_StatsRes(msg, packet):
             max_entries(32), active_count(32), lookup_count(64),
             matched_count(64) = 64 Bytes
         """
-        flow_raw = packet[start:start+64]
-        flow = unpack('!B3s32sLLLQQ', flow_raw)
-        table_id = flow[0]
-        pad = flow[1]
-        name = flow[2]
-        wildcards = flow[3]
-        max_entries = flow[4]
-        active_count = flow[5]
-        lookup_count = flow[6]
-        matched_count = flow[7]
-        msg.instantiate(table_id, pad, name, wildcards, max_entries,
-                        active_count, lookup_count, matched_count)
+        count = len(packet[0:]) - 4
+        tables = []
+        while count > 0:
+            flow_raw = packet[start:start+64]
+            flow = unpack('!B3s32sLLLQQ', flow_raw)
+
+            etable = of10.packet.OFP_STAT_TABLE()
+            etable.table_id = flow[0]
+            etable.pad = flow[1]
+            etable.name = flow[2]
+            etable.wildcards = flow[3]
+            etable.max_entries = flow[4]
+            etable.active_count = flow[5]
+            etable.lookup_count = flow[6]
+            etable.matched_count = flow[7]
+
+            tables.append(etable)
+            del etable
+
+            count -= 64
+            start += 64
+
+        msg.instantiate(tables)
 
     elif msg.stat_type == 4:
         """ Parses Port(4)
@@ -760,7 +771,7 @@ def parse_StatsRes(msg, packet):
         queues = []
         while count > 0:
             flow_raw = packet[start:start+32]
-            flow = unpack('!HHLQQQ', flow_raw)
+            flow = unpack('!H2sLQQQ', flow_raw)
 
             queue = of10.packet.OFP_STAT_QUEUE()
             queue.length = flow[0]
@@ -808,7 +819,7 @@ def parse_BarrierRes(msg, packet):
 # ******************* QueueGetConfigReq *******************
 def parse_QueueGetConfigReq(msg, packet):
     queue_raw = packet[0:4]
-    queue = unpack('!HH', queue_raw)
+    queue = unpack('!H2s', queue_raw)
     msg.port = queue[0]
     msg.pad = queue[1]
 
@@ -826,7 +837,7 @@ def parse_QueueGetConfigRes(msg, packet):
         # Queues - it could be multiple
         # queue_id(32), length(16), pad(16)
         queue_raw = packet[start:start+8]
-        queue = unpack('!LHH', queue_raw)
+        queue = unpack('!LH2s', queue_raw)
 
         equeue = of10.packet.OFP_QUEUE()
         equeue.queue_id = queue[0]
@@ -842,7 +853,7 @@ def parse_QueueGetConfigRes(msg, packet):
 
         while len(properties[q_start:] > 0):
             prop_raw = packet[q_start:q_start+8]
-            prop = unpack('!HHLH6s', prop_raw)
+            prop = unpack('!HH4sH6s', prop_raw)
 
             property = of10.packet.OFP_QUEUE_PROPERTIES()
             property.property = prop[0]
