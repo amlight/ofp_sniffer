@@ -1,20 +1,20 @@
 '''
     OpenFlow 1.3 prints
 '''
-import gen.prints
 import of13.dissector
+import tcpiplib.prints
 
 
 def red(string):
-    return gen.prints.red(string)
+    return tcpiplib.prints.red(string)
 
 
 def green(string):
-    return gen.prints.green(string)
+    return tcpiplib.prints.green(string)
 
 
 def datapath_id(string):
-    return gen.prints.datapath_id(string)
+    return tcpiplib.prints.datapath_id(string)
 
 
 def print_string(pkt):
@@ -123,7 +123,7 @@ def print_match_oxm(oxm):
             oxm['value'] = of13.dissector.get_phy_port_id(oxm['value'])
         # DL_DST or DL_SRC
         elif oxm['field'] in [3, 4, 24, 25, 32, 33]:
-            print green(gen.prints.eth_addr(oxm['value']))
+            print green(tcpiplib.prints.eth_addr(oxm['value']))
             return
         # DL_TYPE
         elif oxm['field'] in [5]:
@@ -136,7 +136,7 @@ def print_match_oxm(oxm):
                 oxm['value'] = oxm['value'] & 0xfff
         # NW_SRC or NW_DST
         elif oxm['field'] in [11, 12, 22, 23]:
-            oxm['value'] = gen.prints.get_ip_from_long(oxm['value'])
+            oxm['value'] = tcpiplib.prints.get_ip_from_long(oxm['value'])
         # IPv6 Extensions
         elif oxm['field'] in [39]:
             extensions = of13.parser.parse_ipv6_extension_header(oxm['values'])
@@ -147,11 +147,11 @@ def print_match_oxm(oxm):
 
     elif oxm['hasmask'] == 1:
         if oxm['field'] in [3, 4, 24, 25]:
-            oxm['value'] = gen.prints.eth_addr(oxm['value'])
-            oxm['mask'] = gen.prints.eth_addr(oxm['mask'])
+            oxm['value'] = tcpiplib.prints.eth_addr(oxm['value'])
+            oxm['mask'] = tcpiplib.prints.eth_addr(oxm['mask'])
         if oxm['field'] in [11, 12, 22, 23]:
-            oxm['value'] = gen.prints.get_ip_from_long(oxm['value'])
-            oxm['mask'] = gen.prints.get_ip_from_long(oxm['mask'])
+            oxm['value'] = tcpiplib.prints.get_ip_from_long(oxm['value'])
+            oxm['mask'] = tcpiplib.prints.get_ip_from_long(oxm['mask'])
 
         print ('%s/%s' % (green(oxm['value']), green(oxm['mask'])))
 

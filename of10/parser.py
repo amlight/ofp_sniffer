@@ -5,19 +5,13 @@
 import socket
 import struct
 from struct import unpack
+
 import gen.proxies
-import gen.tcpip
 import of10.dissector
 import of10.prints
 import of10.vendors
-
-from of10.packet import OFP_Action
-from of10.packet import OFP_Phy_port
-from of10.packet import OFP_Match
-from of10.packet import OFP_STAT_FLOW
-from of10.packet import OFP_STAT_PORT
-from of10.packet import OFP_STAT_QUEUE
-from of10.packet import OFP_QUEUE, OFP_QUEUE_PROPERTIES, OFP_QUEUE_PROP_PAYLOAD
+import tcpiplib.tcpip
+import tcpiplib.packet
 
 
 # *************** Hello *****************
@@ -104,7 +98,7 @@ def _parse_phy_ports(packet):
     supported = _parse_phy_curr(phy[7])
     peer = _parse_phy_curr(phy[8])
 
-    port = OFP_Phy_port()
+    port = of10.packet.OFP_Phy_port()
     port.port_id = port_id
     port.hw_addr = hw_addr
     port.name = phy[2]
@@ -161,70 +155,70 @@ def parse_SetConfig(msg, packet):
 
 
 # ****************** PacketIn ************************
-def process_data(pkt, start):
-    '''
+def process_data(packet, start, msg):
+    """
         This funcion aims to dissect PacketIn and PacketOut data
         It assumes it is
-        Ethernet [vlan] (BDDP|LLDP|ARP|IP) [TCP|UDP]
-    '''
-
+            Ethernet [vlan] (BDDP|LLDP|ARP|IP) [TCP|UDP]
+    Args:
+        packet: class OFMessage
+        start: offset
+    Returns:
+        payload: array with all classes
+    """
+    payload = []
     # Ethernet
-    eth = gen.tcpip.get_ethernet_frame(pkt.packet[start:start+14], 1)
-    pkt.prepare_printing('print_layer2_pktIn', eth)
+    eth = tcpiplib.packet.Ethernet()
+    eth.parse(packet[start:start + 14], 1)
+    payload.append(eth)
 
     # VLAN or not - ETYPE 0x8100 or 33024
-    start = start + 14
     etype = '0x0000'
-    vlan = {}
-    if eth['protocol'] in [33024]:
-        vlan = gen.tcpip.get_ethernet_vlan(pkt.packet[start:start+2])
-        pkt.prepare_printing('print_vlan', vlan)
-        start = start + 2
-        # If VLAN exists, there is a next eth['protocol']
-        etype = gen.tcpip.get_next_etype(pkt.packet[start:start+2])
-        start = start + 2
+
+    start = start + 14
+    if eth.protocol in [33024]:
+        """
+            Frame has VLAN
+        """
+        vlan = tcpiplib.packet.VLAN()
+        vlan.parse(packet[start:start + 4])
+        payload.append(vlan)
+        etype = vlan.protocol
+        start = start + 4
     else:
-        etype = eth['protocol']
+        etype = eth.protocol
 
-    # LLDP - ETYPE 0x88CC or 35020
-    # BBDP - ETYPE 0x8942 or 35138
-    lldp = {}
+    # LLDP - ETYPE 0x88CC or 35020 or BBDP - ETYPE 0x8942 or 35138
     if etype in [35020, 35138]:
-        lldp = gen.tcpip.get_lldp(pkt.packet[start:])
-        if len(lldp) is 0:
-            message = {'message': 'LLDP Packet MalFormed'}
-            pkt.prepare_printing('print_string', message)
+        lldp = tcpiplib.packet.LLDP()
+        lldp.parse(packet[start:])
+        if not isinstance(lldp, tcpiplib.packet.LLDP):
+            lldp.c_id = 0
         else:
-            pkt.prepare_printing('print_lldp', lldp)
-            if pkt.of_h['type'] is 13:
-                gen.proxies.support_fsfw(pkt, lldp)
-        return
-
-    # OESS FVD - ETYPE 0x88B6 or 34998
-    if etype in [34998]:
-        message = {'message': 'OESS FVD'}
-        pkt.prepare_printing('print_string', message)
-        return
+            if msg.type is 13:
+                gen.proxies.support_fsfw(lldp)
+        payload.append(lldp)
+        return payload
 
     # IP - ETYPE 0x800 or 2048
     if etype in [2048]:
-        ip = gen.tcpip.get_ip_packet(pkt.packet, start)
-        pkt.prepare_printing('print_layer3', ip)
-        if ip['protocol'] is 6:
-            tcp = gen.tcpip.get_tcp_stream(pkt.packet, start+ip['length'])
-            pkt.prepare_printing('print_tcp', tcp)
-        return
+        ip = tcpiplib.packet.IP()
+        ip.parse(packet, start)
+        payload.append(ip)
+        if ip.protocol is 6:
+            tcp = tcpiplib.packet.TCP()
+            tcp.parse(packet, start + ip.length)
+            payload.append(tcp)
+        return payload
 
     # ARP - ETYPE 0x806 or 2054
     if etype in [2054]:
-        arp = gen.tcpip.get_arp(pkt.packet[start:])
-        pkt.prepare_printing('print_arp', arp)
-        return
+        arp = tcpiplib.packet.ARP()
+        arp.parse(packet[start:])
+        payload.append(arp)
+        return payload
 
-    string = 'Ethertype %s not dissected' % hex(eth['protocol'])
-    message = {'message': string}
-    pkt.prepare_printing('print_string', message)
-    return
+    return payload
 
 
 def parse_PacketIn(msg, packet):
@@ -237,11 +231,9 @@ def parse_PacketIn(msg, packet):
     msg.in_port = p_in[2]
     msg.reason = reason
     msg.pad = p_in[4]
+    msg.data = process_data(packet, 10, msg)
 
-    # process data
-    # how to handle data?
-    # process_data(pkt, 10)
-
+    return 1
 
 # ******************** FlowRemoved ***************************
 def parse_FlowRemoved(msg, packet):
@@ -288,7 +280,7 @@ def parse_PacketOut(msg, packet):
     # Actions
     start = 8
     total = start+msg.actions_len
-    msg.action = _parse_OFAction(packet[start:total], 0)
+    msg.actions = _parse_OFAction(packet[start:total], 0)
 
     start = start + msg.actions_len
 
@@ -297,7 +289,7 @@ def parse_PacketOut(msg, packet):
         return 1
 
     # process body
-    # process_data(pkt, start)
+    msg.data = process_data(packet, start, msg)
 
     return 1
 
@@ -337,7 +329,7 @@ def get_ip_from_long(long_ip):
 
 
 def _parse_OFMatch(msg, packet, h_size):
-    match_tmp = OFP_Match()
+    match_tmp = of10.packet.OFP_Match()
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
     wildcard = ofm[0]
@@ -499,13 +491,13 @@ def _parse_OFAction(packet, start):
                 total_length = 4
 
             ofa_action_payload = packet[start:start + total_length]
-            action = OFP_Action()
+            action = of10.packet.OFP_Action()
             action.type = ofa_type
             action.length = ofa_length
             action.payload = ofa_action_payload
             actions_list.append(action)
             # Next packet would start at..
-            start = start + total_length
+            start += total_length
             del action
         else:
             break
@@ -648,11 +640,11 @@ def parse_StatsRes(msg, packet):
         """
         count = len(packet[0:]) - 4
         flows = []
-        while (count > 0):
+        while count > 0:
             flow_raw = packet[start:start+4]
             flow = unpack('!HBB', flow_raw)
 
-            eflow = OFP_STAT_FLOW()
+            eflow = of10.packet.OFP_STAT_FLOW()
 
             eflow.length =  flow[0]
             eflow.table_id = flow[1]
@@ -682,8 +674,8 @@ def parse_StatsRes(msg, packet):
 
             flows.append(eflow)
 
-            count = count - int(eflow.length)
-            start = start + int(eflow.length)
+            count -= int(eflow.length)
+            start += int(eflow.length)
             del eflow
 
         msg.instantiate(flows)
@@ -730,11 +722,11 @@ def parse_StatsRes(msg, packet):
         """
         count = len(packet[0:]) - 4
         ports = []
-        while (count > 0):
+        while count > 0:
             flow_raw = packet[start:start+104]
             flow = unpack('!H6sQQQQQQQQQQQQ', flow_raw)
 
-            eport = OFP_STAT_PORT()
+            eport = of10.packet.OFP_STAT_PORT()
             eport.port_number = flow[0]
             eport.pad = flow[1]
             eport.rx_packets = flow[2]
@@ -753,8 +745,8 @@ def parse_StatsRes(msg, packet):
             ports.append(eport)
             del eport
 
-            count = count - 104
-            start = start + 104
+            count -= 104
+            start += 104
 
         msg.instantiate(ports)
 
@@ -770,7 +762,7 @@ def parse_StatsRes(msg, packet):
             flow_raw = packet[start:start+32]
             flow = unpack('!HHLQQQ', flow_raw)
 
-            queue = OFP_STAT_QUEUE()
+            queue = of10.packet.OFP_STAT_QUEUE()
             queue.length = flow[0]
             queue.pad = flow[1]
             queue.queue_id = flow[2]
@@ -836,7 +828,7 @@ def parse_QueueGetConfigRes(msg, packet):
         queue_raw = packet[start:start+8]
         queue = unpack('!LHH', queue_raw)
 
-        equeue = OFP_QUEUE()
+        equeue = of10.packet.OFP_QUEUE()
         equeue.queue_id = queue[0]
         equeue.length = queue[1]
         equeue.pad = queue[2]
@@ -848,15 +840,15 @@ def parse_QueueGetConfigRes(msg, packet):
         properties = packet[q_start:q_start+equeue.length-8]
         properties_list = []
 
-        while (len(properties[q_start:]) > 0):
+        while len(properties[q_start:] > 0):
             prop_raw = packet[q_start:q_start+8]
             prop = unpack('!HHLH6s', prop_raw)
 
-            property = OFP_QUEUE_PROPERTIES()
+            property = of10.packet.OFP_QUEUE_PROPERTIES()
             property.property = prop[0]
             property.length = prop[1]
             property.pad = prop[2]
-            property.payload = OFP_QUEUE_PROP_PAYLOAD()
+            property.payload = of10.packet.OFP_QUEUE_PROP_PAYLOAD()
             property.payload.rate = prop[3]
             property.payload.pad = prop[4]
 

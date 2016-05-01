@@ -1,15 +1,8 @@
 TODO:
 
 Print data from Hello, EchoReq, EchoRes
+
 Handle Vendor
 Handle Pads
 
-packetIn - data
-how to handle data?
-
-packetOut - data
-how to handle data?
-
 Test all STAT_REPLY, QUEUE
-
-add to the requirement' list: sudo pip install hexdump

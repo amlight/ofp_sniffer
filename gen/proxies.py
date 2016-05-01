@@ -1,3 +1,5 @@
+D_ADDR = None
+DEST_PORT = None
 NET = {}
 name = {"cc4e249102000000": "andes2",
         "cc4e249126000000": "andes1",
@@ -8,15 +10,22 @@ name = {"cc4e249102000000": "andes2",
         "24389406000000": "mct01"}
 
 
-def support_fsfw(pkt, lldp):
+def insert_ip_port(dest_ip, dest_port):
+    global D_ADDR
+    global DEST_PORT
+    D_ADDR = dest_ip
+    DEST_PORT = dest_port
+
+
+def support_fsfw(lldp):
     global NET
 
-    ip = pkt.main_packet.l3['d_addr']
-    port = pkt.main_packet.l4['dest_port']
+    ip = D_ADDR
+    port = DEST_PORT
     try:
-        dpid = lldp['c_id'].split(':')[1]
+        dpid = lldp.c_id.split(':')[1]
     except:
-        dpid = lldp['c_id']
+        dpid = lldp.c_id
     name = get_name_dpid(dpid)
     NET[ip, port] = name
     return

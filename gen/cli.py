@@ -4,7 +4,7 @@ import json
 import pcapy
 
 
-VERSION = '0.3-dev'
+VERSION = '0.3a-dev'
 NO_COLOR = False
 
 

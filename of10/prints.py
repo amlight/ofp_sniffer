@@ -2,60 +2,14 @@
     Prints for OpenFlow 1.0 only
 '''
 from hexdump import hexdump
+
 import of10.dissector
 import of10.parser
-import gen.prints
-import gen.packet
-import gen.tcpip
-
-
-
-def red(string):
-    return gen.prints.red(string)
-
-
-def green(string):
-    return gen.prints.green(string)
-
-
-def eth_addr(string):
-    return gen.prints.eth_addr(string)
-
-
-def datapath_id(string):
-    return gen.prints.datapath_id(string)
-
-
-def print_layer2(pkt):
-    gen.prints.print_layer2(pkt.l2)
-
-
-def print_layer2_pktIn(pkt):
-    gen.prints.print_layer2(pkt.of_body['print_layer2_pktIn'])
-
-
-def print_tcp(pkt):
-    gen.prints.print_tcp(pkt.of_body['print_tcp'])
-
-
-def print_layer3(pkt):
-    gen.prints.print_layer3(pkt.of_body['print_layer3'])
-
-
-def print_lldp(pkt):
-    gen.prints.print_lldp(pkt)
-
-
-def print_arp(pkt):
-    gen.prints.print_arp(pkt.of_body['print_arp'])
-
-
-def print_vlan(pkt):
-    gen.prints.print_vlan(pkt.of_body['print_vlan'])
-
-
-def print_string(pkt):
-    print pkt.of_body['print_string']['message']
+import tcpiplib.prints
+import tcpiplib.tcpip
+from gen.prints import red, green
+from tcpiplib.prints import eth_addr, datapath_id
+import tcpiplib.prints
 
 
 def print_type_unknown(pkt):
@@ -164,7 +118,7 @@ def print_ofp_match(match):
              elif match_item is 'wildcards':
                  match_item_value = hex(match_item_value)
              elif match_item is 'dl_type':
-                 match_item_value = gen.tcpip.get_ethertype(match_item_value)
+                 match_item_value = tcpiplib.tcpip.get_ethertype(match_item_value)
 
              print ("%s: %s" % (match_item, green(match_item_value))),
     print
@@ -551,33 +505,60 @@ def print_portStatus(msg):
 
 def print_packetInOut_layer2(of_xid, eth):
     print ('%s' % of_xid),
-    gen.prints.print_layer2(eth)
+    tcpiplib.prints.print_layer2(eth)
 
 
 def print_packetInOut_vlan(of_xid, vlan):
     print ('%s Ethernet:' % of_xid),
-    gen.prints.print_vlan(vlan)
+    tcpiplib.prints.print_vlan(vlan)
 
 
 def print_of_packetIn(msg):
     print ('PacketIn: buffer_id: %s total_len: %s in_port: %s reason: %s '
            'pad: %s' %
-           (hex(msg.buffer_id), msg.total_len, green(msg.in_port), green(msg.reason),
-            msg.pad))
+           (hex(msg.buffer_id), msg.total_len, green(msg.in_port),
+            green(msg.reason), msg.pad))
     print_data(msg.data)
 
 
 def print_of_packetOut(msg):
     print ('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
-           (hex(msg.buffer_id), green(of10.dissector.get_phy_port_id(msg.in_port)),
+           (hex(msg.buffer_id),
+            green(of10.dissector.get_phy_port_id(msg.in_port)),
             msg.actions_len))
     print_actions(msg.actions)
     print_data(msg.data)
 
 
 def print_data(data):
-    # what to do with data?
-    pass
+    """
+        Print msg.data from both PacketIn and Packetout
+    Args:
+        data: msg.data - array of protocols
+    """
+    next_protocol = '0x0000'
+    eth = data.pop(0)
+    tcpiplib.prints.print_layer2(eth)
+    next_protocol = eth.protocol
+    if next_protocol in [33024]:
+        vlan = data.pop(0)
+        tcpiplib.prints.print_vlan(vlan)
+        next_protocol = vlan.protocol
+
+    if next_protocol in [35020, 35138]:
+        lldp = data.pop(0)
+        tcpiplib.prints.print_lldp(lldp)
+    elif next_protocol in [34998]:
+        print 'OESS FVD'
+    elif next_protocol in [2048]:
+        ip = data.pop(0)
+        tcpiplib.prints.print_layer3(ip)
+        if ip.protocol is 6:
+            tcp = data.pop(0)
+            tcpiplib.prints.print_tcp(tcp)
+    elif next_protocol in [2054]:
+        arp = data.pop(0)
+        tcpiplib.prints.print_arp(arp)
 
 
 def print_queueReq(msg):
