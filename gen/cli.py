@@ -44,23 +44,39 @@ def read_sanitizer(sanitizer_file):
     return (json_content)
 
 
+def check_file_position(file):
+    """
+        Check if -r file was inserted with colon (:)
+        If yes, only read the position specified after colon
+    Args:
+        file: User's input -r
+    Returns:
+        position
+    """
+    new_file = file.partition(":")[0]
+    position = file.partition(":")[2]
+    return new_file, int(position) if len(position) is not 0 else 0
+
+
 def start_capture(capfile, infilter, dev):
     try:
         if len(capfile) > 0:
+            capfile, position = check_file_position(capfile)
             print "Using file %s " % capfile
             cap = pcapy.open_offline(capfile)
         else:
             print "Sniffing device %s" % dev
             cap = pcapy.open_live(dev, 65536, 1, 0)
 
-	if len(infilter) is 0:
-	    infilter = " port 6633 "
-        cap.setfilter(infilter)
-        return cap
-
     except Exception as exception:
         print exception
         return -1
+
+    finally:
+        if len(infilter) is 0:
+            infilter = " port 6633 "
+            cap.setfilter(infilter)
+        return cap, position
 
 
 def get_params(argv):
@@ -113,13 +129,12 @@ def get_params(argv):
 
     if len(sanitizer_file) == 0:
         sanitizer = {'allowed_of_versions': {},
-                     'packetInOut_filter': {},
-                     'flowMod_logs': {},
-                     'packetIn_filter': {}}
+                     'filters': {}}
     else:
         print_options['filters'] = 1
         sanitizer = read_sanitizer(sanitizer_file)
 
-    cap = start_capture(captured_file, input_filter, dev)
 
-    return cap, print_options, sanitizer
+    cap, position = start_capture(captured_file, input_filter, dev)
+
+    return cap, position, print_options, sanitizer

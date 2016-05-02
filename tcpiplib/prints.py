@@ -125,8 +125,8 @@ def print_vlan(vlan):
     Args:
         vlan: class VLAN
     """
-    print ('VLAN: PCP: %s CFI: %s VID: %s' %
-           (vlan.pcp, vlan.cfi, red(vlan.vid)))
+    print ('VLAN: PCP: %s CFI: %s VID: %s Protocol: %s' %
+           (vlan.pcp, vlan.cfi, red(vlan.vid), hex(vlan.ethertype)))
 
 
 def print_arp(arp):

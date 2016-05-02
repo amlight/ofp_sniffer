@@ -48,7 +48,8 @@ class OFMessage:
         if of_header['version'] is 1:
             self.ofp = of10.packet.instantiate(self, of_header)
             if type(self.ofp) is type(int()):
-                print 'Debug: Type not recognized'
+                print ('Debug: Packet: %s not OpenFlow\n' %
+                       (self.main_packet.position))
                 self.offset += 8
                 self.packet = self.packet[8:]
                 return 0
@@ -68,10 +69,7 @@ class OFMessage:
         Args:
             exception = generated expection
         """
-        string = ('!!! MalFormed Packet - Packet Len: %s Informed: %s '
-                  'Missing: %s Bytes  !!!' %
-                  (len(self.packet), self.ofp.length,
-                   self.ofp.length - len(self.packet)))
+        string = ('!!! MalFormed Packet: %s' % self.main_packet.position)
         print 'message %s\n Details about the Error:' % string
         print exception
 
@@ -100,8 +98,7 @@ class OFMessage:
             return -1
 
     def print_packet(self, pkt):
-        # TODO: what about the OpenFlow version filter?
-        if not gen.filters.filter_of_type(self):
+        if not gen.filters.filter_msg(self):
             if pkt.printed_header is False:
                 tcpiplib.prints.print_headers(pkt)
                 pkt.printed_header = True
@@ -177,6 +174,12 @@ class Packet:
                 # MalFormed Packet
                 return 0
             self.this_packet = self.packet[self.offset:self.offset+length]
+
+            if len(self.this_packet) != length:
+                # it means packet is smaller than it should be
+                # propably MTU issue
+                return 1
+
             # Instantiate the OpenFlow message in the ofmsgs array
             # Process the content, using cur_msg position of the array of msgs
             self.ofmsgs.insert(self.cur_msg, OFMessage(self))

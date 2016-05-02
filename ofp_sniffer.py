@@ -32,7 +32,8 @@ def process_packet(header, packet):
         packet: packet captured from file or interface
     """
     global ctr  # packet counter
-    if len(packet) >= 62:
+
+    if len(packet) >= 62 and position_defined():
         time = datetime.datetime.now()
         pkt = Packet(packet, print_options, sanitizer, ctr)
         pkt.process_packet_header(header, time)
@@ -46,12 +47,32 @@ def process_packet(header, packet):
     ctr += 1
 
 
+def position_defined():
+    """
+        In case user wants to see a specific packet inside a
+            specific pcap file, provide file name with the position
+            -r file.pcap:position
+    Returns:
+        True if ctr is good
+        False: if ctr is not good
+    """
+    if position > 0:
+        if ctr == position:
+            return True
+        else:
+            return False
+    else:
+        return True
+
+
 def main(argv):
     """
         This is how it starts: cap.loop continuously capture packets w/ pcapy
         print_options and sanitizer are global variables
     """
     cap.loop(-1, process_packet)
+
+#    Once code is considered "done", remove comments
 #    try:
 #        cap.loop(-1, process_packet)
 #    except KeyboardInterrupt:
@@ -61,5 +82,5 @@ def main(argv):
 #        print exception
 
 if __name__ == "__main__":
-    cap, print_options, sanitizer = gen.cli.get_params(sys.argv)
+    cap, position, print_options, sanitizer = gen.cli.get_params(sys.argv)
     main(sys.argv)
