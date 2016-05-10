@@ -59,6 +59,8 @@ def check_file_position(file):
 
 
 def start_capture(capfile, infilter, dev):
+
+    position = 0
     try:
         if len(capfile) > 0:
             capfile, position = check_file_position(capfile)
