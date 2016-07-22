@@ -6,9 +6,15 @@ from struct import unpack
 import socket
 
 
+IP_PROTOCOL = 8
+TCP_PROTOCOL = 6
+TCP_FLAG_PUSH = 8
+OF_HEADER_SIZE = 8
+
+
 class L1:
     """
-        Class to manage L1 fields
+        Class to dissect L1 fields
     """
     def __init__(self):
         self.caplen = None
@@ -23,14 +29,13 @@ class L1:
 
 class Ethernet:
     """
-        Class to manage Ethernet fields
+        Class to dissect Ethernet fields
     """
     def __init__(self):
-
         self.src_mac = None
         self.dst_mac = None
         self.protocol = None
-        self.length = 14  # Ethernet Header has 14 bytes
+        self.length = 14  # Ethernet header has 14 bytes
 
     def parse(self, packet, host_order=0):
         eth_raw = packet[:self.length]
@@ -38,6 +43,9 @@ class Ethernet:
         self.dst_mac = ethernet[0]
         self.src_mac = ethernet[1]
 
+        # When Ethernet is captured directly from the wire,
+        # use host_order big-endian. When the frame is encapsulated
+        # inside an OpenFlow PacketIn or Out, it is little-endian
         if not host_order:
             self.protocol = socket.ntohs(ethernet[2])
         else:
@@ -47,7 +55,7 @@ class Ethernet:
 
 class IP:
     """
-        Class to manage IP fields
+        Class to dissect IP fields
     """
     def __init__(self):
         self.version = None
@@ -74,7 +82,7 @@ class IP:
 
 class TCP:
     """
-        Class to manage TCP fields
+        Class to dissect TCP fields
     """
     def __init__(self):
         self.source_port = None
@@ -101,7 +109,7 @@ class TCP:
         doff_reserved = tcph[4]
         tcph_length = doff_reserved >> 4
         self.length = tcph_length * 4
-        flags = tcph[5]  # Ignoring Flag NS
+        flags = tcph[5]  # TODO: Flag NS
         self.flag_cwr = flags & 0x80
         self.flag_ece = flags & 0x40
         self.flag_urg = flags & 0x20
@@ -115,7 +123,7 @@ class TCP:
 
 class VLAN:
     """
-        Class to manage VLAN fields
+        Class to dissect VLAN fields
     """
     def __init__(self):
         self.vid = None
@@ -138,7 +146,9 @@ class VLAN:
 
 class LLDP:
     """
-        Class to manage LLDP fields
+        Class to dissect LLDP fields
+        This is not a full LLDP dissection, just basic fields
+        The idea is to get the DPID and ports
     """
     def __init__(self):
         self.c_type = None
@@ -243,7 +253,7 @@ class LLDP:
 
 class ARP:
     """
-        Class to manage ARP fields
+        Class to dissect ARP fields
     """
     def __init__(self):
         self.hw_type = None

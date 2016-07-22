@@ -1,4 +1,9 @@
-from gen.termcolor import colored
+"""
+    Generic printing functions
+"""
+
+
+from termcolor import colored
 import gen.cli
 
 

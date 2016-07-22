@@ -11,12 +11,7 @@ import tcpiplib.packet
 import tcpiplib.prints
 from tcpiplib.tcpip import get_openflow_header
 import gen.proxies
-
-
-IP_PROTOCOL = 8
-TCP_PROTOCOL = 6
-TCP_FLAG_PUSH = 8
-OF_HEADER_SIZE = 8
+from tcpiplib.packet import IP_PROTOCOL, TCP_PROTOCOL, TCP_FLAG_PUSH
 
 
 class OFMessage:
@@ -24,12 +19,18 @@ class OFMessage:
         Used to process all data regarding this OpenFlow message
     """
     def __init__(self, pkt):
+        """
+            Instantiate OFMessage class
+            Args:
+                self: this class
+                pkt: Packet class
+        """
+        # main_packet = full TCP/IP packet
         self.main_packet = pkt
         self.packet = pkt.this_packet
         self.offset = 0
         self.print_options = self.main_packet.print_options
         self.sanitizer = self.main_packet.sanitizer
-        #
         self.message = None
         # ofp is the real OpenFlow message
         self.ofp = None
@@ -38,18 +39,18 @@ class OFMessage:
         """
             This method instantiate the class equivalent to the OpenFlow
                 message type.
-        Args:
-            of_header: dictionary of the OpenFlow header
+            Args:
+                of_header: dictionary of the OpenFlow header
 
-        Returns:
-            0: message type unknown or OpenFlow version non-dissected
-            1: No error
+            Returns:
+                0: message type unknown or OpenFlow version non-dissected
+                1: No error
         """
         if of_header['version'] is 1:
-            self.ofp = of10.packet.instantiate(self, of_header)
-            if type(self.ofp) is type(int()):
+            self.ofp = of10.packet.instantiate(of_header)
+            if isinstance(self.ofp, (int, long)):
                 print ('Debug: Packet: %s not OpenFlow\n' %
-                       (self.main_packet.position))
+                       self.main_packet.position)
                 self.offset += 8
                 self.packet = self.packet[8:]
                 return 0
@@ -66,8 +67,8 @@ class OFMessage:
         """
             In case the OpenFlow message processing crashes, this
                 function tries to give some ideas of what happened
-        Args:
-            exception = generated expection
+            Args:
+                exception: generated expection
         """
         string = ('!!! MalFormed Packet: %s' % self.main_packet.position)
         print 'message %s\n Details about the Error:' % string
@@ -76,42 +77,63 @@ class OFMessage:
     def process_openflow_body(self, of_header):
         """
             Process the OpenFlow content - starts with header
-        Args:
-            of_header: dictionary of the OpenFlow header
-
-        Returns:
-            0: Error with the OpenFlow header
-            1: Success
-            -1: Error processing the OpenFlow content
+            Args:
+                of_header: dictionary of the OpenFlow header
+            Returns:
+                0: Error with the OpenFlow header
+                1: Success
+                -1: Error processing the OpenFlow content
         """
         if not self.process_openflow_header(of_header):
             return 0
         try:
             # support for proxies
+            # PacketOut will be used to collect DPID, but at this moment
+            # just save DEST IP and DEST TCP port
             if of_header['type'] is 13:
                 gen.proxies.insert_ip_port(self.main_packet.l3.d_addr,
                                            self.main_packet.l4.dest_port)
+
             self.ofp.process_msg(self.packet)
             return 1
+
         except Exception as exception:
             self.handle_malformed_pkts(exception)
             return -1
 
     def print_packet(self, pkt):
+        """
+            Generic printing function
+            Args:
+                pkt: Packet class
+        """
+        # Check if there is any printing filter
         if not gen.filters.filter_msg(self):
+            # Only prints TCP/IP header once
+            # A TCP/IP packet might contain multiple OpenFlow messages
             if pkt.printed_header is False:
                 tcpiplib.prints.print_headers(pkt)
                 pkt.printed_header = True
+            # Print OpenFlow header - version independent
             tcpiplib.prints.print_openflow_header(self.ofp)
+            # Print OpenFlow message body
             self.ofp.prints()
             print
 
 
 class Packet:
     """
-        Used to save all data about the packet
+        Used to save all data about the TCP/IP packet
     """
     def __init__(self, packet, print_options, sanitizer, ctr):
+        """
+            Instantiate this class
+            Args:
+                packet: the whole captured packet from NIC or pcap file
+                print_options: printing options provided by user
+                sanitizer: filter file
+                ctr: position of this packet in the packet capture
+        """
         # Raw packet
         self.packet = packet
 
@@ -128,7 +150,7 @@ class Packet:
         self.print_options = print_options
         self.sanitizer = sanitizer
 
-        # TCP/IP header
+        # Instantiate TCP/IP headers
         self.l1 = tcpiplib.packet.L1()
         self.l2 = tcpiplib.packet.Ethernet()
         self.l3 = tcpiplib.packet.IP()
@@ -144,9 +166,9 @@ class Packet:
             Process TCP/IP Header, from Layer 1 to TCP.
             Each layer has a different class. Methods parse are used
                 per layer to dissect it
-        Args:
-            header: header of the captured packet
-            time: time the packet was captured
+            Args:
+                header: header of the captured packet
+                time: time the packet was captured
         """
         self.l1.parse(header, time)
         self.offset = self.l2.parse(self.packet)
@@ -171,7 +193,7 @@ class Packet:
             # let's remove the current OpenFlow message from the packet
             of_header, length = self.get_of_message_length()
             if length < 8:
-                # MalFormed Packet
+                # MalFormed Packet - it could be a fragment
                 return 0
             self.this_packet = self.packet[self.offset:self.offset+length]
 
@@ -181,6 +203,7 @@ class Packet:
                 return 1
 
             # Instantiate the OpenFlow message in the ofmsgs array
+            # A TCP/IP packet might contain multiple OpenFlow messages
             # Process the content, using cur_msg position of the array of msgs
             self.ofmsgs.insert(self.cur_msg, OFMessage(self))
 

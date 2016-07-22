@@ -2,6 +2,13 @@ from struct import unpack
 
 
 def get_ethertype(etype):
+    """
+        Converts Ethertype from number to name
+        Args:
+            etype: etype number collected
+        Returns:
+            etype name
+    """
     etypes = {8: 'IP',
               2048: 'IP',
               2054: 'ARP',
@@ -13,11 +20,18 @@ def get_ethertype(etype):
               34998: 'PRIVATE'}
     try:
         return '%s(%s)' % (etypes[etype], hex(etype))
-    except:
+    except KeyError:
         return hex(etype)
 
 
 def get_ofp_version(version):
+    """
+        Converts OpenFlow version number to a human version
+        Args:
+            version: integer version of the OpenFlow version
+        Returns:
+            human version of the OpenFlow version
+    """
     of_versions = {0: 'Experimental',
                    1: '1.0',
                    2: '1.1',
@@ -27,14 +41,17 @@ def get_ofp_version(version):
                    6: '1.5'}
     try:
         return of_versions[version]
-    except:
+    except KeyError:
         return 'Unknown(%s)' % version
 
 
 def get_openflow_header(packet, start):
     """
         Returns OpenFlow header
-        It is non-version aware
+        It is not a version aware
+        Args:
+            packet: packet content
+            start: offset
     """
     of_header_length = 8
     of_header = packet[start:of_header_length+start]

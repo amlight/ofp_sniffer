@@ -1,3 +1,8 @@
+"""
+    This code handles the CLI parameters
+"""
+
+
 import sys
 import getopt
 import json
@@ -8,9 +13,12 @@ VERSION = '0.3a-dev'
 NO_COLOR = False
 
 
-def usage(file):
-    """ This funcion prints the Usage in case of errors or help needed.
+def usage(filename):
+    """
+        This funcion prints the Usage in case of errors or help needed.
         Always ends after printing this lines below.
+        Args:
+            filename: name of the script called (usually ofp_sniffer.py)
     """
     print (('Usage: \n %s [-p min|full] [-f pcap_filter] [-F filter_file]'
             ' [-i dev] [-r pcap_file]\n'
@@ -25,41 +33,58 @@ def usage(file):
             '\t -h or --help : prints this guidance\n'
             '\t -c or --no-colors: removes colors\n'
             '\t -d or --debug: enable debug\n'
-            '\t -v or --version : prints version\n') % file)
+            '\t -v or --version : prints version\n') % filename)
 
     sys.exit(0)
 
 
 def read_sanitizer(sanitizer_file):
+    """
+        Read the JSON file provided through -F
+        Args:
+            sanitizer_file: file provided
+        Returns:
+            json content of the file provided
+    """
     try:
-        jfile = open(sanitizer_file, 'ro')
-        json_content = json.loads(jfile.read())
-    except:
+        with open(sanitizer_file) as jfile:
+            json_content = json.loads(jfile.read())
+    except Exception as error:
         msg = 'Error Opening the sanitizer file\n'
         msg += 'Please check your JSON file. Maybe the permission is wrong'
         msg += ' or the JSON syntax is incorrect. Try the following:\n'
         msg += 'cat %s | python -m json.tool'
         print msg % sanitizer_file
+        print "Error seen: %s" % error
         sys.exit(0)
-    return (json_content)
+    return json_content
 
 
-def check_file_position(file):
+def check_file_position(filename):
     """
         Check if -r file was inserted with colon (:)
         If yes, only read the position specified after colon
     Args:
-        file: User's input -r
+        filename: User's input -r
     Returns:
-        position
+        position number
     """
-    new_file = file.partition(":")[0]
-    position = file.partition(":")[2]
+    new_file = filename.partition(":")[0]
+    position = filename.partition(":")[2]
     return new_file, int(position) if len(position) is not 0 else 0
 
 
 def start_capture(capfile, infilter, dev):
-
+    """
+        With all information in hand, start capturing packets
+        Args:
+            capfile: in case user provides a pcap file
+            infilter: any tcpdump filters
+            dev: network device to sniffer
+        Returns:
+            cap object
+            position number
+    """
     position = 0
     try:
         if len(capfile) > 0:
@@ -71,17 +96,28 @@ def start_capture(capfile, infilter, dev):
             cap = pcapy.open_live(dev, 65536, 1, 0)
 
     except Exception as exception:
-        print exception
-        return -1
+        print "Error: %s" % exception
+        print "Exiting..."
+        sys.exit(3)
 
-    finally:
-        if len(infilter) is 0:
-            infilter = " port 6633 "
-            cap.setfilter(infilter)
-        return cap, position
+    if len(infilter) is 0:
+        infilter = " port 6633 "
+    cap.setfilter(infilter)
+
+    return cap, position
 
 
 def get_params(argv):
+    """
+        Get CLI params provided by user
+        Args:
+            argv: CLI params
+        Returns:
+            cap - pcap object
+            position - position to read
+            print_options - printing options
+            sanitizer - sanitizer filter
+    """
     # Handle all input params
     letters = 'f:F:i:r:p:ohvcd'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
@@ -90,6 +126,7 @@ def get_params(argv):
 
     # Default Values
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
+    opts = None
 
     try:
         opts, extraparams = getopt.getopt(argv[1:], letters, keywords)
@@ -130,12 +167,10 @@ def get_params(argv):
             usage(argv[0])
 
     if len(sanitizer_file) == 0:
-        sanitizer = {'allowed_of_versions': {},
-                     'filters': {}}
+        sanitizer = {'allowed_of_versions': {}, 'filters': {}}
     else:
         print_options['filters'] = 1
         sanitizer = read_sanitizer(sanitizer_file)
-
 
     cap, position = start_capture(captured_file, input_filter, dev)
 

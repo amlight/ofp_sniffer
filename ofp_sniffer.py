@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-    This code acts as an OpenFlow troubleshoot toolkit: it acts as a sniffer
+    This code is an OpenFlow troubleshooting tool: it acts as a sniffer
     and as an OpenFlow message checker, to make sure the
     ONF standards are being followed.
 
@@ -9,7 +9,7 @@
 
     Current version: 0.3
 
-    Author: Jeronimo Bezerra <tcpiplib@amlight.net>
+    Author: Jeronimo Bezerra <jab@amlight.net>
 """
 
 import datetime
@@ -18,23 +18,26 @@ import gen.cli
 from gen.packet import Packet
 
 
+# Global Variable
+# Others are instantiated later: cap, position, print_options, sanitizer
 ctr = 1
 
 
 def process_packet(header, packet):
     """
         Every packet captured by cap.loop is then processed here.
-        If packets are bigger than 62, we process. If it is 0, means there is
+        If packets are bigger than 62 Bytes, we process. If it is 0, means there is
             no more packets. If it is something in between, it is a fragment,
-            just ignore.
-    Args:
-        header: header of the captured packet
-        packet: packet captured from file or interface
+            we ignore for now.
+        Args:
+            header: header of the captured packet
+            packet: packet captured from file or interface
     """
     global ctr  # packet counter
 
     if len(packet) >= 62 and position_defined():
         time = datetime.datetime.now()
+        # global variables: print_options, sanitizer, ctr
         pkt = Packet(packet, print_options, sanitizer, ctr)
         pkt.process_packet_header(header, time)
         if pkt.openflow_packet:
@@ -52,35 +55,37 @@ def position_defined():
         In case user wants to see a specific packet inside a
             specific pcap file, provide file name with the position
             -r file.pcap:position
-    Returns:
-        True if ctr is good
-        False: if ctr is not good
+        Returns:
+            True if ctr is good
+            False: if ctr is not good
     """
-    if position > 0:
-        if ctr == position:
-            return True
-        else:
-            return False
-    else:
-        return True
+    return (True if ctr == position else False) if position > 0 else True
 
 
-def main(argv):
+def main():
     """
         This is how it starts: cap.loop continuously capture packets w/ pcapy
         print_options and sanitizer are global variables
+        Exits:
+            0 - Normal, reached end of file
+            1 - Normal, user requested with CRTL + C
+            2 - Error
+            3 - Interface or file not found
     """
-    cap.loop(-1, process_packet)
+    exit_code = 0
+    try:
+        cap.loop(-1, process_packet)
+    except KeyboardInterrupt:
+        exit_code = 1
+    except Exception as exception:
+        print 'Error: %s ' % exception
+        exit_code = 2
+    finally:
+        print 'Exiting...'
+        sys.exit(exit_code)
 
-#    Once code is considered "done", remove comments
-#    try:
-#        cap.loop(-1, process_packet)
-#    except KeyboardInterrupt:
-#        print 'Exiting...'
-#        sys.exit(0)
-#    except Exception as exception:
-#        print exception
 
 if __name__ == "__main__":
+    # Get CLI params and call the pcapy loop
     cap, position, print_options, sanitizer = gen.cli.get_params(sys.argv)
-    main(sys.argv)
+    main()

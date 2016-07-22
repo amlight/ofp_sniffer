@@ -20,9 +20,9 @@ def print_type_unknown(pkt):
 def print_pad(pad):
     """
         Used to print pads as a sequence of 0s: 0, 00, 000..
-    Args:
-        pad: pad in str format
-    Returns: string with '0'
+        Args:
+            pad: pad in str format
+        Returns: string with '0'
     """
     pad_len = len(pad)
     string = '0'
@@ -40,6 +40,7 @@ def print_of_hello(msg):
 def print_of_error(msg):
     nCode, tCode = of10.dissector.get_ofp_error(msg.type, msg.code)
     print ('OpenFlow Error - Type: %s Code: %s' % (red(nCode), red(tCode)))
+    # TODO: Print data
 
 
 def print_of_feature_req(msg):
@@ -107,7 +108,7 @@ def print_ofp_phy_port(port):
         printed = _dont_print_0(printed)
     print
 
-    # fix it
+    # TODO: fix it
     print_port_field(port_id, port.curr, 'curr')
     print_port_field(port_id, port.advertised, 'advertised')
     print_port_field(port_id, port.supported, 'supported')
@@ -171,7 +172,7 @@ def print_actions(actions):
 
 def print_ofp_action(action_type, length, payload):
     if action_type == 0:
-        port, max_len = of10.parser.get_action(action_type, length, payload)
+        port, max_len = of10.parser.get_action(action_type, payload)
 
         port = of10.dissector.get_phy_port_id(port)
         print ('Action - Type: %s Length: %s Port: %s '
@@ -180,13 +181,13 @@ def print_ofp_action(action_type, length, payload):
         return 'output:' + port
 
     elif action_type == 1:
-        vlan, pad = of10.parser.get_action(action_type, length, payload)
+        vlan, pad = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s VLAN ID: %s Pad: %s' %
                (green('SetVLANID'), length, green(str(vlan)), print_pad(pad)))
         return 'mod_vlan_vid:' + str(vlan)
 
     elif action_type == 2:
-        vlan_pc, pad = of10.parser.get_action(action_type, length, payload)
+        vlan_pc, pad = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s VLAN PCP: %s Pad: %s' %
                (green('SetVLANPCP'), length, green(str(vlan_pc)), print_pad(pad)))
         return 'mod_vlan_pcp:' + str(vlan_pc)
@@ -197,52 +198,51 @@ def print_ofp_action(action_type, length, payload):
         return 'strip_vlan'
 
     elif action_type == 4:
-        setDLSrc, pad = of10.parser.get_action(action_type, length, payload)
+        setDLSrc, pad = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s SetDLSrc: %s Pad: %s' %
                (green('SetDLSrc'), length, green(str(eth_addr(setDLSrc))),
                 print_pad(pad)))
         return 'mod_dl_src:' + str(eth_addr(setDLSrc))
 
     elif action_type == 5:
-        setDLDst, pad = of10.parser.get_action(action_type, length, payload)
+        setDLDst, pad = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s SetDLDst: %s Pad: %s' %
                (green('SetDLDst'), length, green(str(eth_addr(setDLDst))),
                 print_pad(pad)))
         return 'mod_dl_dst:' + str(eth_addr(setDLDst))
 
     elif action_type == 6:
-        nw_addr = of10.parser.get_action(action_type, length, payload)
+        nw_addr = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s SetNWSrc: %s' %
                (green('SetNWSrc'), length, green(str(nw_addr))))
         return 'mod_nw_src:' + str(nw_addr)
 
     elif action_type == 7:
-        nw_addr = of10.parser.get_action(action_type, length, payload)
+        nw_addr = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s SetNWDst: %s' %
                (green('SetNWDst'), length, green(str(nw_addr))))
         return 'mod_nw_src:' + str(nw_addr)
 
     elif action_type == 8:
-        nw_tos, pad = of10.parser.get_action(action_type, length, payload)
+        nw_tos, pad = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s SetNWTos: %s Pad: %s' %
                (green('SetNWTos'), length, green(str(nw_tos)), print_pad(pad)))
         return 'mod_nw_tos:' + str(nw_tos)
 
     elif action_type == 9:
-        port, pad = of10.parser.get_action(action_type, length, payload)
+        port, pad = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s SetTPSrc: %s Pad: %s' %
                (green('SetTPSrc'), length, green(str(port)), print_pad(pad)))
         return 'mod_tp_src:' + str(port)
 
     elif action_type == int('a', 16):
-        port, pad = of10.parser.get_action(action_type, length, payload)
+        port, pad = of10.parser.get_action(action_type, payload)
         print ('Action - Type: %s Length: %s SetTPDst: %s Pad: %s' %
                (green('SetTPDst'), length, green(str(port)), print_pad(pad)))
         return 'mod_tp_dst:' + str(port)
 
     elif action_type == int('b', 16):
-        port, pad, queue_id = of10.parser.get_action(action_type, length,
-                                                     payload)
+        port, pad, queue_id = of10.parser.get_action(action_type, payload)
         print (('Action - Type: %s Length: %s Enqueue: %s Pad: %s'
                 ' Queue: %s') %
                (green('Enqueue'), length, green(str(port)), print_pad(pad),
@@ -250,7 +250,7 @@ def print_ofp_action(action_type, length, payload):
         return 'set_queue:' + str(queue_id)
 
     elif action_type == int('ffff', 16):
-        vendor = of10.parser.get_action(action_type, length, payload)
+        vendor = of10.parser.get_action(action_type, payload)
         print ('Action - Type:  %s Length: %s Vendor: %s' %
                (green('VENDOR'), length, green(str(vendor))))
         return 'VendorType'
@@ -292,7 +292,7 @@ def print_of_FlowMod(msg):
 
 def _print_portMod_config_mask(variable, name):
 
-    print ('PortMod %s:' % (name)),
+    print ('PortMod %s:' % name),
     printed = False
     for i in variable:
         print of10.dissector.get_phy_config(i),
@@ -561,8 +561,8 @@ def print_of_packetOut(msg):
 def print_data(data):
     """
         Print msg.data from both PacketIn and Packetout
-    Args:
-        data: msg.data - array of protocols
+        Args:
+            data: msg.data - array of protocols
     """
     next_protocol = '0x0000'
     eth = data.pop(0)
@@ -614,10 +614,10 @@ def print_queueRes_queue(queue):
         print_queueRes_properties(property)
 
 
-def print_queueRes_properties(property):
+def print_queueRes_properties(qproperty):
     print ('Property: %s Length: %s Pad: %s' %
-           (property.property, property.length, print_pad(property.pad)))
-    print_queueRes_prop_payload(property.payload)
+           (qproperty.property, qproperty.length, print_pad(qproperty.pad)))
+    print_queueRes_prop_payload(qproperty.payload)
 
 
 def print_queueRes_prop_payload(payload):

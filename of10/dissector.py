@@ -1,7 +1,7 @@
-'''
+"""
     This is the OpenFlow 1.0 dictionary/dissector
-    Here messages, types and codes are converted to names
-'''
+    Here messages, types and codes are converted to names.
+"""
 
 
 def get_ofp_type(of_type):
@@ -29,17 +29,17 @@ def get_ofp_type(of_type):
                 21: 'QueueGetConfigRes'}
     try:
         return of_types[of_type]
-    except:
+    except KeyError:
         return 'UnknownType(%s)' % of_type
 
 
 def get_ofp_error(error_type, code):
-    errors_types = {}
-    codes = {}
+    errors_types = dict()
+    error_codes = dict()
 
-    # Starts with an Error
+    # Starts with an Error - exception
     errors_types[error_type] = 'UnknownType(%s)' % error_type
-    codes[code] = 'UnknownCode(%s)' % code
+    error_codes[code] = 'UnknownCode(%s)' % code
 
     # Error Types
     if error_type in range(0, 6):
@@ -52,61 +52,61 @@ def get_ofp_error(error_type, code):
 
     # Error Codes per Error Type
     if error_type == 0:
-        if code in range(0, 2):
-            codes = {0: 'Incompatible(0)',
-                     1: 'EPerm(1)'}
+        if error_codes in range(0, 2):
+            error_codes = {0: 'Incompatible(0)',
+                           1: 'EPerm(1)'}
 
     elif error_type == 1:
-        if code in range(0, 9):
-            codes = {0: 'BadVersion(0)',
-                     1: 'BadType(1)',
-                     2: 'BadStat(2)',
-                     3: 'BadVendor(3)',
-                     4: 'BadSubtype(4)',
-                     5: 'EPerm(5)',
-                     6: 'BadLength(6)',
-                     7: 'BufferEmpty(7)',
-                     8: 'BufferUnknown(8)'}
+        if error_codes in range(0, 9):
+            error_codes = {0: 'BadVersion(0)',
+                           1: 'BadType(1)',
+                           2: 'BadStat(2)',
+                           3: 'BadVendor(3)',
+                           4: 'BadSubtype(4)',
+                           5: 'EPerm(5)',
+                           6: 'BadLength(6)',
+                           7: 'BufferEmpty(7)',
+                           8: 'BufferUnknown(8)'}
 
     elif error_type == 2:
-        if code in range(0, 9):
-            codes = {0: 'BadType',
-                     1: 'BadLength',
-                     2: 'BadVendor',
-                     3: 'BadVendorType',
-                     4: 'BadOutPort',
-                     5: 'BadArgument',
-                     6: 'EPerm',
-                     7: 'TooMany',
-                     8: 'BadQueue'}
+        if error_codes in range(0, 9):
+            error_codes = {0: 'BadType',
+                           1: 'BadLength',
+                           2: 'BadVendor',
+                           3: 'BadVendorType',
+                           4: 'BadOutPort',
+                           5: 'BadArgument',
+                           6: 'EPerm',
+                           7: 'TooMany',
+                           8: 'BadQueue'}
 
     elif error_type == 3:
-        if code == 0 or code in range(2, 7):
-            codes = {0: 'AllTablesFull(0)',
-                     2: 'Overlap(2)',
-                     3: 'EPerm(3)',
-                     4: 'BadEmergTimeout(4)',
-                     5: 'BadCommand(5)',
-                     6: 'Unsupported(6)'}
+        if error_codes == 0 or error_codes in range(2, 7):
+            error_codes = {0: 'AllTablesFull(0)',
+                           2: 'Overlap(2)',
+                           3: 'EPerm(3)',
+                           4: 'BadEmergTimeout(4)',
+                           5: 'BadCommand(5)',
+                           6: 'Unsupported(6)'}
 
     elif error_type == 4:
-        if code in range(0, 2):
-            codes = {0: 'BadPort(0)',
-                     1: 'BadHwAddr(1)'}
+        if error_codes in range(0, 2):
+            error_codes = {0: 'BadPort(0)',
+                           1: 'BadHwAddr(1)'}
 
     elif error_type == 5:
-        if code in range(0, 3):
-            codes = {0: 'BadPort(0)',
-                     1: 'BadQueue(1)',
-                     2: 'EPerm(2)'}
+        if error_codes in range(0, 3):
+            error_codes = {0: 'BadPort(0)',
+                           1: 'BadQueue(1)',
+                           2: 'EPerm(2)'}
 
-    return errors_types[error_type], codes[code]
+    return errors_types[error_type], error_codes[code]
 
 
 def get_ofp_vendor(vendor_id):
     # NICIRA / OVS: 0x2320 or 8992
     if vendor_id == 8992:
-        return 'NICIRA(' + hex(vendor_id) + ')'
+        return "NICIRA(%s)" % (hex(vendor_id))
     else:
         return str(vendor_id)
 
@@ -119,7 +119,7 @@ def get_ofp_command(command):
                 4: 'DeleteStrict(4)'}
     try:
         return commands[command]
-    except:
+    except KeyError:
         return 'UnknownCommand(%s)' % command
 
 
@@ -127,7 +127,7 @@ def get_vlan(vlan):
     vlans = {65535: 'Untagged(0xFFFF)'}
     try:
         return vlans[vlan]
-    except:
+    except KeyError:
         return vlan
 
 
@@ -138,7 +138,7 @@ def get_ofp_flags(flag):
              3: 'Emerg(3)'}
     try:
         return flags[flag]
-    except:
+    except KeyError:
         return 'UnknownFlag(%s)' % flag
 
 
@@ -148,7 +148,7 @@ def get_flow_removed_reason(reason):
            2: 'Delete(2)'}
     try:
         return rsn[reason]
-    except:
+    except KeyError:
         return 'UnknownReason(%s)' % reason
 
 
@@ -163,7 +163,7 @@ def get_feature_res_capabilities(cap):
             128: 'ARP_MATCH_IP(0x80)'}
     try:
         return caps[cap]
-    except:
+    except KeyError:
         return 'UnknownCapability(%s)' % cap
 
 
@@ -182,7 +182,7 @@ def get_feature_res_actions(action):
                2048: 'ENQUEUE(0x800)'}
     try:
         return actions[action]
-    except:
+    except KeyError:
         return 'UnknownAction(%s)' % action
 
 
@@ -198,7 +198,7 @@ def get_phy_port_id(p_id):
            65535: 'None(0xFFFF)'}
     try:
         return ids[p_id]
-    except:
+    except KeyError:
         return '%s' % p_id
 
 
@@ -212,7 +212,7 @@ def get_phy_config(p_cfg):
            64: 'NoPacketIn(0x40)'}
     try:
         return cfg[p_cfg]
-    except:
+    except KeyError:
         return 'UnknownConfig(%s)' % p_cfg
 
 
@@ -225,7 +225,7 @@ def get_phy_state(p_state):
              16: 'STPMask(0x10)'}
     try:
         return state[p_state]
-    except:
+    except KeyError:
         return 'UnknownState(%s)' % p_state
 
 
@@ -244,7 +244,7 @@ def get_phy_feature(p_feature):
            2048: 'PauseAsym(0x800)'}
     try:
         return ftr[p_feature]
-    except:
+    except KeyError:
         return 'UnknownFeature(%s)' % p_feature
 
 
@@ -255,24 +255,24 @@ def get_configres_flags(flag):
              3: 'FRAG_MASK(3)'}
     try:
         return flags[flag]
-    except:
+    except KeyError:
         return 'UnknownFlag(%s)' % flag
 
 
-def get_portStatus_reason(reason):
+def get_port_status_reason(reason):
     reasons = {0: 'OFPPR_ADD(0)',
                1: 'OFPPR_DELETE(1)',
                2: 'OFPPR_MODIFY(2)'}
     try:
         return reasons[reason]
-    except:
+    except KeyError:
         return 'UnknownReason(%s)' % reason
 
 
-def get_packetIn_reason(reason):
+def get_packet_in_reason(reason):
     reasons = {0: 'OFPR_NO_MATCH(0)',
                1: 'OFPR_ACTION(1)'}
     try:
         return reasons[reason]
-    except:
+    except KeyError:
         return 'UnknownReason(%s)' % reason

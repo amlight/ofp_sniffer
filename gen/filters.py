@@ -1,25 +1,30 @@
-'''
+"""
     Filters to be used
-'''
+    Any customized print filters should be inserted in this file
+    Filters are provided via CLI option -F json-file
+"""
+
+
 import tcpiplib.tcpip
+import tcpiplib.packet
 
 
 def filter_msg(msg):
     """
         This method will be the core of all filters. Any new filter comes here
     Args:
-        msg: class OFMessage
+        msg: OFMessage class
     Returns:
         False: Don' filter packet
         True: Filter it (don't print)
     """
     if msg.print_options['filters'] is 0:
-        # User hasn't selected -F
+        # User hasn't selected CLI option -F
         return False
 
     # Filter per OF Version
     if filter_of_version(msg):
-       return True
+        return True
 
     # Filter per OF Message Type
     if filter_of_type(msg):
@@ -33,22 +38,43 @@ def filter_msg(msg):
 
 
 def filter_of_version(msg):
-    # Check if the OpenFlow version is allowed
+    """
+        Check if the OpenFlow version is allowed
+        Args:
+            msg: OFMessage class
+        Returns:
+            False: Don' filter packet
+            True: Filter it (don't print)
+    """
     name_version = tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
     supported_versions = []
-    for version in msg.sanitizer['allowed_of_versions']:
-        supported_versions.append(version)
-    if name_version not in supported_versions:
-        return True
+    try:
+        for version in msg.sanitizer['allowed_of_versions']:
+            supported_versions.append(version)
+        if name_version not in supported_versions:
+            return True
+    except KeyError:
+        pass
     return False
 
 
 def filter_of_type(msg):
+    """
+        Filter per OF Message Type
+        Args:
+            msg: OFMessage class
+        Returns:
+            False: Don' filter packet
+            True: Filter it (don't print)
+    """
     name_version = tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
     # OF Types to be ignored through json file (-F)
-    rejected_types = msg.sanitizer['allowed_of_versions'][name_version]
-    if msg.ofp.type in rejected_types['rejected_of_types']:
-        return True
+    try:
+        rejected_types = msg.sanitizer['allowed_of_versions'][name_version]
+        if msg.ofp.type in rejected_types['rejected_of_types']:
+            return True
+    except KeyError:
+        pass
     return False
 
 
@@ -56,14 +82,17 @@ def ethertype_filters(msg):
     """
         Filter PacketIn and PacketOut messages with LLDP or BDDP
         Sanitizer filter (-F), entry "filters", "ethertype"
-    Args:
-        msg: class OFMessage
-    Returns:
-        False: Don' filter packet
-        True: Filter it (don't print)
+        Args:
+            msg: class OFMessage
+        Returns:
+            False: Don' filter packet
+            True: Filter it (don't print)
     """
     if msg.ofp.type in [10, 13]:
-        filters = msg.sanitizer['filters']['ethertypes']
+        try:
+            filters = msg.sanitizer['filters']['ethertypes']
+        except KeyError:
+            return False
         if not len(filters):
             # No filters
             return False
@@ -82,6 +111,8 @@ def ethertype_filters(msg):
                 if next_protocol in [2054] and filters['arp']:
                     return True
             except KeyError:
+                # If there is no entry 'lldp' for example, Python will complain.
+                # So, just ignore because user does not want to filter lldp.
                 pass
 
             # Other Ethertypes listed as hex

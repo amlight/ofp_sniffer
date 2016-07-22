@@ -1,6 +1,6 @@
-'''
-    Generic/Protocol-independent prints
-'''
+"""
+    Printing TCP/IP classes
+"""
 
 import socket
 import struct
@@ -33,7 +33,7 @@ def get_ip_from_long(long_ip):
 
     Returns: IP in the format x.x.x.x
     """
-    return (socket.inet_ntoa(struct.pack('!L', long_ip)))
+    return socket.inet_ntoa(struct.pack('!L', long_ip))
 
 
 def datapath_id(a):
@@ -55,7 +55,7 @@ def print_headers(pkt):
         Print TCP/IP header. It uses command line option -p
             to print 'mininal' or 'full' headers
     Args:
-        pkt: class OFMessage
+        pkt: OFMessage class
     """
     if pkt.print_options['min'] == 1:
         print_minimal(pkt.position, pkt.l1.time, pkt.l1.caplen, pkt.l3,
@@ -75,8 +75,8 @@ def print_minimal(position, date, getlen, ip, tcp):
         position: packet count
         date: date/time packet was captured
         getlen: total number of bytes captured
-        ip: class IP
-        tcp: class TCP
+        ip: IP class
+        tcp: TCP class
     """
     string = 'Packet #%s - %s %s:%s -> %s:%s Size: %s Bytes'
 
@@ -112,7 +112,7 @@ def print_layer2(eth):
     """
         Prints the Ethernet frame
     Args:
-        eth: class Ethernet
+        eth: Ethernet class
     """
     print ('Ethernet: Destination MAC: %s Source MAC: %s Protocol: %s' %
            (eth_addr(eth.dst_mac), eth_addr(eth.src_mac),
@@ -123,7 +123,7 @@ def print_vlan(vlan):
     """
         Print VLAN fields
     Args:
-        vlan: class VLAN
+        vlan: VLAN class
     """
     print ('VLAN: PCP: %s CFI: %s VID: %s Protocol: %s' %
            (vlan.pcp, vlan.cfi, red(vlan.vid), hex(vlan.ethertype)))
@@ -133,7 +133,7 @@ def print_arp(arp):
     """
         Print ARP fields
     Args:
-        arp: class ARP
+        arp: ARP class
     """
     print ('ARP: Hardware Type: %s Protocol Type: %s '
            'HW Length: %s Prot Length: %s Opcode: %s '
@@ -149,11 +149,11 @@ def print_layer3(ip):
     """
         Prints IP headers
     Args:
-        ip: class IP
+        ip: IP class
     """
     print (('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '
            'Source Address: %s Destination Address: %s') %
-           (ip.version, (ip.length), ip.ttl, ip.protocol,
+           (ip.version, ip.length, ip.ttl, ip.protocol,
             blue(ip.s_addr), blue(ip.d_addr)))
 
 
@@ -161,13 +161,13 @@ def print_tcp(tcp):
     """
         Print TCP headers
     Args:
-        tcp: class TCP
+        tcp: TCP class
     """
     print ('TCP Source Port: %s Dest Port: %s Sequence Number: %s '
            'Acknowledgement: %s TCP header length: %s Flags: CWR: %s '
            'ECE: %s URG: %s ACK: %s PSH: %s RST: %s SYN: %s FYN: %s' %
            (tcp.source_port, tcp.dest_port, tcp.sequence,
-            tcp.acknowledgement, (tcp.length), tcp.flag_cwr,
+            tcp.acknowledgement, tcp.length, tcp.flag_cwr,
             tcp.flag_ece, tcp.flag_urg, tcp.flag_ack, tcp.flag_psh,
             tcp.flag_rst, tcp.flag_syn, tcp.flag_fyn))
 
@@ -176,7 +176,7 @@ def print_openflow_header(ofp):
     """
         Print OpenFlow header
     Args:
-        ofp: class OFMessage
+        ofp: OFMessage class
     """
     version = tcpiplib.tcpip.get_ofp_version(ofp.version)
     name_version = '%s(%s)' % (version, ofp.version)
@@ -187,7 +187,7 @@ def print_openflow_header(ofp):
         name = of13.dissector.get_ofp_type(ofp.type)
         name_type = '%s(%s)' % (name, ofp.type)
     else:
-        name_type = '%s' % (ofp.type)
+        name_type = '%s' % ofp.type
 
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
            (name_version, yellow(name_type), ofp.length, red(ofp.xid)))
@@ -197,7 +197,7 @@ def print_lldp(lldp):
     """
         Print LLDP fields
     Args:
-        lldp: class LLDP
+        lldp: LLDP class
     """
     print ('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
            'LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'

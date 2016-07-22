@@ -10,6 +10,7 @@ import gen.proxies
 import of10.dissector
 import of10.prints
 import of10.vendors
+import of10.packet
 import tcpiplib.tcpip
 import tcpiplib.packet
 
@@ -25,6 +26,7 @@ def parse_Error(msg, packet):
     ofe = unpack('!HH', of_error)
     msg.type = ofe[0]
     msg.code = ofe[1]
+    msg.data = packet[4:]
 
 
 # ************ EchoReq *****************
@@ -127,7 +129,7 @@ def parse_FeatureRes(msg, packet):
     while len(packet[start:]) > 0:
         port = _parse_phy_ports(packet[start:start+48])
         ports_array.append(port)
-        start = start + 48
+        start += 48
     msg.ports = ports_array
     return 1
 
@@ -163,6 +165,7 @@ def process_data(packet, start, msg):
     Args:
         packet: class OFMessage
         start: offset
+        msg:
     Returns:
         payload: array with all classes
     """
@@ -175,7 +178,7 @@ def process_data(packet, start, msg):
     # VLAN or not - ETYPE 0x8100 or 33024
     etype = '0x0000'
 
-    start = start + 14
+    start += 14
     if eth.protocol in [33024]:
         """
             Frame has VLAN
@@ -184,7 +187,7 @@ def process_data(packet, start, msg):
         vlan.parse(packet[start:start + 4])
         payload.append(vlan)
         etype = vlan.protocol
-        start = start + 4
+        start += 4
     else:
         etype = eth.protocol
 
@@ -196,7 +199,7 @@ def process_data(packet, start, msg):
             lldp.c_id = 0
         else:
             if msg.type is 13:
-                gen.proxies.support_fsfw(lldp)
+                gen.proxies.save_dpid(lldp)
         payload.append(lldp)
         return payload
 
@@ -225,7 +228,7 @@ def parse_PacketIn(msg, packet):
     # buffer_id(32), total_len(16), in_port(16), reason(8), pad(8)
     pkt_raw = packet[0:10]
     p_in = unpack('!LHHB1s', pkt_raw)
-    reason = of10.dissector.get_packetIn_reason(p_in[3])
+    reason = of10.dissector.get_packet_in_reason(p_in[3])
     msg.buffer_id = p_in[0]
     msg.total_len = p_in[1]
     msg.in_port = p_in[2]
@@ -235,9 +238,10 @@ def parse_PacketIn(msg, packet):
 
     return 1
 
+
 # ******************** FlowRemoved ***************************
 def parse_FlowRemoved(msg, packet):
-    msg.match = _parse_OFMatch(msg, packet, 0)
+    msg.match = _parse_OFMatch(packet, 0)
 
     of_rem_body = packet[40:40+40]
     ofrem = unpack('!QHB1sLLH1s1sQQ', of_rem_body)
@@ -262,7 +266,7 @@ def parse_FlowRemoved(msg, packet):
 def parse_PortStatus(msg, packet):
     port_raw = packet[0:8]
     port = unpack('!B7s', port_raw)
-    reason = of10.dissector.get_portStatus_reason(port[0])
+    reason = of10.dissector.get_port_status_reason(port[0])
     msg.reason = reason
     msg.pad = port[1]
     msg.desc = _parse_phy_ports(packet[8:64])
@@ -299,14 +303,14 @@ def process_dst_subnet(wcard):
     OFPFW_NW_DST_SHIFT = 14
     OFPFW_NW_DST_MASK = 1032192
     nw_dst_bits = (wcard & OFPFW_NW_DST_MASK) >> OFPFW_NW_DST_SHIFT
-    return ((32 - nw_dst_bits) if nw_dst_bits < 32 else 0)
+    return (32 - nw_dst_bits) if nw_dst_bits < 32 else 0
 
 
 def process_src_subnet(wcard):
     OFPFW_NW_SRC_SHIFT = 8
     OFPFW_NW_SRC_MASK = 16128
     nw_src_bits = (wcard & OFPFW_NW_SRC_MASK) >> OFPFW_NW_SRC_SHIFT
-    return ((32 - nw_src_bits) if nw_src_bits < 32 else 0)
+    return (32 - nw_src_bits) if nw_src_bits < 32 else 0
 
 
 def _process_wildcard(wcard):
@@ -325,10 +329,10 @@ def _process_wildcard(wcard):
 
 
 def get_ip_from_long(long_ip):
-    return (socket.inet_ntoa(struct.pack('!L', long_ip)))
+    return socket.inet_ntoa(struct.pack('!L', long_ip))
 
 
-def _parse_OFMatch(msg, packet, h_size):
+def _parse_OFMatch(packet, h_size):
     match_tmp = of10.packet.OFP_Match()
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
@@ -346,11 +350,9 @@ def _parse_OFMatch(msg, packet, h_size):
                'tp_dst': ofm[14]}
 
     if wildcard >= ((1 << 22) - 1):
-        # msg.match.wildcards = 4194303
         match_tmp.wildcards = 4194303
         return match_tmp
     elif wildcard == 0:
-        # msg.match.wildcards = 0
         match_tmp.wildcards = 0
         return match_tmp
     else:
@@ -381,7 +383,7 @@ def _parse_OFMatch(msg, packet, h_size):
     # Convert from Dict(ofmatch) to Class ofp_match
     # For each item on ofmatch, associate the value to the equivalent on
     # class ofp_match. For example, if there is an ofmatch['in_port']
-    # msg.match.inport = ofmatch['in_port']. Others will be None
+    # match.inport = ofmatch['in_port']. Others will be None
     require_str = ['dl_src', 'dl_dst', 'nw_src', 'nw_dst']
     for match in ofmatch:
         if match in require_str:
@@ -410,7 +412,7 @@ def _parse_OFBody(msg, packet, h_size):
     msg.flags = ofmod[7]
 
 
-def get_action(action_type, length, payload):
+def get_action(action_type, payload):
     # 0 - OUTPUT. Returns port and max_length
     if action_type == 0:
         type_0 = unpack('!HH', payload)
@@ -465,9 +467,9 @@ def get_action(action_type, length, payload):
 
 
 def _parse_OFAction(packet, start):
-    '''
+    """
         Actions
-    '''
+    """
     # Actions: Header = 4 , plus each possible action
     # Payload varies:
     #  4 for types 0,1,2,6,7,8,9,a,ffff
@@ -476,7 +478,7 @@ def _parse_OFAction(packet, start):
     action_header = 4
     # Add all actions to a list for future printing
     actions_list = []
-    while (1):
+    while 1:
         ofp_action = packet[start:start + action_header]
         if len(ofp_action) > 0:
             # Get type and length
@@ -484,7 +486,7 @@ def _parse_OFAction(packet, start):
             ofa_type = ofa[0]
             ofa_length = ofa[1]
 
-            start = start + action_header
+            start += action_header
             if ofa_type == 4 or ofa_type == 5 or ofa_type == int('b', 16):
                 total_length = 12
             else:
@@ -506,7 +508,7 @@ def _parse_OFAction(packet, start):
 
 
 def parse_FlowMod(msg, packet):
-    msg.match = _parse_OFMatch(msg, packet, 0)
+    msg.match = _parse_OFMatch(packet, 0)
     _parse_OFBody(msg, packet, 0)
     # Actions: Header = 4 , plus each possible action
     actions_start = 64
@@ -533,14 +535,11 @@ def parse_PortMod(msg, packet):
 
 # ******************** StatReq ****************************
 def parse_StatsReq(msg, packet):
-    """ Parse StatReq messages
-
-    Args:
-        msg:
-        packet:
-
-    Returns:
-
+    """
+        Parse StatReq messages
+        Args:
+            msg:
+            packet:
     """
 
     # Get type = 16bits
@@ -561,7 +560,7 @@ def parse_StatsReq(msg, packet):
     elif msg.stat_type == 1 or msg.stat_type == 2:
         # Flow(1) or Aggregate(2)
         # Fields: match(40), table_id(8), pad(8), out_port(16)
-        match = _parse_OFMatch(msg, packet, start)
+        match = _parse_OFMatch(packet, start)
         # 44 Bytes (40B from Match, 4 from header)
         of_stat_req = packet[start+40:start+40+4]
         table_id, pad, out_port = unpack('!B1sH', of_stat_req)
@@ -646,11 +645,11 @@ def parse_StatsRes(msg, packet):
 
             eflow = of10.packet.OFP_STAT_FLOW()
 
-            eflow.length =  flow[0]
+            eflow.length = flow[0]
             eflow.table_id = flow[1]
             eflow.pad = flow[2]
 
-            eflow.match = _parse_OFMatch(msg, packet, start+4)
+            eflow.match = _parse_OFMatch(packet, start+4)
 
             flow_raw = packet[start+44:start+44+44]
             flow = unpack('!LLHHH6sQQQ', flow_raw)
@@ -679,7 +678,6 @@ def parse_StatsRes(msg, packet):
             del eflow
 
         msg.instantiate(flows)
-
 
     elif msg.stat_type == 2:
         """
@@ -782,8 +780,8 @@ def parse_StatsRes(msg, packet):
             queue.tx_errors = flow[5]
             queues.append(queue)
 
-            count = count - 32
-            start = start + 32
+            count -= 32
+            start += 32
             del queue
 
         msg.instantiate(queues)
@@ -802,7 +800,7 @@ def parse_StatsRes(msg, packet):
         msg.instantiate(vendor_id, data)
 
     else:
-        print ('StatRes: Unknown Type: %s' % (msg.stat_type))
+        print 'StatRes: Unknown Type: %s' % msg.stat_type
     return 1
 
 
@@ -833,7 +831,7 @@ def parse_QueueGetConfigRes(msg, packet):
 
     start = 8
     queues = []
-    while (packet[start:] > 0):
+    while packet[start:] > 0:
         # Queues - it could be multiple
         # queue_id(32), length(16), pad(16)
         queue_raw = packet[start:start+8]
@@ -851,20 +849,20 @@ def parse_QueueGetConfigRes(msg, packet):
         properties = packet[q_start:q_start+equeue.length-8]
         properties_list = []
 
-        while len(properties[q_start:] > 0):
+        while len(properties[q_start:]) > 0:
             prop_raw = packet[q_start:q_start+8]
             prop = unpack('!HH4sH6s', prop_raw)
 
-            property = of10.packet.OFP_QUEUE_PROPERTIES()
-            property.property = prop[0]
-            property.length = prop[1]
-            property.pad = prop[2]
-            property.payload = of10.packet.OFP_QUEUE_PROP_PAYLOAD()
-            property.payload.rate = prop[3]
-            property.payload.pad = prop[4]
+            qproperty = of10.packet.OFP_QUEUE_PROPERTIES()
+            qproperty.property = prop[0]
+            qproperty.length = prop[1]
+            qproperty.pad = prop[2]
+            qproperty.payload = of10.packet.OFP_QUEUE_PROP_PAYLOAD()
+            qproperty.payload.rate = prop[3]
+            qproperty.payload.pad = prop[4]
 
-            properties_list.append(property)
-            del property
+            properties_list.append(qproperty)
+            del qproperty
 
         equeue.properties = properties_list
 

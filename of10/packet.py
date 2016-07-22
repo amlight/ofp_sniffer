@@ -1,8 +1,18 @@
+"""
+    This code has the OpenFlow 1.0 associated classes
+    Module parser.py will be used to parse the pcap content
+    Module prints.py will be used to print the class content
+
+    Classes on this file are not using the PEP8 CamelCase specification
+    The idea is to use the same name as used in the OpenFlow specification
+"""
+
+
 import prints as prints
 import parser as parser
 
 
-def instantiate(pkt, of_header):
+def instantiate(of_header):
     if of_header['type'] == 0:
         return OFPT_HELLO(of_header)
     elif of_header['type'] == 1:
@@ -321,7 +331,7 @@ class OFPT_STATS_REQ(OFPHeader):
         self.stats = None
 
     def instantiate(self, *args):
-        if self.stat_type in [1,2]:
+        if self.stat_type in [1, 2]:
             self.stats = OFP_STATSREQ_FLOWAGG(*args)
         elif self.stat_type == 4:
             self.stats = OFP_STATREQ_PORT(*args)
@@ -427,6 +437,7 @@ class OFP_Phy_port:
     def __init__(self):
         self.port_id = None
         self.hw_addr = None
+        self.name = None
         self.config = None
         self.state = None
         self.curr = None
@@ -462,7 +473,9 @@ class OFP_Action:
         self.length = None
         self.payload = None
 
+
 # OFP_STATS_REQ Auxiliary Classes
+
 
 class OFP_STATSREQ_FLOWAGG:
 

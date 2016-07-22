@@ -1,0 +1,10 @@
+ # TODO clear all entries inside the code files
+
+ # TODO: Add a debug mode
+
+Document Installation:
+
+ pcapy
+ Hexdump - print hexdump output
+ termcolor - to color some outputs
+ netaddr - for IPv6
