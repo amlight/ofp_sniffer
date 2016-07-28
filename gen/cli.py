@@ -11,6 +11,8 @@ import pcapy
 
 VERSION = '0.3a-dev'
 NO_COLOR = False
+# Change variable below to activate debugging
+DEBUGGING = False
 
 
 def usage(filename):
@@ -121,8 +123,7 @@ def get_params(argv):
     # Handle all input params
     letters = 'f:F:i:r:p:ohvcd'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
-                'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'debug']
+                'src-file=', 'print-ovs', 'help', 'version', 'no-colors']
 
     # Default Values
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
@@ -134,7 +135,7 @@ def get_params(argv):
         print str(err)
         usage(argv[0])
 
-    print_options = {'min': 1, 'debug': 0, 'ovs': 0, 'colors': 0, 'filters': 0}
+    print_options = {'min': 1, 'ovs': 0, 'colors': 0, 'filters': 0}
 
     for option, param in opts:
         if option in ['-p', '--print']:
@@ -161,8 +162,6 @@ def get_params(argv):
         elif option in ['-c', '--no-colors']:
             global NO_COLOR
             NO_COLOR = True
-        elif option in ['-d', '--debub']:
-            print_options['debug'] = 1
         else:
             usage(argv[0])
 

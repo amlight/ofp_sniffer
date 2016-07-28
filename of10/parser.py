@@ -5,11 +5,9 @@
 import socket
 import struct
 from struct import unpack
-
 import gen.proxies
 import of10.dissector
 import of10.prints
-import of10.vendors
 import of10.packet
 import tcpiplib.tcpip
 import tcpiplib.packet

@@ -1,6 +1,15 @@
- # TODO clear all entries inside the code files
+ # TODO clear all TODO entries inside the code files
+ # Fix print ovs format
 
- # TODO: Add a debug mode
+ # Antonio - add support for SSL
+ # Marcos - Dissect NICIRA
+ # Jeronimo - Add OF13
+ # Remove DPIDs from proxy.py
+
+clear parse and print function that are not in use
+messages with no body don't need parse or prints
+
+correct of10/dissector with names from OF1.0 specs
 
 Document Installation:
 

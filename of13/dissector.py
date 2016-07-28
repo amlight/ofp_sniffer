@@ -1,48 +1,49 @@
-'''
-    OpenFlow 1.3 Types and Codes
-'''
+"""
+    This is the OpenFlow 1.3 dictionary/dissector
+    Here messages, types and codes are converted to names.
+"""
 
 
 def get_ofp_type(of_type):
-    of_types = {0: 'Hello',
-                1: 'Error',
-                2: 'EchoReq',
-                3: 'EchoRes',
-                4: 'Experimenter',
-                5: 'FeatureReq',
-                6: 'FeatureRes',
-                7: 'GetConfigReq',
-                8: 'GetConfigRes',
-                9: 'SetConfig',
-                10: 'PacketIn',
-                11: 'FlowRemoved',
-                12: 'PortStatus',
-                13: 'PacketOut',
-                14: 'FlowMod',
-                15: 'GroupMod',
-                16: 'PortMod',
-                17: 'TableMod',
-                18: 'MultipartReq',
-                19: 'MultipartRes',
-                20: 'BarrierReq',
-                21: 'BarrierRes',
-                22: 'QueueGetConfigReq',
-                23: 'QueueGetConfigRes',
-                24: 'RoleReq',
-                25: 'RoleRes',
-                26: 'GetAsyncReq',
-                27: 'GetAsyncRes',
-                28: 'SetAsync',
-                29: 'MeterMod'}
+    of_types = {0: 'OFPT_HELLO',
+                1: 'OFPT_ERROR',
+                2: 'OFPT_ECHO_REQUEST',
+                3: 'OFPT_ECHO_REPLY',
+                4: 'OFPT_EXPERIMENTER',
+                5: 'OFPT_FEATURES_REQUEST',
+                6: 'OFPT_FEATURES_REPLY',
+                7: 'OFPT_GET_CONFIG_REQUEST',
+                8: 'OFPT_GET_CONFIG_REPLY',
+                9: 'OFPT_SET_CONFIG',
+                10: 'OFPT_PACKET_IN',
+                11: 'OFPT_FLOW_REMOVED',
+                12: 'OFPT_PORT_STATUS',
+                13: 'OFPT_PACKET_OUT',
+                14: 'OFPT_FLOW_MOD',
+                15: 'OFPT_GROUP_MOD',
+                16: 'OFPT_PORT_MOD',
+                17: 'OFPT_TABLE_MOD',
+                18: 'OFPT_MULTIPART_REQUEST',
+                19: 'OFPT_MULTIPART_REPLY',
+                20: 'OFPT_BARRIER_REQUEST',
+                21: 'OFPT_BARRIER_REPLY',
+                22: 'OFPT_QUEUE_GET_CONFIG_REQUEST',
+                23: 'OFPT_QUEUE_GET_CONFIG_REPLY',
+                24: 'OFPT_ROLE_REQUEST',
+                25: 'OFPT_ROLE_REPLY',
+                26: 'OFPT_GET_ASYNC_REQUEST',
+                27: 'OFPT_GET_ASYNC_REPLY',
+                28: 'OFPT_SET_ASYNC',
+                29: 'OFPT_METER_MOD'}
     try:
         return of_types[of_type]
-    except:
+    except KeyError:
         return 'UnknownType(%s)' % of_type
 
 
 def get_ofp_error(error_type, code):
-    errors_types = {}
-    codes = {}
+    errors_types = dict()
+    codes = dict()
 
     # Starts with an Error
     errors_types[error_type] = 'UnknownType(%s)' % error_type
@@ -50,175 +51,175 @@ def get_ofp_error(error_type, code):
 
     # Error Types
     if error_type in range(0, 14) or error_type == 65535:
-        errors_types = {0: 'Hello_Failed(0)',
-                        1: 'Bad_Request(1)',
-                        2: 'Bad_Action(2)',
-                        3: 'Bad_Instruction(3)',
-                        4: 'Bad_Match(4)',
-                        5: 'Flow_Mod_Failed(5)',
-                        6: 'Group_Mod_Failed(6)',
-                        7: 'Port_Mod_Failed(7)',
-                        8: 'Table_Mod_Failed(8)',
-                        9: 'Queue_Op_Failed(9)',
-                        10: 'Switch_Config_Failed(10)',
-                        11: 'Role_Request_Failed(11)',
-                        12: 'Meter_Mod_Failed(12)',
-                        13: 'Table_Features_Failed(13)',
+        errors_types = {0: 'OFPET_HELLO_FAILED(0)',
+                        1: 'OFPET_BAD_REQUEST(1)',
+                        2: 'OFPET_BAD_ACTION(2)',
+                        3: 'OFPET_BAD_INSTRUCTION(3)',
+                        4: 'OFPET_BAD_MATCH(4)',
+                        5: 'OFPET_FLOW_MOD_FAILED(5)',
+                        6: 'OFPET_GROUP_MOD_FAILED(6)',
+                        7: 'OFPET_PORT_MOD_FAILED(7)',
+                        8: 'OFPET_TABLE_MOD_FAILED(8)',
+                        9: 'OFPET_QUEUE_OP_FAILED(9)',
+                        10: 'OFPET_SWITCH_CONFIG_FAILED(10)',
+                        11: 'OFPET_ROLE_REQUEST_FAILED(11)',
+                        12: 'OFPET_METER_MOD_FAILED(12)',
+                        13: 'OFPET_TABLE_FEATURES_FAILED(13)',
                         65535: 'Experimenter(0xffff)'}
 
     # Error Codes per Error Type
     if error_type == 0:
         if code in range(0, 2):
-            codes = {0: 'Incompatible(0)',
-                     1: 'EPerm(1)'}
+            codes = {0: 'OFPHFC_INCOMPATIBLE(0)',
+                     1: 'OFPHFC_EPERM(1)'}
 
     elif error_type == 1:
         if code in range(0, 14):
-            codes = {0: 'Bad_Version(0)',
-                     1: 'Bad_Type(1)',
-                     2: 'Multipart(2)',
-                     3: 'Bad_Experimenter(3)',
-                     4: 'Bad_Exp_Type(4)',
-                     5: 'EPerm(5)',
-                     6: 'Bad_Len(6)',
-                     7: 'Buffer_Empty(7)',
-                     8: 'Buffer_Unknown(8)',
-                     9: 'Bad_Table_Id(9)',
-                     10: 'Is_Slave(10)',
-                     11: 'Bad_Port(11)',
-                     12: 'Bad_Packet(12)',
-                     13: 'Multipart_Buffer_Overflow(13)'}
+            codes = {0: 'OFPBRC_BAD_VERSION(0)',
+                     1: 'OFPBRC_BAD_TYPE(1)',
+                     2: 'OFPBRC_BAD_MULTIPART(2)',
+                     3: 'OFPBRC_BAD_EXPERIMENTER(3)',
+                     4: 'OFPBRC_BAD_EXP_TYPE(4)',
+                     5: 'OFPBRC_EPERM(5)',
+                     6: 'OFPBRC_BAD_LEN(6)',
+                     7: 'OFPBRC_BUFFER_EMPTY(7)',
+                     8: 'OFPBRC_BUFFER_UNKNOWN(8)',
+                     9: 'OFPBRC_BAD_TABLE_ID(9)',
+                     10: 'OFPBRC_IS_SLAVE(10)',
+                     11: 'OFPBRC_BAD_PORT(11)',
+                     12: 'OFPBRC_BAD_PACKET(12)',
+                     13: 'OFPBRC_MULTIPART_BUFFER_OVERFLOW(13)'}
 
     elif error_type == 2:
         if code in range(0, 16):
-            codes = {0: 'Bad_Type(0)',
-                     1: 'Bad_Len(1)',
-                     2: 'Bad_Experimenter(2)',
-                     3: 'Bad_Exp_Type(3)',
-                     4: 'Bad_Out_Port(4)',
-                     5: 'Bad_Argument(5)',
-                     6: 'EPerm(6)',
-                     7: 'Too_Many(7)',
-                     8: 'Bad_Queue(8)',
-                     9: 'Bad_Out_Group(9)',
-                     10: 'Match_Inconsistent(10)',
-                     11: 'Unsupported_Order(11)',
-                     12: 'Bad_Tag(12)',
-                     13: 'Bad_Set_Type(13)',
-                     14: 'Bad_Set_Len(14)',
-                     15: 'Bad_Set_Argument(15)'}
+            codes = {0: 'OFPBAC_BAD_TYPE(0)',
+                     1: 'OFPBAC_BAD_LEN(1)',
+                     2: 'OFPBAC_BAD_EXPERIMENTER(2)',
+                     3: 'OFPBAC_BAD_EXP_TYPE(3)',
+                     4: 'OFPBAC_BAD_OUT_PORT(4)',
+                     5: 'OFPBAC_BAD_ARGUMENT(5)',
+                     6: 'OFPBAC_EPERM(6)',
+                     7: 'OFPBAC_TOO_MANY(7)',
+                     8: 'OFPBAC_BAD_QUEUE(8)',
+                     9: 'OFPBAC_BAD_OUT_GROUP(9)',
+                     10: 'OFPBAC_MATCH_INCONSISTENT(10)',
+                     11: 'OFPBAC_UNSUPPORTED_ORDER(11)',
+                     12: 'OFPBAC_BAD_TAG(12)',
+                     13: 'OFPBAC_BAD_SET_TYPE(13)',
+                     14: 'OFPBAC_BAD_SET_LEN(14)',
+                     15: 'OFPBAC_BAD_SET_ARGUMENT(15)'}
 
     elif error_type == 3:
         if code in range(0, 9):
-            codes = {0: 'Unknown_Inst(0)',
-                     1: 'Unsup_Inst(1)',
-                     2: 'Bad_Table_Id(2)',
-                     3: 'Unsup_Metadata(3)',
-                     4: 'Unsup_Metadata_Mask(4)',
-                     5: 'Bad_Experimenter(5)',
-                     6: 'Bad_Exp_Type(6)',
-                     7: 'Bad_Len(7)',
-                     8: 'Eperm(8)'}
+            codes = {0: 'OFPBIC_UNKNOWN_INST(0)',
+                     1: 'OFPBIC_UNSUP_INST(1)',
+                     2: 'OFPBIC_BAD_TABLE_ID(2)',
+                     3: 'OFPBIC_UNSUP_METADATA(3)',
+                     4: 'OFPBIC_UNSUP_METADATA_MASK(4)',
+                     5: 'OFPBIC_BAD_EXPERIMENTER(5)',
+                     6: 'OFPBIC_BAD_EXP_TYPE(6)',
+                     7: 'OFPBIC_BAD_LEN(7)',
+                     8: 'OFPBIC_EPERM(8)'}
 
     elif error_type == 4:
         if code in range(0, 12):
-            codes = {0: 'Bad_Type(0)',
-                     1: 'Bad_Len(1)',
-                     2: 'Bad_Tag(2)',
-                     3: 'Bad_DL_Addr_Mask(3)',
-                     4: 'Bad_NW_Addr_Mask(4)',
-                     5: 'Bad_Wildcards(5)',
-                     6: 'Bad_Field(6)',
-                     7: 'Bad_Value(7)',
-                     8: 'Bad_Mask(8)',
-                     9: 'Bad_Prereq(9)',
-                     10: 'Dup_Field(10)',
-                     11: 'Eperm(11)'}
+            codes = {0: 'OFPBMC_BAD_TYPE(0)',
+                     1: 'OFPBMC_BAD_LEN(1)',
+                     2: 'OFPBMC_BAD_TAG(2)',
+                     3: 'OFPBMC_BAD_DL_ADDR_MASK(3)',
+                     4: 'OFPBMC_BAD_NW_ADDR_MASK(4)',
+                     5: 'OFPBMC_BAD_WILDCARDS(5)',
+                     6: 'OFPBMC_BAD_FIELD(6)',
+                     7: 'OFPBMC_BAD_VALUE(7)',
+                     8: 'OFPBMC_BAD_MASK(8)',
+                     9: 'OFPBMC_BAD_PREREQ(9)',
+                     10: 'OFPBMC_DUP_FIELD(10)',
+                     11: 'OFPBMC_EPERM(11)'}
 
     elif error_type == 5:
         if code in range(0, 8):
-            codes = {0: 'Unknown(0)',
-                     1: 'Table_Full(1)',
-                     2: 'Bad_Table_Id(2)',
-                     3: 'Overlap(3)',
-                     4: 'EPerm(4)',
-                     5: 'Bad_Timeout(5)',
-                     6: 'Bad_Command(6)',
-                     7: 'Bad_Flags(7)'}
+            codes = {0: 'OFPFMFC_UNKNOWN(0)',
+                     1: 'OFPFMFC_TABLE_FULL(1)',
+                     2: 'OFPFMFC_BAD_TABLE_ID(2)',
+                     3: 'OFPFMFC_OVERLAP(3)',
+                     4: 'OFPFMFC_EPERM(4)',
+                     5: 'OFPFMFC_BAD_TIMEOUT(5)',
+                     6: 'OFPFMFC_BAD_COMMAND(6)',
+                     7: 'OFPFMFC_BAD_FLAGS(7)'}
 
     elif error_type == 6:
         if code in range(0, 15):
-            codes = {0: 'Group_Exists(0)',
-                     1: 'Invalid_Group(1)',
-                     2: 'Weight_Unsupported(2)',
-                     3: 'Out_Of_Groups(3)',
-                     4: 'Out_Of_Buckets(4)',
-                     5: 'Chaining_Unsupported(5)',
-                     6: 'Watch_Unsupported(6)',
-                     7: 'Loop(7)',
-                     8: 'Unknown_Group(8)',
-                     9: 'Chained_Group(9)',
-                     10: 'Bad_Type(10)',
-                     11: 'Bad_Command(11)',
-                     12: 'Bad_Bucket(12)',
-                     13: 'Bad_Watch(13)',
-                     14: 'Eperm(14)'}
+            codes = {0: 'OFPGMFC_GROUP_EXISTS(0)',
+                     1: 'OFPGMFC_INVALID_GROUP(1)',
+                     2: 'OFPGMFC_WEIGHT_UNSUPPORTED(2)',
+                     3: 'OFPGMFC_OUT_OF_GROUPS(3)',
+                     4: 'OFPGMFC_OUT_OF_BUCKETS(4)',
+                     5: 'OFPGMFC_CHAINING_UNSUPPORTED(5)',
+                     6: 'OFPGMFC_WATCH_UNSUPPORTED(6)',
+                     7: 'OFPGMFC_LOOP(7)',
+                     8: 'OFPGMFC_UNKNOWN_GROUP(8)',
+                     9: 'OFPGMFC_CHAINED_GROUP(9)',
+                     10: 'OFPGMFC_BAD_TYPE(10)',
+                     11: 'OFPGMFC_BAD_COMMAND(11)',
+                     12: 'OFPGMFC_BAD_BUCKET(12)',
+                     13: 'OFPGMFC_BAD_WATCH(13)',
+                     14: 'OFPGMFC_EPERM(14)'}
 
     elif error_type == 7:
         if code in range(0, 5):
-            codes = {0: 'Bad_Port(0)',
-                     1: 'Bad_Hw_Addr(1)',
-                     2: 'Bad_Config(2)',
-                     3: 'Bad_Advertise(3)',
-                     4: 'Eperm(4)'}
+            codes = {0: 'OFPPMFC_BAD_PORT(0)',
+                     1: 'OFPPMFC_BAD_HW_ADDR(1)',
+                     2: 'OFPPMFC_BAD_CONFIG(2)',
+                     3: 'OFPPMFC_BAD_ADVERTISE(3)',
+                     4: 'OFPPMFC_EPERM(4)'}
 
     elif error_type == 8:
         if code in range(0, 3):
-            codes = {0: 'Bad_Table(0)',
-                     1: 'Bad_Config(1)',
-                     2: 'Eperm(2)'}
+            codes = {0: 'OFPTMFC_BAD_TABLE(0)',
+                     1: 'OFPTMFC_BAD_CONFIG(1)',
+                     2: 'OFPTMFC_EPERM(2)'}
 
     elif error_type == 9:
         if code in range(0, 3):
-            codes = {0: 'Bad_Port(0)',
-                     1: 'Bad_Queue(1)',
-                     2: 'Eperm(2)'}
+            codes = {0: 'OFPQOFC_BAD_PORT(0)',
+                     1: 'OFPQOFC_BAD_QUEUE(1)',
+                     2: 'OFPQOFC_EPERM(2)'}
 
     elif error_type == int('A', 16):
         if code in range(0, 3):
-            codes = {0: 'Bad_Flags(0)',
-                     1: 'Bad_Len(1)',
-                     2: 'Eperm(2)'}
+            codes = {0: 'OFPSCFC_BAD_FLAGS(0)',
+                     1: 'OFPSCFC_BAD_LEN(1)',
+                     2: 'OFPSCFC_EPERM(2)'}
 
     elif error_type == int('B', 16):
         if code in range(0, 3):
-            codes = {0: 'Stale(0)',
-                     1: 'Unsupported(1)',
-                     2: 'Bad_Role(2)'}
+            codes = {0: 'OFPRRFC_STALE(0)',
+                     1: 'OFPRRFC_UNSUP(1)',
+                     2: 'OFPRRFC_BAD_ROLE(2)'}
 
     elif error_type == int('C', 16):
         if code in range(0, 12):
-            codes = {0: 'Unknown(0)',
-                     1: 'Meter_Exists(1)',
-                     2: 'Invalid_Meter(2)',
-                     3: 'Unknown_Meter(3)',
-                     4: 'Bad_Command(4)',
-                     5: 'Bad_Flags(5)',
-                     6: 'Bad_Rate(6)',
-                     7: 'Bad_Burst(7)',
-                     8: 'Bad_Band(8)',
-                     9: 'Bad_Band_Value(9)',
-                     10: 'Out_Of_Meters(10)',
-                     11: 'Out_of_Bands(11)'}
+            codes = {0: 'OFPMMFC_UNKNOWN(0)',
+                     1: 'OFPMMFC_METER_EXISTS(1)',
+                     2: 'OFPMMFC_INVALID_METER(2)',
+                     3: 'OFPMMFC_UNKNOWN_METER(3)',
+                     4: 'OFPMMFC_BAD_COMMAND(4)',
+                     5: 'OFPMMFC_BAD_FLAGS(5)',
+                     6: 'OFPMMFC_BAD_RATE(6)',
+                     7: 'OFPMMFC_BAD_BURST(7)',
+                     8: 'OFPMMFC_BAD_BAND(8)',
+                     9: 'Bad_BOFPMMFC_BAD_BAND_VALUEand_Value(9)',
+                     10: 'OFPMMFC_OUT_OF_METERS(10)',
+                     11: 'OFPMMFC_OUT_OF_BANDS(11)'}
 
     elif error_type == int('D', 16):
         if code in range(0, 6):
-            codes = {0: 'Bad_Table(0)',
-                     1: 'Bad_Metadata(1)',
-                     2: 'Bad_Type(2)',
-                     3: 'Bad_Length(3)',
-                     4: 'Bad_Argument(4)',
-                     5: 'Eperm(5)'}
+            codes = {0: 'OFPTFFC_BAD_TABLE(0)',
+                     1: 'OFPTFFC_BAD_METADATA(1)',
+                     2: 'OFPTFFC_BAD_TYPE(2)',
+                     3: 'OFPTFFC_BAD_LEN(3)',
+                     4: 'OFPTFFC_BAD_ARGUMENT(4)',
+                     5: 'OFPTFFC_EPERM(5)'}
 
     return errors_types[error_type], codes[code]
 
@@ -233,34 +234,65 @@ def get_feature_res_capabilities(cap):
             256: 'PORT_BLOCKED(0x100)'}
     try:
         return caps[cap]
-    except:
+    except KeyError:
         return 'UnknownCapability(%s)' % cap
 
 
-def get_configres_flags(flag):
+def get_config_flags(flag):
     flags = {0: 'FRAG_NORMAL(0)',
              1: 'FRAG_DROP(1)',
              2: 'FRAG_REASM(2)',
              3: 'FRAG_MASK(3)'}
     try:
         return flags[flag]
-    except:
+    except KeyError:
         return 'UnknownFlag(%s)' % flag
 
 
+def get_packet_in_reason(reason):
+    reasons = {0: 'OFPR_NO_MATCH(0)',
+               1: 'OFPR_ACTION(1)',
+               2: 'OFPR_INVALID_TTL'}
+    try:
+        return reasons[reason]
+    except KeyError:
+        return 'UnknownReason(%s)' % reason
+
+
+def get_flow_removed_reason(reason):
+    rsn = {0: 'OFPRR_IDLE_TIMEOUT(0)',
+           1: 'OFPRR_HARD_TIMEOUT(1)',
+           2: 'OFPRR_DELETE(2)',
+           3: 'OFPRR_GROUP_DELETE'}
+    try:
+        return rsn[reason]
+    except KeyError:
+        return 'UnknownReason(%s)' % reason
+
+
+def get_port_status_reason(reason):
+    reasons = {0: 'OFPPR_ADD(0)',
+               1: 'OFPPR_DELETE(1)',
+               2: 'OFPPR_MODIFY(2)'}
+    try:
+        return reasons[reason]
+    except KeyError:
+        return 'UnknownReason(%s)' % reason
+
+
 def get_phy_port_id(p_id):
-    ids = {65280: 'Max(OxFF00)',
-           65528: 'InPort(0xFFF8)',
-           65529: 'Table(0xFFF9)',
-           65530: 'Normal(0xFFFA)',
-           65531: 'Flood(0xFFFB)',
-           65532: 'All(0xFFFC)',
-           65533: 'Controller(0xFFFD)',
-           65534: 'Local(0xFFFE)',
-           65535: 'Any(0xFFFF)'}
+    ids = {4294967040: 'OFPP_MAX(OxFFFFFF00)',
+           4294967288: 'OFPP_IN_PORT(0xFFFFFFF8)',
+           4294967289: 'OFPP_TABLE(0xFFFFFFF9)',
+           4294967290: 'OFPP_NORMAL(0xFFFFFFFA)',
+           4294967291: 'OFPP_FLOOD(0xFFFFFFFB)',
+           4294967292: 'OFPP_ALL(0xFFFFFFFC)',
+           4294967293: 'OFPP_CONTROLLER(0xFFFFFFFD)',
+           4294967294: 'OFPP_LOCAL(0xFFFFFFFE)',
+           4294967295: 'OFPP_ANY(0xFFFFFFFF)'}
     try:
         return ids[p_id]
-    except:
+    except KeyError:
         return '%s' % p_id
 
 
@@ -308,32 +340,32 @@ def get_flow_match_fields(value):
 
     try:
         return '%s(%s)' % (values[value], value)
-    except:
+    except KeyError:
         return 'UnknownMatchField(%s)' % value
 
 
-def get_of_command(command):
-    commands = {0: 'Add(0)',
-                1: 'Modify(1)',
-                2: 'ModifyStrict(2)',
-                3: 'Delete(3)',
-                4: 'DeleteStrict(4)'}
+def get_flow_mod_command(command):
+    commands = {0: 'OFPFC_ADD(0)',
+                1: 'OFPFC_MODIFY(1)',
+                2: 'OFPFC_MODIFY_STRICT(2)',
+                3: 'OFPFC_DELETE(3)',
+                4: 'OFPFC_DELETE_STRICT(4)'}
     try:
         return commands[command]
-    except:
+    except KeyError:
         return 'UnknownCommand(%s)' % command
 
 
-def get_of_flags(flag):
+def get_flow_mod_flags(flag):
     flags = {0: 'NoFlagSet(0)',
-             1: 'SendFlowRem(0x1)',
-             2: 'CheckOverLap(0x2)',
-             4: 'ResetCounts(0x4)',
-             16: 'NoPacketCounts(0x10)',
-             32: 'NoByteCounts(0x20)'}
+             1: 'OFPFF_SEND_FLOW_REM(0x1)',
+             2: 'OFPFF_CHECK_OVERLAP(0x2)',
+             4: 'OFPFF_RESET_COUNTS(0x4)',
+             16: 'OFPFF_NO_PKT_COUNTS(0x10)',
+             32: 'OFPFF_NO_BYT_COUNTS(0x20)'}
     try:
         return flags[flag]
-    except:
+    except KeyError:
         return 'UnknownFlag(%s)' % flag
 
 
@@ -349,7 +381,7 @@ def get_ipv6_extension(bit):
                256: 'UNSEQ'}
     try:
         return '%s(%s)' % (options[bit], hex(bit))
-    except:
+    except KeyError:
         return 'UnknownBit(%s)' % bit
 
 
@@ -364,7 +396,55 @@ def get_instructions(instruction):
 
     try:
         return '%s(%s)' % (instructions[instruction], instruction)
-    except:
+    except KeyError:
         return 'UnknownInstruction(%s)' % instruction
 
 
+def get_group_mod_command(command):
+    commands = {0: 'OFPGC_ADD(0)',
+                1: 'OFPGC_MODIFY(1)',
+                2: 'OFPGC_DELETE(2)'}
+    try:
+        return commands[command]
+    except KeyError:
+        return 'UnknownCommand(%s)' % command
+
+
+def get_group_mod_type(type):
+    types = {0: 'OFPGT_ALL(0)',
+             1: 'OFPGT_SELECT(1)',
+             2: 'OFPGT_INDIRECT(2)',
+             3: 'OFPGT_FF'}
+    try:
+        return types[type]
+    except KeyError:
+        return 'UnknownType(%s)' % type
+
+
+def get_multipart_request_flags(flag):
+    flags = {0: 'NOT_FLAG_SET(0)',
+             1: 'OFPMPF_REQ_MORE(1)'}
+    try:
+        return flags[flag]
+    except KeyError:
+        return 'UnknownFlag(%s)' % flag
+
+
+def get_multipart_reply_flags(flag):
+    flags = {0: 'NOT_FLAG_SET(0)',
+             1: 'OFPMPF_REPLY_MORE(1)'}
+    try:
+        return flags[flag]
+    except KeyError:
+        return 'UnknownFlag(%s)' % flag
+
+
+def get_controller_role(role):
+    roles = {0: 'OFPCR_ROLE_NOCHANGE(0)',
+             1: 'OFPCR_ROLE_EQUAL(1)',
+             2: 'OFPCR_ROLE_MASTER(2)',
+             3: 'OFPCR_ROLE_SLAVE(3)'}
+    try:
+        return roles[role]
+    except KeyError:
+        return 'UnknownRole(%s)' % role

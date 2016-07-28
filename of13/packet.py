@@ -1,495 +1,607 @@
+"""
+    OpenFlow 1.3 message definition
+"""
+
+
 import prints as prints
 import parser as parser
 
 
-def instantiate(pkt, of_header):
+def instantiate(of_header):
     if of_header['type'] == 0:
-        return OFPT_HELLO(of_header)
+        return ofp_hello(of_header)
     elif of_header['type'] == 1:
-        return OFPT_ERROR(of_header)
+        return ofp_error_msg(of_header)
     elif of_header['type'] == 2:
-        return OFPT_ECHO_REQUEST(of_header)
+        return ofp_echo_request(of_header)
     elif of_header['type'] == 3:
-        return OFPT_ECHO_REPLY(of_header)
+        return ofp_echo_reply(of_header)
     elif of_header['type'] == 4:
-        return OFPT_EXPERIMENTER(of_header)
+        return ofp_experimenter(of_header)
     elif of_header['type'] == 5:
-        return OFPT_FEATURE_REQUEST(of_header)
+        return ofp_switch_features_request(of_header)
     elif of_header['type'] == 6:
-        return OFPT_FEATURE_REPLY(of_header)
+        return ofp_switch_features_reply(of_header)
     elif of_header['type'] == 7:
-        return OFPT_GET_CONFIG_REQUEST(of_header)
+        return ofp_switch_config_request(of_header)
     elif of_header['type'] == 8:
-        return OFPT_GET_CONFIG_REPLY(of_header)
+        return ofp_switch_config(of_header)
     elif of_header['type'] == 9:
-        return OFPT_SET_CONFIG(of_header)
+        return ofp_switch_config(of_header)
     elif of_header['type'] == 10:
-        return OFPT_PACKET_IN(of_header)
+        return ofp_packet_in(of_header)
     elif of_header['type'] == 11:
-        return OFPF_FLOW_REMOVED(of_header)
+        return ofp_flow_removed(of_header)
     elif of_header['type'] == 12:
-        return OFPT_PORT_STATUS(of_header)
+        return ofp_port_status(of_header)
     elif of_header['type'] == 13:
-        return OFPT_PACKET_OUT(of_header)
+        return ofp_packet_out(of_header)
     elif of_header['type'] == 14:
-        return OFPT_FLOW_MOD(of_header)
+        return ofp_flow_mod(of_header)
     elif of_header['type'] == 15:
-        return OFPT_GROUP_MOD(of_header)
+        return ofp_group_mod(of_header)
     elif of_header['type'] == 16:
-        return OFPT_PORT_MOD(of_header)
+        return ofp_port_mod(of_header)
     elif of_header['type'] == 17:
-        return OFPT_TABLE_MOD(of_header)
+        return ofp_table_mod(of_header)
     elif of_header['type'] == 18:
-        return OFPT_MULTIPART_REQUEST(of_header)
+        return ofp_multipart_request(of_header)
     elif of_header['type'] == 19:
-        return OFPT_MULTIPART_REPLY(of_header)
+        return ofp_multipart_reply(of_header)
     elif of_header['type'] == 20:
-        return OFPT_BARRIER_REQUEST(of_header)
+        return ofp_barrier(of_header)
     elif of_header['type'] == 21:
-        return OFPT_BARRIER_REPLY(of_header)
+        return ofp_barrier(of_header)
     elif of_header['type'] == 22:
-        return OFPT_QUEUE_GET_CONFIG_REQUEST(of_header)
+        return ofp_queue_get_config_request(of_header)
     elif of_header['type'] == 23:
-        return OFPT_QUEUE_GET_CONFIG_REPLY(of_header)
+        return ofp_queue_get_config_reply(of_header)
     elif of_header['type'] == 24:
-        return OFPT_ROLE_REQUEST(of_header)
+        return ofp_role(of_header)
     elif of_header['type'] == 25:
-        return OFPT_ROLE_REPLY(of_header)
+        return ofp_role(of_header)
     elif of_header['type'] == 26:
-        return OFPT_GET_ASYNC_REQUEST(of_header)
+        return ofp_get_async_request(of_header)
     elif of_header['type'] == 27:
-        return OFPT_GET_ASYNC_REPLY(of_header)
+        return ofp_async_config(of_header)
     elif of_header['type'] == 28:
-        return OFPT_SET_ASYNC(of_header)
+        return ofp_async_config(of_header)
     elif of_header['type'] == 29:
-        return OFPT_METER_MOD(of_header)
+        return ofp_meter_mod(of_header)
     else:
         return 0
 
 
-class OFPHeader:
+# ################## OpenFlow Header ######################
+
+
+class ofp_header:
 
     def __init__(self, of_header):
-        self.version = 1
+        self.version = 4
         self.type = of_header['type']
         self.length = of_header['length']
         self.xid = of_header['xid']
 
 
-class OFPT_HELLO(OFPHeader):
+# ################## OFPT_HELLO ############################
+
+
+class ofp_hello(ofp_header):
+
+    class ofp_hello_elem_header:
+        def __init__(self):
+            self.type = None  # 2 bytes OFPHET_*
+            self.length = None  # 2 bytes
+            self.versionbitmap = []  # Length bytes, class ofp_hello_elem_versionbitmap
+
+    class ofp_hello_elem_versionbitmap:
+
+        def __init__(self):
+            self.OFPHET_VERSIONBITMAP = 1
+            self.type = self.OFPHET_VERSIONBITMAP  # 2 bytes
+            self.length = None  # 2 bytes
+            self.bitmaps = []  # 4 bytes array
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
+        ofp_header.__init__(self, of_header)
         self.elements = []  # Class ofp_hello_elem_header
 
     def process_msg(self, packet):
-        parser.parse_Hello(self, packet)
+        parser.parse_hello(self, packet)
 
     def prints(self):
-        prints.print_of_hello(self)
+        prints.print_hello(self)
 
 
-class OFPT_ERROR(OFPHeader):
+# ################## OFPT_ERROR ############################
+
+
+class ofp_error_msg(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.type = None  # 16 bits
-        self.code = None  # 16 bits
-        self.data = None
+        ofp_header.__init__(self, of_header)
+        self.error_type = None  # 2 bytes
+        self.code = None  # 2 bytes
+        self.data = []  # 1 Bytes x N
 
     def process_msg(self, packet):
-        parser.parse_Error(self, packet)
+        parser.parse_error_msg(self, packet)
 
     def prints(self):
-        prints.print_of_error(self)
+        prints.print_error_msg(self)
 
 
-class OFPT_ECHO_REQUEST(OFPHeader):
+# ################## OFPT_ECHO_REQUEST ############################
+
+
+class ofp_echo_request(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.data = None
+        ofp_header.__init__(self, of_header)
+        self.data = None  # Variable Length
 
     def process_msg(self, packet):
-        parser.parse_EchoReq(self, packet)
+        parser.parse_echo_request(self, packet)
 
     def prints(self):
-        prints.print_of_echoreq(self)
+        prints.print_echo_request(self)
 
 
-class OFPT_ECHO_REPLY(OFPHeader):
+# ################## OFPT_ECHO_REPLY ############################
+
+
+class ofp_echo_reply(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.data = None
+        ofp_header.__init__(self, of_header)
+        self.data = None  # Variable Length
 
     def process_msg(self, packet):
-        parser.parse_EchoRes(self, packet)
+        parser.parse_echo_reply(self, packet)
 
     def prints(self):
-        prints.print_of_echores(self)
+        prints.ofp_echo_reply(self)
 
 
-class OFPT_EXPERIMENTER(OFPHeader):
+# ################## OFPT_EXPERIMENTER ############################
+
+
+class ofp_experimenter(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.experimenter = None  # 32 bits
-        self.exp_type = None
+        ofp_header.__init__(self, of_header)
+        self.experimenter = None  # 4 Bytes
+        self.exp_type = None  # 4 Bytes
 
     def process_msg(self, packet):
-        parser.parse_Vendor(self, packet)
+        parser.parse_experimenter(self, packet)
 
     def prints(self):
-        prints.print_of_vendor(self)
+        prints.print_experimenter(self)
 
 
-class OFPT_FEATURE_REQUEST(OFPHeader):
+# ################## OFPT_FEATURE_REQUEST ############################
+
+
+class ofp_switch_features_request(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
+        ofp_header.__init__(self, of_header)
 
     def process_msg(self, packet):
-        parser.parse_FeatureReq(self, packet)
+        # ofp_switch_features_request has no body
+        pass
 
     def prints(self):
-        prints.print_of_feature_req(self)
+        # ofp_switch_features_request has no body
+        pass
 
 
-class OFPT_FEATURE_REPLY(OFPHeader):
+# ################## OFPT_FEATURE_REQUEST ############################
+
+
+class ofp_switch_features_reply(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.datapath_id = None  # 64 bits
-        self.n_buffers = None  # 32 bits
-        self.n_tbls = None  # 8 bits
-        self.auxiliary_id = None  # 8 bits
-        self.pad = []  # 0-2 Bytes
-        self.capabilities = []  # 32 bits
-        self.reserved = None  # 32 bits
+        ofp_header.__init__(self, of_header)
+        self.datapath_id = None  # 8 bytes
+        self.n_buffers = None  # 4 bytes
+        self.n_tbls = None  # 1 byte
+        self.auxiliary_id = None  # 1 bytes
+        self.pad = []  # 2 bytes
+        self.capabilities = []  # 4 bytes
+        self.reserved = None  # 4 bytes
 
     def process_msg(self, packet):
-        parser.parse_FeatureRes(self, packet)
+        parser.parse_switch_features(self, packet)
 
     def prints(self):
-        prints.print_of_feature_res(self)
+        prints.print_switch_features(self)
 
 
-class OFPT_GET_CONFIG_REQUEST(OFPHeader):
+# ################## OFPT_GET_CONFIG_REQUEST ############################
+
+
+class ofp_switch_config_request(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
+        ofp_header.__init__(self, of_header)
 
     def process_msg(self, packet):
-        parser.parse_GetConfigReq(self, packet)
+        # ofp_switch_config_request has no body
+        pass
 
     def prints(self):
-        prints.print_of_getconfig_req(self)
+        # ofp_switch_config_request has no body
+        pass
 
 
-class OFPT_GET_CONFIG_REPLY(OFPHeader):
+# ########## OFPT_GET_CONFIG_REPLY & OFPT_SET_CONFIG ###############
+
+
+class ofp_switch_config(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
+        ofp_header.__init__(self, of_header)
         self.flags = None
         self.miss_send_len = None
 
     def process_msg(self, packet):
-        parser.parse_GetConfigRes(self, packet)
+        parser.parse_switch_config(self, packet)
 
     def prints(self):
-        prints.print_ofp_getConfigRes(self)
+        prints.print_switch_config(self)
 
 
-class OFPT_SET_CONFIG(OFPHeader):
-
-    def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.flags = None
-        self.miss_send_len = None
-
-    def process_msg(self, packet):
-        parser.parse_SetConfig(self, packet)
-
-    def prints(self):
-        prints.print_ofp_setConfig(self)
+# ################## OFPT_PACKET_IN ############################
 
 
-class OFPT_PACKET_IN(OFPHeader):
+class ofp_packet_in(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.buffer_id = None  # 32 bits
-        self.total_len = None  # 16 bits
-        self.reason = None  # 8 bits
-        self.table_id = None  # 8 bits
-        self.cookie = None  # 64 bits
-        self.match = None  # class ofp_match
+        ofp_header.__init__(self, of_header)
+        self.buffer_id = None  # 4 bytes
+        self.total_len = None  # 2 bytes
+        self.reason = None  # 1 byte
+        self.table_id = None  # 1 byte
+        self.cookie = None  # 8 bytes
+        self.match = ofp_match()  # auxiliary class ofp_match
         self.pad = None  # 2 bytes
-        self.data = None
+        self.data = None  # 1 bytes x N
 
     def process_msg(self, packet):
-        parser.parse_PacketIn(self, packet)
+        parser.parse_packet_in(self, packet)
 
     def prints(self):
-        prints.print_of_packetIn(self)
+        prints.print_packet_in(self)
 
 
-class OFPF_FLOW_REMOVED(OFPHeader):
+# ################## OFPT_FLOW_REMOVED ############################
+
+
+class ofp_flow_removed(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.cookie = None  # 64 bits
-        self.priority = None  # 16 bits
+        ofp_header.__init__(self, of_header)
+        self.cookie = None  # 8 bytes
+        self.priority = None  # 2 bytes
+        self.reason = None  # 1 byte
+        self.table_id = None  # 1 byte
+        self.duration_sec = None  # 4 bytes
+        self.duration_nsec = None  # 4 bytes
+        self.idle_timeout = None  # 2 bytes
+        self.hard_timeout = None  # 2 bytes
+        self.packet_count = None  # 8 bytes
+        self.byte_count = None  # 8 bytes
+        self.match = ofp_match()   # auxiliary class ofp_match()
+
+    def process_msg(self, packet):
+        parser.parse_flow_removed(self, packet)
+
+    def prints(self):
+        prints.print_flow_removed(self)
+
+
+# ################## OFPT_PORT_STATUS ############################
+
+
+class ofp_port_status(ofp_header):
+
+    def __init__(self, of_header):
+        ofp_header.__init__(self, of_header)
         self.reason = None  # 8 bits
-        self.table_id = None  # 8 bits
-        self.duration_sec = None  # 32 bits
-        self.duration_nsec = None  # 32 bits
-        self.idle_timeout = None  # 16 bits
-        self.hard_timeout = None  # 16 bits
-        self.packet_count = None  # 64 bits
-        self.byte_count = None  # 64 bits
-        self.match = OFP_Match()   # class ofp_match()
+        self.pad = []  # 7 Bytes
+        self.desc = ofp_port()  # ofp_port class
 
     def process_msg(self, packet):
-        parser.parse_FlowRemoved(self, packet)
+        parser.parse_port_status(self, packet)
 
     def prints(self):
-        prints.print_ofp_flow_removed(self)
+        prints.print_port_status(self)
 
 
-class OFPT_PORT_STATUS(OFPHeader):
-
-    def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.reason = None  # 8 bits
-        self.pad = []  # 0 - 7 Bytes
-        self.desc = OFP_Phy_port()
-
-    def process_msg(self, packet):
-        parser.parse_PortStatus(self, packet)
-
-    def prints(self):
-        prints.print_portStatus(self)
+# ################## OFPT_PACKET_OUT ############################
 
 
-class OFPT_PACKET_OUT(OFPHeader):
+class ofp_packet_out(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.buffer_id = None  # 32 bits
-        self.in_port = None  # 32 bits
-        self.actions_len = None  # 16 bits
+        ofp_header.__init__(self, of_header)
+        self.buffer_id = None  # 4 bytes
+        self.in_port = None  # 4 bytes
+        self.actions_len = None  # 2 bytes
         self.pad = None  # 6 bytes
         self.actions = []  # class ofp_action_header
-        self.data = None
+        self.data = None  # 1 bytes x N - Ethernet packet
 
     def process_msg(self, packet):
-        parser.parse_PacketOut(self, packet)
+        parser.parse_packet_out(self, packet)
 
     def prints(self):
-        prints.print_of_packetOut(self)
+        prints.print_packet_out(self)
 
 
-class OFPT_FLOW_MOD(OFPHeader):
+# ################## OFPT_FLOW_MOD ############################
+
+
+class ofp_flow_mod(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.cookie = None  # 64 bits
-        self.cookie_mask = None # 64 bits
-        self.table_id = None  # 8 bits
-        self.command = None  # 8 bits
-
-        self.idle_timeout = None  # 16 bits
-        self.hard_timeout = None  # 16 bits
-        self.priority = None  # 16 bits
-        self.buffer_id = None  # 32 bits
-        self.out_port = None  # 32 bits
-        self.out_group = None  # 32 bits
-        self.flags = None  # 16 bits
-        self.pad = None  # 2 Bytes
-        self.match = None  # Class ofp_match()
+        ofp_header.__init__(self, of_header)
+        self.cookie = None  # 8 bytes
+        self.cookie_mask = None  # 8 bytes
+        self.table_id = None  # 1 byte
+        self.command = None  # 1 byte
+        self.idle_timeout = None  # 2 bytes
+        self.hard_timeout = None  # 2 bytes
+        self.priority = None  # 2 bytes
+        self.buffer_id = None  # 4 bytes
+        self.out_port = None  # 4 bytes
+        self.out_group = None  # 4 bytes
+        self.flags = None  # 2 bytes
+        self.pad = None  # 2 bytes
+        self.match = ofp_match()  # Class ofp_match
         self.instructions = []  # Class ofp_instructions
 
     def process_msg(self, packet):
-        parser.parse_FlowMod(self, packet)
+        parser.parse_flow_mod(self, packet)
 
     def prints(self):
-        prints.print_of_FlowMod(self)
+        prints.print_flow_mod(self)
 
 
-class OFPT_GROUP_MOD(OFPHeader):
+# ################## OFPT_GROUP_MOD ############################
+
+
+class ofp_group_mod(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.command = None  # 16 bits
-        self.type = None  # 8 bits
+        ofp_header.__init__(self, of_header)
+        self.command = None  # 2 bytes
+        self.group_type = None  # 1 byte
         self.pad = None  # 1 byte
-        self.group_id = None  # 32 bits
+        self.group_id = None  # 4 bytes
         self.buckets = []  # class ofp_bucket
 
     def process_msg(self, packet):
-        pass
+        parser.parse_group_mod(self, packet)
 
     def prints(self):
-        pass
+        prints.print_group_mod(self)
 
 
-class OFPT_PORT_MOD(OFPHeader):
+# ################## OFPT_PORT_MOD ############################
+
+
+class ofp_port_mod(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.port_no = None  # 32 bits
+        ofp_header.__init__(self, of_header)
+        self.port_no = None  # 4 bytes
         self.pad = None  # 4 Bytes
-        self.hw_addr = None  # 48 bits
+        self.hw_addr = None  # 6 bytes
         self.pad2 = None  # 2 Bytes
-        self.config = None  # 32 bits
-        self.mask = None  # 32 bits
-        self.advertise = None  # advertise
+        self.config = None  # 4 bytes
+        self.mask = None  # 4 bytes
+        self.advertise = None  # 4 bytes - bitmap of OFPPF_*
         self.pad3 = None  # 4 Bytes
 
     def process_msg(self, packet):
-        parser.parse_PortMod(self, packet)
+        parser.parse_port_mod(self, packet)
 
     def prints(self):
-        prints.print_of_PortMod(self)
+        prints.print_port_mod(self)
 
 
-class OFPT_TABLE_MOD(OFPHeader):
+# ################## OFPT_TABLE_MOD ############################
+
+
+class ofp_table_mod(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.table_id = None  # 8 bits
-        self.pad = None  # 3 x8 bits
-        self.config = None  # 32 bits
+        ofp_header.__init__(self, of_header)
+        self.table_id = None  # 1 byte
+        self.pad = None  # 3 bytes
+        self.config = None  # 4 bytes - bitmap of OFPTC_*
 
     def process_msg(self, packet):
-        pass
+        parser.parse_table_mod(self, packet)
 
     def prints(self):
-        pass
+        prints.print_table_mod(self)
 
 
-class OFPT_MULTIPART_REQUEST(OFPHeader):
+# ################## OFPT_MULTIPART_REQUEST ############################
+
+
+class ofp_multipart_request(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.stat_type = None  # 16 bits
-        self.flags = None   # 16 bits
-        self.pad = None  # 4 Bytes
-        self.body = []  #
-        self.stats = None # legacy?
+        ofp_header.__init__(self, of_header)
+        self.stat_type = None  # 2 bytes
+        self.flags = None   # 2 bytes
+        self.pad = None  # 4 bytes
+        self.body = []  # content to be instantiated
 
     def instantiate(self, *args):
-        if self.stat_type in [1,2]:
-            self.stats = OFP_STATSREQ_FLOWAGG(*args)
+        if self.stat_type in [0, 3, 7, 8, 11, 13]:
+            # These types have empty body. Here for documentation only
+            pass
+        elif self.stat_type == 1:
+            self.body = ofp_flow_stats_request(*args)
+        elif self.stat_type == 2:
+            self.body = ofp_aggregate_stats_request(*args)
         elif self.stat_type == 4:
-            self.stats = OFP_STATREQ_PORT(*args)
+            self.body = ofp_port_stats_request(*args)
         elif self.stat_type == 5:
-            self.stats = OFP_STATREQ_QUEUE(*args)
+            self.body = ofp_queue_stats_request(*args)
+        elif self.stat_type == 6:
+            self.body = ofp_group_stats_request(*args)
+        elif self.stat_type == 9:
+            self.body = ofp_meter_multipart_requests(*args)
+        elif self.stat_type == 10:
+            self.body = ofp_meter_multipart_requests(*args)
+        elif self.stat_type == 12:
+            self.body = ofp_table_features(*args)
         elif self.stat_type == 65535:
-            self.stats = OFP_STATREQ_VENDOR(*args)
+            self.body = ofp_experimenter_multipart_header(*args)
 
     def process_msg(self, packet):
-        parser.parse_StatsReq(self, packet)
+        parser.parse_multipart_request(self, packet)
 
     def prints(self):
-        prints.print_ofp_statReq(self)
+        prints.print_multipart_request(self)
 
 
-class OFPT_MULTIPART_REPLY(OFPHeader):
+# ################## OFPT_MULTIPART_REPLY ############################
+
+
+class ofp_multipart_reply(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.stat_type = None   # 16 bits
-        self.flags = None   # 16 bits
+        ofp_header.__init__(self, of_header)
+        self.stat_type = None   # 2 bytes
+        self.flags = None   # 2 bytes
         self.pad = None  # 4 bytes
-        self.body = None  #
-        self.stats = None   # legacy?
+        self.body = None  # content to be instantiated
 
     def instantiate(self, *args):
         if self.stat_type == 0:
-            self.stats = OFP_STATSRES_DESC(*args)
+            self.body = ofp_desc(*args)
         elif self.stat_type == 1:
-            self.stats = OFP_STATSRES_FLOW(*args)
+            self.body = ofp_flow_stats(*args)
         elif self.stat_type == 2:
-            self.stats = OFP_STATSRES_AGG(*args)
+            self.body = ofp_aggregate_stats_reply(*args)
         elif self.stat_type == 3:
-            self.stats = OFP_STATSRES_TABLE(*args)
+            self.body = ofp_table_stats(*args)
         elif self.stat_type == 4:
-            self.stats = OFP_STATRES_PORT(*args)
+            self.body = ofp_port_stats(*args)
         elif self.stat_type == 5:
-            self.stats = OFP_STATRES_QUEUE(*args)
+            self.body = ofp_queue_stats(*args)
+        elif self.stat_type == 6:
+            self.body = ofp_group_stats(*args)
+        elif self.stat_type == 7:
+            self.body = ofp_group_desc(*args)
+        elif self.stat_type == 8:
+            self.body = ofp_group_features(*args)
+        elif self.stat_type == 9:
+            self.body = ofp_meter_stats(*args)
+        elif self.stat_type == 10:
+            self.body = ofp_meter_config(*args)
+        elif self.stat_type == 11:
+            self.body = ofp_meter_features(*args)
+        elif self.stat_type == 12:
+            self.body = ofp_table_features(*args)
+        elif self.stat_type == 13:
+            self.body = ofp_port_stats(*args)
         elif self.stat_type == 65535:
-            self.stats = OFP_STATRES_VENDOR(*args)
+            self.body = ofp_experimenter_multipart_header(*args)
 
     def process_msg(self, packet):
-        parser.parse_StatsRes(self, packet)
+        parser.parse_multipart_reply(self, packet)
 
     def prints(self):
-        prints.print_ofp_statRes(self)
+        prints.print_multipart_reply(self)
 
 
-class OFPT_BARRIER_REQUEST(OFPHeader):
+# ########## OFPT_BARRIER_REQUEST & OFPT_BARRIER_REPLY ############
+
+
+class ofp_barrier(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
+        ofp_header.__init__(self, of_header)
 
     def process_msg(self, packet):
-        parser.parse_BarrierReq(self, packet)
+        # ofp_barrier has no body
+        pass
 
     def prints(self):
+        # ofp_barrier has no body
         pass
 
 
-class OFPT_BARRIER_REPLY(OFPHeader):
+# ################## OFPT_QUEUE_GET_CONFIG_REQUEST ############################
+
+
+class ofp_queue_get_config_request(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
+        ofp_header.__init__(self, of_header)
+        self.port = None  # 4 bytes
+        self.pad = []  # 4 bytes
 
     def process_msg(self, packet):
-        parser.parse_BarrierReq(self, packet)
+        parser.parse_queue_get_config_request(self, packet)
 
     def prints(self):
-        pass
+        prints.print_queue_get_config_request(self)
 
 
-class OFPT_QUEUE_GET_CONFIG_REQUEST(OFPHeader):
+# ################## OFPT_QUEUE_GET_CONFIG_REPLY ############################
+
+
+class ofp_queue_get_config_reply(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.port = None  # 32 bits
+        ofp_header.__init__(self, of_header)
+        self.port = None  # 4 bytes
         self.pad = []  # 4 Bytes
+        self.queues = []  # Class ofp_packet_queue[]
 
     def process_msg(self, packet):
-        parser.parse_QueueGetConfigReq(self, packet)
+        parser.parse_queue_get_config_reply(self, packet)
 
     def prints(self):
-        prints.print_queueReq(self)
+        prints.print_queue_get_config_reply(self)
 
 
-class OFPT_QUEUE_GET_CONFIG_REPLY(OFPHeader):
-
-    def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.port = None  # 32 bits
-        self.pad = []  # 4 Bytes
-        self.queues = []  # Class OFP_QUEUE[]
-
-    def process_msg(self, packet):
-        parser.parse_QueueGetConfigRes(self, packet)
-
-    def prints(self):
-        prints.print_queueRes(self)
+# ########## OFPT_ROLE_REQUEST & OFPT_ROLE_REPLY ###############
 
 
-class OFPT_ROLE_REQUEST(OFPHeader):
+class ofp_role(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.role = None  # 16 bits
+        ofp_header.__init__(self, of_header)
+        self.role = None  # 8 bytes
         self.pad = None  # 4 bytes
-        self.generation_id = None  # 64 bits
+        self.generation_id = None  # 8 bytes
+
+    def process_msg(self, packet):
+        parser.parse_role(self, packet)
+
+    def prints(self):
+        prints.print_role(self)
+
+
+# ################## OFPT_GET_ASYNC_REQUEST ############################
+
+
+class ofp_get_async_request(ofp_header):
+
+    def __init__(self, of_header):
+        ofp_header.__init__(self, of_header)
 
     def process_msg(self, packet):
         pass
@@ -498,80 +610,47 @@ class OFPT_ROLE_REQUEST(OFPHeader):
         pass
 
 
-class OFPT_ROLE_REPLY(OFPHeader):
+# ########### OFPT_GET_ASYNC_REPLY & OFPT_SET_ASYNC #####################
+
+
+class ofp_async_config(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.role = None  # 16 bits
-        self.pad = None  # 4 bytes
-        self.generation_id = None  # 64 bits
-
-    def process_msg(self, packet):
-        pass
-
-    def prints(self):
-        pass
-
-class OFPT_GET_ASYNC_REQUEST(OFPHeader):
-
-    def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-
-    def process_msg(self, packet):
-        pass
-
-    def prints(self):
-        pass
-
-
-class OFPT_GET_ASYNC_REPLY(OFPHeader):
-
-    def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
+        ofp_header.__init__(self, of_header)
         self.packet_in_mask = None  # 2 x 32 bits
         self.port_status_mask = None  # 2 x 32 bits
         self.flow_removed_mask = None  # 2 x 32 bits
 
     def process_msg(self, packet):
-        pass
+        parser.parse_async_config(self, packet)
 
     def prints(self):
-        pass
+        prints.print_async_config(self)
 
 
-class OFPT_SET_ASYNC(OFPHeader):
+# ################## OFPT_METER_MOD ############################
+
+
+class ofp_meter_mod(ofp_header):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.packet_in_mask = None  # 2 x 32 bits
-        self.port_status_mask = None  # 2 x 32 bits
-        self.flow_removed_mask = None  # 2 x 32 bits
+        ofp_header.__init__(self, of_header)
+        self.command = None  # 2 bytes
+        self.flags = None  # 2 bytes
+        self.meter_id = None  # 4 bytes
+        self.bands = []  # class ofp_meter_band_header
 
     def process_msg(self, packet):
-        pass
+        parser.parse_meter_mod(self, packet)
 
     def prints(self):
-        pass
+        prints.print_meter_mod(self)
 
 
-class OFPT_METER_MOD(OFPHeader):
-
-    def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
-        self.command = None  # 16 bits
-        self.flags = None  # 16 bits
-        self.meter_id = None  # 32 bits
-        self.bands = []  # class ofp_mter_band_header
-
-    def process_msg(self, packet):
-        pass
-
-    def prints(self):
-        pass
+# ######### Auxiliary Data Structures #############
 
 
-# Auxiliary Data Structures
-class OFP_Phy_port:
+class ofp_port:
 
     def __init__(self):
         self.port_id = None
@@ -584,34 +663,103 @@ class OFP_Phy_port:
         self.peer = None
 
 
-class OFP_Match:
-
-    def __init__(self):
-        self.wildcards = None
-        self.in_port = None
-        self.dl_src = None
-        self.dl_dst = None
-        self.dl_vlan = None
-        self.dl_vlan_pcp = None
-        self.pad1 = None
-        self.dl_type = None
-        self.nw_tos = None
-        self.nw_proto = None
-        self.pad2 = None
-        self.nw_src = None
-        self.nw_dst = None
-        self.tp_src = None
-        self.tp_dst = None
-
-
-class OFP_Action:
+class ofp_match:
 
     def __init__(self):
         self.type = None
         self.length = None
-        self.payload = None
+        self.oxm_fields = []  # ofp_match_oxm_fields
+        self.pad = None
+
+
+class ofp_match_oxm_fields:
+
+    def __init__(self):
+        self.oxm_class = None
+        self.field = None
+        self.hasmask = None
+        self.length = None
+        self.payload = ofp_match_oxm_payload()  # ofp_match_oxm
+
+
+class ofp_match_oxm_payload:
+
+    def __init__(self):
+        self.value = None
+        self.mask = None
+
+
+class ofp_instruction:
+
+    def __init__(self, i_type, length):
+        self.type = i_type
+        self.length = length
+
+
+class ofp_instruction_go_to(ofp_instruction):
+
+    def __init__(self, i_type, length):
+        ofp_instruction.__init__(self, i_type, length)
+        self.table_id = None
+        self.pad = None
+
+
+class ofp_instruction_write_metadata(ofp_instruction):
+
+    def __init__(self, i_type, length):
+        ofp_instruction.__init__(self, i_type, length)
+        self.pad = None
+        self.metadata = None
+        self.metadata_mask = None
+
+
+class ofp_instruction_wac_actions(ofp_instruction):
+
+    def __init__(self, i_type, length):
+        ofp_instruction.__init__(self, i_type, length)
+        self.pad = None
+        self.actions = []  # class ofp_action
+
+
+class ofp_instruction_meter(ofp_instruction):
+
+    def __init__(self, i_type, length):
+        ofp_instruction.__init__(self, i_type, length)
+        self.meter_id = None
+
+
+class ofp_instruction_experimenter(ofp_instruction):
+
+    def __init__(self, i_type, length):
+        ofp_instruction.__init__(self, i_type, length)
+        self.experimenter_id = None
+
+
+class ofp_action:
+
+    def __init__(self, a_type, a_length):
+        self.type = a_type
+        self.length = a_length
+        self.pad = None
+
+
+class ofp_action_set_output(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+        self.port = None
+        self.max_len = None
+
+
+class ofp_action_set_vlan_vid(ofp_action):
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+        self.vlan_vid = None
+        self.pad = None
+
 
 # OFP_STATS_REQ Auxiliary Classes
+
 
 class OFP_STATSREQ_FLOWAGG:
 
@@ -644,6 +792,107 @@ class OFP_STATREQ_VENDOR:
 
 
 # OFP_STATS_RES Auxiliary Classes
+
+
+class ofp_flow_stats_request:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_aggregate_stats_request:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_port_stats_request:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_queue_stats_request:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_group_stats_request:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_meter_multipart_requests:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_table_features:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_experimenter_multipart_header:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_desc:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_flow_stats:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_aggregate_stats_reply:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_table_stats:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_port_stats:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_queue_stats:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_group_stats:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_group_desc:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_group_features:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_meter_stats:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_meter_config:
+    def __init__(self, *args):
+        pass
+
+
+class ofp_meter_features:
+    def __init__(self, *args):
+        pass
+
 
 class OFP_STATSRES_DESC:
 

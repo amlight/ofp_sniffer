@@ -12,8 +12,11 @@ import tcpiplib.prints
 from tcpiplib.tcpip import get_openflow_header
 import gen.proxies
 from tcpiplib.packet import IP_PROTOCOL, TCP_PROTOCOL, TCP_FLAG_PUSH
+from gen.debugging import debugclass
+import of13.packet
 
 
+@debugclass
 class OFMessage:
     """
         Used to process all data regarding this OpenFlow message
@@ -54,8 +57,14 @@ class OFMessage:
                 self.offset += 8
                 self.packet = self.packet[8:]
                 return 0
-        # elif of_header['version'] is 4:
-        #     of13.packet.instantiate_class(self)
+        elif of_header['version'] is 4:
+            self.ofp = of13.packet.instantiate(of_header)
+            if isinstance(self.ofp, (int, long)):
+                print ('Debug: Packet: %s not OpenFlow\n' %
+                       self.main_packet.position)
+                self.offset += 8
+                self.packet = self.packet[8:]
+                return 0
         else:
             return 0
 
@@ -121,6 +130,7 @@ class OFMessage:
             print
 
 
+@debugclass
 class Packet:
     """
         Used to save all data about the TCP/IP packet
