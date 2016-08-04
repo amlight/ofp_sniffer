@@ -8,67 +8,18 @@ import parser as parser
 
 
 def instantiate(of_header):
-    if of_header['type'] == 0:
-        return ofp_hello(of_header)
-    elif of_header['type'] == 1:
-        return ofp_error_msg(of_header)
-    elif of_header['type'] == 2:
-        return ofp_echo_request(of_header)
-    elif of_header['type'] == 3:
-        return ofp_echo_reply(of_header)
-    elif of_header['type'] == 4:
-        return ofp_experimenter(of_header)
-    elif of_header['type'] == 5:
-        return ofp_switch_features_request(of_header)
-    elif of_header['type'] == 6:
-        return ofp_switch_features_reply(of_header)
-    elif of_header['type'] == 7:
-        return ofp_switch_config_request(of_header)
-    elif of_header['type'] == 8:
-        return ofp_switch_config(of_header)
-    elif of_header['type'] == 9:
-        return ofp_switch_config(of_header)
-    elif of_header['type'] == 10:
-        return ofp_packet_in(of_header)
-    elif of_header['type'] == 11:
-        return ofp_flow_removed(of_header)
-    elif of_header['type'] == 12:
-        return ofp_port_status(of_header)
-    elif of_header['type'] == 13:
-        return ofp_packet_out(of_header)
-    elif of_header['type'] == 14:
-        return ofp_flow_mod(of_header)
-    elif of_header['type'] == 15:
-        return ofp_group_mod(of_header)
-    elif of_header['type'] == 16:
-        return ofp_port_mod(of_header)
-    elif of_header['type'] == 17:
-        return ofp_table_mod(of_header)
-    elif of_header['type'] == 18:
-        return ofp_multipart_request(of_header)
-    elif of_header['type'] == 19:
-        return ofp_multipart_reply(of_header)
-    elif of_header['type'] == 20:
-        return ofp_barrier(of_header)
-    elif of_header['type'] == 21:
-        return ofp_barrier(of_header)
-    elif of_header['type'] == 22:
-        return ofp_queue_get_config_request(of_header)
-    elif of_header['type'] == 23:
-        return ofp_queue_get_config_reply(of_header)
-    elif of_header['type'] == 24:
-        return ofp_role(of_header)
-    elif of_header['type'] == 25:
-        return ofp_role(of_header)
-    elif of_header['type'] == 26:
-        return ofp_get_async_request(of_header)
-    elif of_header['type'] == 27:
-        return ofp_async_config(of_header)
-    elif of_header['type'] == 28:
-        return ofp_async_config(of_header)
-    elif of_header['type'] == 29:
-        return ofp_meter_mod(of_header)
-    else:
+
+    of_type = {0: ofp_hello, 1: ofp_error_msg, 2: ofp_echo_request, 3: ofp_echo_reply, 4: ofp_experimenter,
+               5: ofp_switch_features_request, 6: ofp_switch_features_reply, 7: ofp_switch_config_request,
+               8: ofp_switch_config, 9: ofp_switch_config, 10: ofp_packet_in, 11: ofp_flow_removed,
+               12: ofp_port_status, 13: ofp_packet_out, 14: ofp_flow_mod, 15: ofp_group_mod, 16: ofp_port_mod,
+               17: ofp_table_mod, 18: ofp_multipart_request, 19: ofp_multipart_reply, 20: ofp_barrier,
+               21: ofp_barrier, 22: ofp_queue_get_config_request, 23: ofp_queue_get_config_reply, 24: ofp_role,
+               25: ofp_role, 26: ofp_get_async_request, 27: ofp_async_config, 28: ofp_async_config, 29: ofp_meter_mod}
+
+    try:
+        return of_type[of_header['type']](of_header)
+    except KeyError:
         return 0
 
 

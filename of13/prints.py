@@ -36,7 +36,7 @@ def print_hello(msg):
             count_bit += 1
             print ("Hello - Bitmap: %s Type: %s Length: %s" %
                    (count_bit, bitmap.type, bitmap.length))
-            print 'Bitmap: %s' % bitmap.bitmaps.split('b')[1]
+            print 'Bitmap: %08d' % int(bitmap.bitmaps.split('b')[1])
 
 
 # ################## OFPT_ERROR ############################
