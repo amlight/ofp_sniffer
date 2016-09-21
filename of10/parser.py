@@ -192,7 +192,10 @@ def process_data(packet, start, msg):
     # LLDP - ETYPE 0x88CC or 35020 or BBDP - ETYPE 0x8942 or 35138
     if etype in [35020, 35138]:
         lldp = tcpiplib.packet.LLDP()
-        lldp.parse(packet[start:])
+        try:
+            lldp.parse(packet[start:])
+        except:
+            pass
         if not isinstance(lldp, tcpiplib.packet.LLDP):
             lldp.c_id = 0
         else:

@@ -199,12 +199,16 @@ def print_lldp(lldp):
     Args:
         lldp: LLDP class
     """
-    print ('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s\n'
-           'LLDP: Port Type(%s) Length: %s SubType: %s ID: %s\n'
-           'LLDP: TTL(%s) Length: %s Seconds: %s\n'
-           'LLDP: END(%s) Length: %s' %
-           (lldp.c_type, lldp.c_length, lldp.c_subtype,
-            green(lldp.c_id), lldp.p_type,
-            lldp.p_length, lldp.p_subtype, green(lldp.p_id),
-            lldp.t_type, lldp.t_length, lldp.t_ttl,
-            lldp.e_type, lldp.e_length))
+    if lldp.c_type is 1:
+        print ('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' % (lldp.c_type, lldp.c_length, lldp.c_subtype,
+                                                                         green(lldp.c_id)))
+    if lldp.p_type is 2:
+        print ('LLDP: Port Type(%s) Length: %s SubType: %s ID: %s' % (lldp.p_type, lldp.p_length, lldp.p_subtype,
+                                                                      green(lldp.p_id)))
+    if lldp.t_type is 3:
+        print ('LLDP: TTL(%s) Length: %s Seconds: %s' % (lldp.t_type, lldp.t_length, lldp.t_ttl))
+
+    if lldp.e_type is 0:
+        print ('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
+    else:
+        print ('LLDP: Malformed packet')
