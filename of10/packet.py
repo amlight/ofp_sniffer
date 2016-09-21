@@ -13,51 +13,17 @@ import parser as parser
 
 
 def instantiate(of_header):
-    if of_header['type'] == 0:
-        return OFPT_HELLO(of_header)
-    elif of_header['type'] == 1:
-        return OFPT_ERROR(of_header)
-    elif of_header['type'] == 2:
-        return OFPT_ECHO_REQ(of_header)
-    elif of_header['type'] == 3:
-        return OFPT_ECHO_RES(of_header)
-    elif of_header['type'] == 4:
-        return OFPT_VENDOR(of_header)
-    elif of_header['type'] == 5:
-        return OFPT_FEATURE_REQ(of_header)
-    elif of_header['type'] == 6:
-        return OFPT_FEATURE_RES(of_header)
-    elif of_header['type'] == 7:
-        return OFPT_GET_CONFIG_REQ(of_header)
-    elif of_header['type'] == 8:
-        return OFPT_GET_CONFIG_RES(of_header)
-    elif of_header['type'] == 9:
-        return OFPT_SET_CONFIG(of_header)
-    elif of_header['type'] == 10:
-        return OFPT_PACKET_IN(of_header)
-    elif of_header['type'] == 11:
-        return OFPF_FLOW_REMOVED(of_header)
-    elif of_header['type'] == 12:
-        return OFPT_PORT_STATUS(of_header)
-    elif of_header['type'] == 13:
-        return OFPT_PACKET_OUT(of_header)
-    elif of_header['type'] == 14:
-        return OFPT_FLOW_MOD(of_header)
-    elif of_header['type'] == 15:
-        return OFPT_PORT_MOD(of_header)
-    elif of_header['type'] == 16:
-        return OFPT_STATS_REQ(of_header)
-    elif of_header['type'] == 17:
-        return OFPT_STATS_RES(of_header)
-    elif of_header['type'] == 18:
-        return OFPT_BARRIER_REQ(of_header)
-    elif of_header['type'] == 19:
-        return OFPT_BARRIER_RES(of_header)
-    elif of_header['type'] == 20:
-        return OFPT_QUEUE_GET_CONFIG_REQ(of_header)
-    elif of_header['type'] == 21:
-        return OFPT_QUEUE_GET_CONFIG_RES(of_header)
-    else:
+
+    of_type = {0: ofp_hello, 1: ofp_error_msg, 2: ofp_echo_request, 3: ofp_echo_reply, 4: ofp_vendor,
+               5: ofp_switch_features_request, 6: ofp_switch_features_reply, 7: OFPT_GET_CONFIG_REQ,
+               8: OFPT_GET_CONFIG_RES, 9: OFPT_SET_CONFIG, 10: OFPT_PACKET_IN, 11: OFPF_FLOW_REMOVED,
+               12: OFPT_PORT_STATUS, 13: OFPT_PACKET_OUT, 14: OFPT_FLOW_MOD, 15: OFPT_PORT_MOD, 16: OFPT_STATS_REQ,
+               17: OFPT_STATS_RES, 18: OFPT_BARRIER_REQ, 19: OFPT_BARRIER_RES, 20: OFPT_QUEUE_GET_CONFIG_REQ,
+               21: OFPT_QUEUE_GET_CONFIG_RES}
+
+    try:
+        return of_type[of_header['type']](of_header)
+    except KeyError:
         return 0
 
 
@@ -70,7 +36,7 @@ class OFPHeader:
         self.xid = of_header['xid']
 
 
-class OFPT_HELLO(OFPHeader):
+class ofp_hello(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
@@ -83,7 +49,7 @@ class OFPT_HELLO(OFPHeader):
         prints.print_of_hello(self)
 
 
-class OFPT_ERROR(OFPHeader):
+class ofp_error_msg(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
@@ -97,7 +63,7 @@ class OFPT_ERROR(OFPHeader):
         prints.print_of_error(self)
 
 
-class OFPT_ECHO_REQ(OFPHeader):
+class ofp_echo_request(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
@@ -110,7 +76,7 @@ class OFPT_ECHO_REQ(OFPHeader):
         prints.print_of_echoreq(self)
 
 
-class OFPT_ECHO_RES(OFPHeader):
+class ofp_echo_reply(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
@@ -123,7 +89,7 @@ class OFPT_ECHO_RES(OFPHeader):
         prints.print_of_echores(self)
 
 
-class OFPT_VENDOR(OFPHeader):
+class ofp_vendor(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
@@ -137,7 +103,7 @@ class OFPT_VENDOR(OFPHeader):
         prints.print_of_vendor(self)
 
 
-class OFPT_FEATURE_REQ(OFPHeader):
+class ofp_switch_features_request(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)
@@ -149,7 +115,7 @@ class OFPT_FEATURE_REQ(OFPHeader):
         prints.print_of_feature_req(self)
 
 
-class OFPT_FEATURE_RES(OFPHeader):
+class ofp_switch_features_reply(OFPHeader):
 
     def __init__(self, of_header):
         OFPHeader.__init__(self, of_header)

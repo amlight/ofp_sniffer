@@ -96,7 +96,7 @@ def parse_experimenter(msg, packet):
     return 0
 
 
-# ################## OFPT_FEATURE_REQUEST ############################
+# ################## OFPT_FEATURE_REPLY ############################
 
 
 def _parse_bitmask(bitmask, array):
@@ -176,10 +176,28 @@ def parse_packet_out(msg, packet):
 # ################## OFPT_FLOW_MOD ############################
 
 
-def parse_ipv6_extension_header(extensions):
+# def parse_ipv6_extension_header(extensions):
     # still useful?
-    bits = [1, 2, 4, 8, 16, 32, 64, 128, 256]
-    return _parse_bitmask(extensions, bits)
+#    bits = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+#    return _parse_bitmask(extensions, bits)
+
+def _parse_action_output(packet, start, a_type, a_length, offset=12):
+    # Output has 12 bytes
+    raw2 = unpack('!LH6s', packet[start:start + offset])
+    action = of13.packet.ofp_action_set_output(a_type, a_length)
+    action.port = raw2[0]
+    action.max_len = raw2[1]
+    action.pad = raw2[2]
+    return action, offset
+
+
+def _parser_action_set_vlan_vid(packet, start, a_type, a_length, offset=4):
+    # Set_vlan_vid has 4 bytes
+    raw2 = unpack('!H2s', packet[start:start + offset])
+    action = of13.packet.ofp_action_set_vlan_vid(a_type, a_length)
+    action.vlan_vid = raw2[0]
+    action.pad = raw2[1]
+    return action, offset
 
 
 def _parse_actions(packet):
@@ -189,34 +207,21 @@ def _parse_actions(packet):
 
     while len(packet[start:]) > 0:
         raw = unpack('!HH', packet[start:start + 4])
-        a_type = raw[0]
-        a_length = raw[1]
+        action_type = raw[0]
+        action_length = raw[1]
 
         start += 4
 
-        print len(packet[start:])
-        if a_type == 0:
-            raw2 = unpack('!LH6s', packet[start:start + 12])
-            action = of13.packet.ofp_action_set_output(a_type, a_length)
-            action.port = raw2[0]
-            action.max_len = raw2[1]
-            action.pad = raw2[2]
-            actions.append(action)
-            start += 12
-        elif a_type == 1:
-            raw2 = unpack('!H2s', packet[start:start + 4])
-            action = of13.packet.ofp_action_set_vlan_vid(a_type, a_length)
-            action.vlan_vid = raw2[0]
-            action.pad = raw2[1]
-            actions.append(action)
-            start += 4
+        action_types = {0: _parse_action_output, 1: _parser_action_set_vlan_vid}
 
-        else:
-            print 'later'
+        try:
+            action, offset = action_types[action_type](packet, start, action_type, action_length)
+        except KeyError:
+            return 0
 
-        del action
+        actions.append(action)
+        start += offset
 
-    print len(actions)
     return actions
 
 

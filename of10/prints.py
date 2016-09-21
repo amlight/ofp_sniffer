@@ -554,8 +554,9 @@ def print_of_packetOut(msg):
            (hex(msg.buffer_id),
             green(of10.dissector.get_phy_port_id(msg.in_port)),
             msg.actions_len))
-    print_actions(msg.actions)
-    print_data(msg.data)
+    if msg.actions_len is not 0:
+        print_actions(msg.actions)
+        print_data(msg.data)
 
 
 def print_data(data):

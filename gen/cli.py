@@ -15,6 +15,7 @@ NO_COLOR = False
 DEBUGGING = False
 
 
+
 def usage(filename):
     """
         This funcion prints the Usage in case of errors or help needed.

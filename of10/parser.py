@@ -279,6 +279,9 @@ def parse_PacketOut(msg, packet):
     msg.in_port = p_out[1]
     msg.actions_len = p_out[2]
 
+    if msg.actions_len is 0:
+        return 1
+
     # Actions
     start = 8
     total = start+msg.actions_len

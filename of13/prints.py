@@ -44,6 +44,7 @@ def print_hello(msg):
 
 def print_error_msg(msg):
     print ("Error - Type: %s Code: %s" % (msg.error_type, msg.code))
+    # TODO print data with hexdump
     return 0
 
 
@@ -158,7 +159,7 @@ def print_match_oxm_fields(oxm_fields):
 
 
 def print_match_generic(oxm):
-    print ('OXM Match: Class: %s Length: %s HasMask: %s Field: %s:' %
+    print (' OXM Match: Class: %s Length: %s HasMask: %s Field: %s:' %
            (hex(oxm.oxm_class), oxm.length, oxm.hasmask,
             green(of13.dissector.get_flow_match_fields(oxm.field)))),
 
@@ -206,10 +207,10 @@ def print_match_oxm(oxm):
 def print_instruction(instructions):
     print ('Flow Instructions:')
     for instruction in instructions:
-        print 'Instruction: Type %s Length: %s' %\
+        print ' Instruction: Type %s Length: %s' %\
               (instruction.type, instruction.length)
         for action in instruction.actions:
-            print ('Action - Type %s Length %s' % (action.type, action.length)),
+            print ('  Action - Type %s Length %s' % (action.type, action.length)),
             if action.type == 0:
                 print ("Port %s Max_Len %s Pad %s" %
                        (action.port, action.max_len, print_pad(action.pad)))

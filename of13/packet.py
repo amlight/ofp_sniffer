@@ -149,7 +149,7 @@ class ofp_switch_features_request(ofp_header):
         pass
 
 
-# ################## OFPT_FEATURE_REQUEST ############################
+# ################## OFPT_FEATURE_REPLY  ############################
 
 
 class ofp_switch_features_reply(ofp_header):
@@ -703,10 +703,154 @@ class ofp_action_set_output(ofp_action):
 
 
 class ofp_action_set_vlan_vid(ofp_action):
+
     def __init__(self, a_type, a_length):
         ofp_action.__init__(self, a_type, a_length)
         self.vlan_vid = None
         self.pad = None
+
+
+class ofp_action_copy_ttl_out(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_copy_ttl_in(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_set_mpls_ttl(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_dec_mpls_ttl(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_push_vlan(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_pop_vlan(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_push_mpls(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_pop_mpls(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_set_queue(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_group(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_set_nw_ttl(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_dec_nw_ttl(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_set_field(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_experimenter(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+# legacy actions
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+class ofp_action_(ofp_action):
+
+    def __init__(self, a_type, a_length):
+        ofp_action.__init__(self, a_type, a_length)
+
+
+
+
 
 
 # OFP_STATS_REQ Auxiliary Classes
