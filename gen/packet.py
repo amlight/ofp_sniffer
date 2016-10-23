@@ -99,7 +99,10 @@ class OFMessage:
             # support for proxies
             # PacketOut will be used to collect DPID, but at this moment
             # just save DEST IP and DEST TCP port
-            if of_header['type'] in [6, 13]:
+            if of_header['type'] == 6:
+                gen.proxies.insert_ip_port(self.main_packet.l3.s_addr,
+                                           self.main_packet.l4.source_port)
+            if of_header['type'] == 13:
                 gen.proxies.insert_ip_port(self.main_packet.l3.d_addr,
                                            self.main_packet.l4.dest_port)
 

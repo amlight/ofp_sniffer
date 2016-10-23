@@ -12,6 +12,7 @@ import gen.proxies as proxies
 
 VERSION = '0.3a-dev'
 NO_COLOR = False
+print_ovs = False
 # Change variable below to activate debugging
 DEBUGGING = False
 
@@ -138,7 +139,7 @@ def get_params(argv):
         print str(err)
         usage(argv[0])
 
-    print_options = {'min': 1, 'ovs': 0, 'colors': 0, 'filters': 0, 'proxy': 0}
+    print_options = {'min': 1, 'colors': 0, 'filters': 0, 'proxy': 0}
 
     for option, param in opts:
         if option in ['-p', '--print']:
@@ -158,7 +159,8 @@ def get_params(argv):
         elif option in ['-h', '--help']:
             usage(argv[0])
         elif option in ['-o', '--print-ovs']:
-            print_options['ovs'] = 1
+            global print_ovs
+            print_ovs = True
         elif option in ['-P', '--proxy-file']:
             print_options['proxy'] = param
         elif option in ['-v', '--version']:

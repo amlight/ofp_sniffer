@@ -10,6 +10,7 @@ import tcpiplib.tcpip
 from gen.prints import red, green
 from tcpiplib.prints import eth_addr, datapath_id
 import tcpiplib.prints
+import gen.cli
 
 
 def print_type_unknown(pkt):
@@ -40,7 +41,7 @@ def print_of_hello(msg):
 def print_of_error(msg):
     nCode, tCode = of10.dissector.get_ofp_error(msg.type, msg.code)
     print ('OpenFlow Error - Type: %s Code: %s' % (red(nCode), red(tCode)))
-    print hexdump.hexdump(msg.data)
+    hexdump(msg.data)
 
 
 def print_of_feature_req(msg):
@@ -318,6 +319,9 @@ def print_ofp_ovs(msg):
     '''
         If -o or --print-ovs is provided by user, print a ovs-ofctl add-dump
     '''
+    if gen.cli.print_ovs is not True:
+        return
+
     switch_ip = 'SWITCH_IP'
     switch_port = '6634'
 
