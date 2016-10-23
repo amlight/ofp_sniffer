@@ -188,6 +188,8 @@ class Packet:
                 self.offset = self.l4.parse(self.packet, self.offset)
                 if self.l4.flag_psh == TCP_FLAG_PUSH:
                     self.openflow_packet = True
+                elif self.l4.flag_fyn and self.l4.flag_ack:
+                    tcpiplib.prints.print_connection_restablished(self)
 
     def get_remaining_bytes(self):
         return self.l1.caplen - self.offset

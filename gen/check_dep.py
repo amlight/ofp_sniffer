@@ -2,14 +2,6 @@ import imp
 import os
 
 
-def check_if_root():
-    if os.geteuid() != 0:
-        print("You need to have root privileges to run this script.")
-        print("Please try again, this time using 'sudo'. Exiting.")
-        return False
-    return True
-
-
 def check_dependencies():
     found = True
 
@@ -27,8 +19,4 @@ def check_dependencies():
     if found is False:
 
         return False
-
-    if not check_if_root():
-        return False
-
     return True

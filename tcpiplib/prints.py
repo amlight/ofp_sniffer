@@ -50,14 +50,15 @@ def datapath_id(a):
     return dpid
 
 
-def print_headers(pkt):
+def print_headers(pkt, overwrite_min=0):
     """
         Print TCP/IP header. It uses command line option -p
             to print 'mininal' or 'full' headers
     Args:
         pkt: OFMessage class
+        overwrite_min: in case of problems, overwrite user definition
     """
-    if pkt.print_options['min'] == 1:
+    if pkt.print_options['min'] == 1 and overwrite_min == 0:
         print_minimal(pkt.position, pkt.l1.time, pkt.l1.caplen, pkt.l3,
                       pkt.l4)
     else:
@@ -85,6 +86,7 @@ def print_minimal(position, date, getlen, ip, tcp):
 
     print string % (position, date, cyan(source), cyan(tcp.source_port),
                     cyan(dest), cyan(tcp.dest_port), getlen)
+
 
 
 def print_position(position):
@@ -212,3 +214,8 @@ def print_lldp(lldp):
         print ('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
     else:
         print ('LLDP: Malformed packet')
+
+
+def print_connection_restablished(pkt):
+    print_headers(pkt, overwrite_min=0)
+    print(red("!!!! Attention: Connection Re-Established !!!!\n"))
