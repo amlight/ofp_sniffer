@@ -3,6 +3,7 @@
     If FlowSpace Firewall or FlowVisor is not used, this module is not useful.
 """
 import json
+from tcpiplib.packet import LLDP
 
 
 D_ADDR = None
@@ -40,6 +41,24 @@ def insert_ip_port(dest_ip, dest_port):
     DEST_PORT = dest_port
 
 
+def clean_dpid(lldp):
+    try:
+        dpid = lldp.c_id.split(':')[1]
+    except IndexError:
+        dpid = lldp.c_id
+    return dpid
+
+
+def datapath_id(a):
+    """
+        Convert OpenFlow Datapath ID to human format
+    """
+    string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
+    dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
+                     ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
+    return dpid
+
+
 def save_dpid(lldp):
     """
         Get the DPID from the LLDP.c_id
@@ -50,10 +69,11 @@ def save_dpid(lldp):
 
     ip = D_ADDR
     port = DEST_PORT
-    try:
-        dpid = lldp.c_id.split(':')[1]
-    except IndexError:
-        dpid = lldp.c_id
+    if isinstance(lldp, LLDP):
+        dpid = clean_dpid(lldp)
+    else:
+        dpid = datapath_id(lldp)
+
     sw_name = get_name_dpid(dpid)
     NET[ip, port] = sw_name
 

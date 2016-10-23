@@ -40,8 +40,7 @@ def print_of_hello(msg):
 def print_of_error(msg):
     nCode, tCode = of10.dissector.get_ofp_error(msg.type, msg.code)
     print ('OpenFlow Error - Type: %s Code: %s' % (red(nCode), red(tCode)))
-    if len(msg.data):
-        print hexdump.hexdump(msg.data)
+    print hexdump.hexdump(msg.data)
 
 
 def print_of_feature_req(msg):
@@ -109,6 +108,7 @@ def print_ofp_phy_port(port):
         printed = _dont_print_0(printed)
     print
 
+    # TODO: fix it
     print_port_field(port_id, port.curr, 'curr')
     print_port_field(port_id, port.advertised, 'advertised')
     print_port_field(port_id, port.supported, 'supported')

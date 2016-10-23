@@ -218,4 +218,4 @@ def print_lldp(lldp):
 
 def print_connection_restablished(pkt):
     print_headers(pkt, overwrite_min=0)
-    print(red("!!!! Attention: Connection Re-Established !!!!\n"))
+    print(red("!!!! Attention: Connection Re-Established!!\n"))

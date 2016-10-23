@@ -129,6 +129,10 @@ def parse_FeatureRes(msg, packet):
         ports_array.append(port)
         start += 48
     msg.ports = ports_array
+
+    # Save DPID to handle proxies
+    gen.proxies.save_dpid(msg.datapath_id)
+
     return 1
 
 
@@ -200,6 +204,7 @@ def process_data(packet, start, msg):
             lldp.c_id = 0
         else:
             if msg.type is 13:
+                # Save DPID to handle proxies
                 gen.proxies.save_dpid(lldp)
         payload.append(lldp)
         return payload

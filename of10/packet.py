@@ -8,8 +8,8 @@
 """
 
 
-import prints as prints
-import parser as parser
+import of10.prints as prints
+import of10.parser as parser
 
 
 def instantiate(of_header):
