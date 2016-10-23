@@ -18,10 +18,12 @@ def check_dependencies():
             try:
                 imp.find_module(dependency)
             except ImportError:
+                print('Modules missing. Please install them:')
+                print('sudo pip install -r docs/requirements.txt')
                 found = False
+            except IOError:
+                print('docs/requirements.txt file not found')
     if found is False:
-        print('Modules missing. Please install them:')
-        print('sudo pip install -r docs/requirements.txt')
         return False
 
     if not check_if_root():
