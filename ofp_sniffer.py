@@ -88,7 +88,7 @@ def main():
 
 if __name__ == "__main__":
     # Test dependencies first
-    if not check_dependencies:
+    if not check_dependencies():
         sys.exit(2)
     # Get CLI params and call the pcapy loop
     cap, position, print_options, sanitizer = gen.cli.get_params(sys.argv)
