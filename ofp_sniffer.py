@@ -16,6 +16,7 @@ import datetime
 import sys
 import gen.cli
 from gen.packet import Packet
+from gen.check_dep import check_dependencies
 
 
 # Global Variable
@@ -86,6 +87,9 @@ def main():
 
 
 if __name__ == "__main__":
+    # Test dependencies first
+    if not check_dependencies:
+        sys.exit(2)
     # Get CLI params and call the pcapy loop
     cap, position, print_options, sanitizer = gen.cli.get_params(sys.argv)
     main()
