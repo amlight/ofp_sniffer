@@ -55,6 +55,7 @@ class ofp_error_msg(OFPHeader):
         OFPHeader.__init__(self, of_header)
         self.type = None
         self.code = None
+        self.data = None
 
     def process_msg(self, packet):
         parser.parse_Error(self, packet)

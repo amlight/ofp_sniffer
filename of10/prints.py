@@ -1,6 +1,6 @@
-'''
+"""
     Prints for OpenFlow 1.0 only
-'''
+"""
 from hexdump import hexdump
 
 import of10.dissector
@@ -40,7 +40,8 @@ def print_of_hello(msg):
 def print_of_error(msg):
     nCode, tCode = of10.dissector.get_ofp_error(msg.type, msg.code)
     print ('OpenFlow Error - Type: %s Code: %s' % (red(nCode), red(tCode)))
-    # TODO: Print data
+    if len(msg.data):
+        print hexdump.hexdump(msg.data)
 
 
 def print_of_feature_req(msg):
@@ -108,7 +109,6 @@ def print_ofp_phy_port(port):
         printed = _dont_print_0(printed)
     print
 
-    # TODO: fix it
     print_port_field(port_id, port.curr, 'curr')
     print_port_field(port_id, port.advertised, 'advertised')
     print_port_field(port_id, port.supported, 'supported')
@@ -259,35 +259,109 @@ def print_ofp_action(action_type, length, payload):
         return 'Error'
 
 
-# TODO: Is it working? Fix it.
-def print_ofp_ovs(print_options, ofmatch, ofactions, ovs_command, prio):
+def get_command(command):
+    commands = {0: 'add-flow', 1: 'mod-flows', 3: 'del-flows'}
+    try:
+        return commands[command]
+    except KeyError:
+        return 0
+
+
+def get_flag(flag):
+    flags = {0: '', 1: 'send_flow_rem', 2: 'check_overlap', 3: 'Emerg'}
+    try:
+        return flags[flag]
+    except KeyError:
+        return 0
+
+
+def get_actions(action_type, action_length, payload):
+    if action_type == 0:
+        port, max_len = of10.parser.get_action(action_type, payload)
+        return 'output:%s' % (port if port != 65533 else 'CONTROLLER')
+    elif action_type == 1:
+        vlan, pad = of10.parser.get_action(action_type, payload)
+        return 'mod_vlan_vid:' + str(vlan)
+    elif action_type == 2:
+        vlan_pc, pad = of10.parser.get_action(action_type, payload)
+        return 'mod_vlan_pcp:' + str(vlan_pc)
+    elif action_type == 3:
+        return 'strip_vlan'
+    elif action_type == 4:
+        setDLSrc, pad = of10.parser.get_action(action_type, payload)
+        return 'mod_dl_src:' + str(eth_addr(setDLSrc))
+    elif action_type == 5:
+        setDLDst, pad = of10.parser.get_action(action_type, payload)
+        return 'mod_dl_dst:' + str(eth_addr(setDLDst))
+    elif action_type == 6:
+        nw_addr = of10.parser.get_action(action_type, payload)
+        return 'mod_nw_src:' + str(nw_addr)
+    elif action_type == 7:
+        nw_addr = of10.parser.get_action(action_type, payload)
+        return 'mod_nw_src:' + str(nw_addr)
+    elif action_type == 8:
+        nw_tos, pad = of10.parser.get_action(action_type, payload)
+        return 'mod_nw_tos:' + str(nw_tos)
+    elif action_type == 9:
+        port, pad = of10.parser.get_action(action_type, payload)
+        return 'mod_tp_src:' + str(port)
+    elif action_type == int('a', 16):
+        port, pad = of10.parser.get_action(action_type, payload)
+        return 'mod_tp_dst:' + str(port)
+    elif action_type == int('b', 16):
+        port, pad, queue_id = of10.parser.get_action(action_type, payload)
+        return 'set_queue:' + str(queue_id)
+
+
+def print_ofp_ovs(msg):
 
     '''
         If -o or --print-ovs is provided by user, print a ovs-ofctl add-dump
     '''
-    switch_ip = print_options['device_ip']
-    switch_port = print_options['device_port']
+    switch_ip = 'SWITCH_IP'
+    switch_port = '6634'
 
     ofm = []
+    ofactions = []
 
-    for K in ofmatch:
+    ovs_command = get_command(msg.command)
+
+    for K in msg.match.__dict__:
         if K != 'wildcards':
-            value = "%s=%s," % (K, ofmatch[K])
-            ofm.append(value)
+            if msg.match.__dict__[K] is not None:
+                value = "%s=%s," % (K, msg.match.__dict__[K])
+                ofm.append(value)
 
     matches = ''.join(ofm)
-    actions = ''.join(ofactions)
 
-    print ('ovs-ofctl %s tcp:%s:%s "priority=%s %s %s"' %
-           (ovs_command, switch_ip, switch_port, prio, matches,
-            (actions if ovs_command != 'del-flows' else '')))
-    return
+    if msg.command is not 3:
+        for action in msg.actions:
+                value = get_actions(action.type, action.length, action.payload)
+                value = "%s," % (value)
+                ofactions.append(value)
+
+        flag = get_flag(msg.flags)
+        print('ovs-ofctl %s tcp:%s:%s \"' % (ovs_command, switch_ip, switch_port)),
+        if msg.flags != 0:
+            print('%s,' % flag),
+        if msg.priority != 32678:
+            print('priority=%s,' % msg.priority),
+        if msg.idle_timeout != 0:
+            print('idle_timeout=%s,' % msg.idle_timeout),
+        if msg.hard_timeout != 0:
+            print('hard_timeout=%s,' % msg.hard_timeout),
+        print('%s ' % matches),
+        print('action=%s\"' % ''.join(ofactions))
+    else:
+        ovs_msg_del = 'ovs-ofctl %s tcp:%s:%s %s '
+        print(ovs_msg_del % (ovs_command, switch_ip, switch_port, matches))
 
 
 def print_of_FlowMod(msg):
     print_ofp_match(msg.match)
     print_ofp_body(msg)
     print_actions(msg.actions)
+    print_ofp_ovs(msg)
 
 
 def _print_portMod_config_mask(variable, name):

@@ -2,20 +2,28 @@
     This code is used to associate IP address seen to a switch when partitioning is in place
     If FlowSpace Firewall or FlowVisor is not used, this module is not useful.
 """
+import json
 
 
 D_ADDR = None
 DEST_PORT = None
 NET = {}
+dpid_dict = {}
 
-# TODO: This dictionary with DPID and names should be moved to a configuration file
-dpid_dict = {"cc4e249102000000": "andes2",
-             "cc4e249126000000": "andes1",
-             "cc4e244b11000000": "sol2",
-             "0024389406000000": "mct01",
-             "002438af17000000": "mct02",
-             "2438af17000000": "mct02",
-             "24389406000000": "mct01"}
+
+def load_names_file(device_names):
+    default = 'docs/devices_list.json'
+    pfile = default if device_names == 0 else device_names
+
+    try:
+        with open(pfile) as jfile:
+            json_content = json.loads(jfile.read())
+    except Exception as error:
+        print "Error %s Opening file %s" % (error, pfile)
+        return
+
+    global dpid_dict
+    dpid_dict = json_content
 
 
 def insert_ip_port(dest_ip, dest_port):

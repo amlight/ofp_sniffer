@@ -7,13 +7,13 @@ import sys
 import getopt
 import json
 import pcapy
+import gen.proxies as proxies
 
 
 VERSION = '0.3a-dev'
 NO_COLOR = False
 # Change variable below to activate debugging
 DEBUGGING = False
-
 
 
 def usage(filename):
@@ -32,6 +32,7 @@ def usage(filename):
             '\t -F sanitizer_file.json or --sanitizer-file=sanitizerfile.json\n'
             '\t -i interface or --interface=interface. Default: eth0\n'
             '\t -r captured.pcap or --src-file=captured.pcap\n'
+            '\t -P devices_list.json or --proxy-file=devices_list.json\n'
             '\t -o or --print-ovs : print using ovs-ofctl format\n'
             '\t -h or --help : prints this guidance\n'
             '\t -c or --no-colors: removes colors\n'
@@ -122,9 +123,10 @@ def get_params(argv):
             sanitizer - sanitizer filter
     """
     # Handle all input params
-    letters = 'f:F:i:r:p:ohvcd'
+    letters = 'f:F:i:r:P:p:ohvcd'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
-                'src-file=', 'print-ovs', 'help', 'version', 'no-colors']
+                'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
+                'proxy-file=']
 
     # Default Values
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
@@ -136,7 +138,7 @@ def get_params(argv):
         print str(err)
         usage(argv[0])
 
-    print_options = {'min': 1, 'ovs': 0, 'colors': 0, 'filters': 0}
+    print_options = {'min': 1, 'ovs': 0, 'colors': 0, 'filters': 0, 'proxy': 0}
 
     for option, param in opts:
         if option in ['-p', '--print']:
@@ -157,6 +159,8 @@ def get_params(argv):
             usage(argv[0])
         elif option in ['-o', '--print-ovs']:
             print_options['ovs'] = 1
+        elif option in ['-P', '--proxy-file']:
+            print_options['proxy'] = param
         elif option in ['-v', '--version']:
             print 'OpenFlow Sniffer version %s' % VERSION
             sys.exit(0)
@@ -171,6 +175,9 @@ def get_params(argv):
     else:
         print_options['filters'] = 1
         sanitizer = read_sanitizer(sanitizer_file)
+
+    # Load devices' names in case of proxy
+    proxies.load_names_file(print_options['proxy'])
 
     cap, position = start_capture(captured_file, input_filter, dev)
 

@@ -109,7 +109,7 @@ class TCP:
         doff_reserved = tcph[4]
         tcph_length = doff_reserved >> 4
         self.length = tcph_length * 4
-        flags = tcph[5]  # TODO: Flag NS
+        flags = tcph[5]
         self.flag_cwr = flags & 0x80
         self.flag_ece = flags & 0x40
         self.flag_urg = flags & 0x20

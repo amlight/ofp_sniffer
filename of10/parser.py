@@ -323,7 +323,7 @@ def _process_wildcard(wcard):
                 4: 'dl_src',
                 8: 'dl_dst',
                 16: 'dl_type',
-                32: 'nw_prot',
+                32: 'nw_proto',
                 64: 'tp_src',
                 128: 'tp_dst',
                 1048576: 'dl_vlan_pcp',
@@ -349,7 +349,7 @@ def _parse_OFMatch(packet, h_size):
 
     ofmatch = {'wildcards': ofm[0], 'in_port': ofm[1], 'dl_src': dl_src,
                'dl_dst': dl_dst, 'dl_vlan': ofm[4], 'dl_vlan_pcp': ofm[5],
-               'dl_type': etype, 'nw_tos': ofm[8], 'nw_prot': ofm[9],
+               'dl_type': etype, 'nw_tos': ofm[8], 'nw_proto': ofm[9],
                'nw_src': nw_src, 'nw_dst': nw_dst, 'tp_src': ofm[13],
                'tp_dst': ofm[14]}
 

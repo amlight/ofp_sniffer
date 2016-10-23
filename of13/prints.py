@@ -1,6 +1,7 @@
 """
     OpenFlow 1.3 prints
 """
+from hexdump import hexdump
 import of13.dissector
 import tcpiplib.prints
 from gen.prints import red, green
@@ -44,7 +45,8 @@ def print_hello(msg):
 
 def print_error_msg(msg):
     print ("Error - Type: %s Code: %s" % (msg.error_type, msg.code))
-    # TODO print data with hexdump
+    if len(msg.data):
+        print hexdump(msg.data)
     return 0
 
 
