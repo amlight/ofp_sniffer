@@ -15,6 +15,7 @@ from tcpiplib.packet import IP_PROTOCOL, TCP_PROTOCOL, TCP_FLAG_PUSH
 from gen.debugging import debugclass
 import of13.packet
 
+# TODO: Create a file per class
 
 @debugclass
 class OFMessage:
@@ -192,6 +193,7 @@ class Packet:
                 if self.l4.flag_psh == TCP_FLAG_PUSH:
                     self.openflow_packet = True
                 elif self.l4.flag_fyn and self.l4.flag_ack:
+                    # TODO: move this to the main ofp_sniffer file
                     tcpiplib.prints.print_connection_restablished(self)
 
     def get_remaining_bytes(self):

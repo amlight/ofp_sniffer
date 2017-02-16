@@ -193,6 +193,10 @@ def process_data(packet, start, msg):
     else:
         etype = eth.protocol
 
+    # if there is no content, return
+    if len(packet[start:]) == 0:
+        return payload
+
     # LLDP - ETYPE 0x88CC or 35020 or BBDP - ETYPE 0x8942 or 35138
     if etype in [35020, 35138]:
         lldp = tcpiplib.packet.LLDP()

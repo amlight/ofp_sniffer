@@ -643,29 +643,33 @@ def print_data(data):
         Args:
             data: msg.data - array of protocols
     """
-    next_protocol = '0x0000'
-    eth = data.pop(0)
-    tcpiplib.prints.print_layer2(eth)
-    next_protocol = eth.protocol
-    if next_protocol in [33024]:
-        vlan = data.pop(0)
-        tcpiplib.prints.print_vlan(vlan)
-        next_protocol = vlan.protocol
+    try:
+        next_protocol = '0x0000'
+        eth = data.pop(0)
+        tcpiplib.prints.print_layer2(eth)
+        next_protocol = eth.protocol
 
-    if next_protocol in [35020, 35138]:
-        lldp = data.pop(0)
-        tcpiplib.prints.print_lldp(lldp)
-    elif next_protocol in [34998]:
-        print 'OESS FVD'
-    elif next_protocol in [2048]:
-        ip = data.pop(0)
-        tcpiplib.prints.print_layer3(ip)
-        if ip.protocol is 6:
-            tcp = data.pop(0)
-            tcpiplib.prints.print_tcp(tcp)
-    elif next_protocol in [2054]:
-        arp = data.pop(0)
-        tcpiplib.prints.print_arp(arp)
+        if next_protocol in [33024]:
+            vlan = data.pop(0)
+            tcpiplib.prints.print_vlan(vlan)
+            next_protocol = vlan.protocol
+
+        if next_protocol in [35020, 35138]:
+            lldp = data.pop(0)
+            tcpiplib.prints.print_lldp(lldp)
+        elif next_protocol in [34998]:
+            print 'OESS FVD'
+        elif next_protocol in [2048]:
+            ip = data.pop(0)
+            tcpiplib.prints.print_layer3(ip)
+            if ip.protocol is 6:
+                tcp = data.pop(0)
+                tcpiplib.prints.print_tcp(tcp)
+        elif next_protocol in [2054]:
+            arp = data.pop(0)
+            tcpiplib.prints.print_arp(arp)
+    except Exception as error:
+        pass
 
 
 def print_queueReq(msg):

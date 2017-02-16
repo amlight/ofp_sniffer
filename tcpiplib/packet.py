@@ -166,6 +166,7 @@ class LLDP:
         self.e_length = None
 
     def parse(self, packet):
+
         # Chassis
         # TLV (1) + Length = 2 bytes | Sub-type = 1 Byte
         chassis_raw = packet[:3]
