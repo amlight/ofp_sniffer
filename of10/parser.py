@@ -207,7 +207,8 @@ def process_data(packet, start, msg):
         payload.append(fvd)
         return payload
 
-    # LLDP - ETYPE 0x88CC or 35020 or BBDP - ETYPE 0x8942 or 35138
+    # LLDP - ETYPE 0x88CC or 35020 or
+    # BBDP - ETYPE 0x8942 or 35138
     if etype in [35020, 35138]:
         lldp = tcpiplib.packet.LLDP()
         try:

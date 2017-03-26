@@ -281,6 +281,25 @@ class ARP:
         self.dst_ip = arp[8]
 
 
+def get_timestamp(a):
+    """
+        Convert binary to timestamp
+    """
+    dpid = None
+    if len(a) == 8:
+        string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
+        dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]),
+                         ord(a[4]), ord(a[3]), ord(a[2]),
+                         ord(a[1]), ord(a[0]))
+    elif len(a) == 10:
+        string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
+        dpid = string % (ord(a[9]), ord(a[8]), ord(a[7]),
+                         ord(a[6]), ord(a[5]), ord(a[4]),
+                         ord(a[3]), ord(a[2]), ord(a[1]),
+                         ord(a[0]))
+    return int(dpid, base=16) / 1000
+
+
 class OessFvd:
     """
         OESS' FVD module
@@ -297,4 +316,4 @@ class OessFvd:
         self.port_a = unpack('!8s', packet[8:16])[0]
         self.side_z = unpack('8s', packet[16:24])[0]
         self.port_z = unpack('8s', packet[24:32])[0]
-        self.timestamp = packet[32:]
+        self.timestamp = get_timestamp(packet[32:])
