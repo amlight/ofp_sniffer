@@ -293,9 +293,8 @@ class OessFvd:
         self.timestamp = None
 
     def parse(self, packet):
-        fv = unpack('!8s8s8s8s', packet[:32])
         self.side_a = unpack('!8s', packet[0:8])[0]
         self.port_a = unpack('!8s', packet[8:16])[0]
         self.side_z = unpack('8s', packet[16:24])[0]
         self.port_z = unpack('8s', packet[24:32])[0]
-        self.timestamp = unpack('8s', packet[32:])[0]
+        self.timestamp = packet[32:]
