@@ -36,7 +36,7 @@ def get_ip_from_long(long_ip):
     return socket.inet_ntoa(struct.pack('!L', long_ip))
 
 
-def datapath_id(a):
+def datapath_id(a, invert=False):
     """
         Convert OpenFlow Datapath ID to human format
     Args:
@@ -45,8 +45,12 @@ def datapath_id(a):
         DPID in human format
     """
     string = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x"
-    dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
-                     ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
+    if not invert:
+        dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
+                         ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
+    else:
+        dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]), ord(a[4]),
+                         ord(a[3]), ord(a[2]), ord(a[1]), ord(a[0]))
     return dpid
 
 
@@ -214,6 +218,39 @@ def print_lldp(lldp):
         print ('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
     else:
         print ('LLDP: Malformed packet')
+
+
+def port_id(a, invert=False):
+    """
+        Convert OpenFlow Port ID to human format
+    Args:
+        a: DPID in "8s" format
+    Returns:
+        DPID in human format
+    """
+    string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
+    if not invert:
+        dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
+                         ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
+    else:
+        dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]), ord(a[4]),
+                         ord(a[3]), ord(a[2]), ord(a[1]), ord(a[0]))
+    return int(dpid, base=16)
+
+
+def print_oessfvd(fvd):
+    """
+        Print FVD fields
+        Args:
+            fvd: OessFvd class
+    """
+    pa = port_id(fvd.port_a, invert=True)
+    pz = port_id(fvd.port_z, invert=True)
+    print('OESS FVD: side_a: %s port_a: %s side_z: %s port_z: %s '
+          'timestamp: %s' %
+          (red(datapath_id(fvd.side_a, invert=True)), blue(pa),
+           red(datapath_id(fvd.side_z, invert=True)), blue(pz),
+           port_id(fvd.timestamp, invert=True)))
 
 
 def print_connection_restablished(pkt):

@@ -279,3 +279,23 @@ class ARP:
         self.src_ip = arp[6]
         self.dst_mac = arp[7]
         self.dst_ip = arp[8]
+
+
+class OessFvd:
+    """
+        OESS' FVD module
+    """
+    def __init__(self):
+        self.side_a = None
+        self.port_a = None
+        self.side_z = None
+        self.port_z = None
+        self.timestamp = None
+
+    def parse(self, packet):
+        fv = unpack('!8s8s8s8s', packet[:32])
+        self.side_a = unpack('!8s', packet[0:8])[0]
+        self.port_a = unpack('!8s', packet[8:16])[0]
+        self.side_z = unpack('8s', packet[16:24])[0]
+        self.port_z = unpack('8s', packet[24:32])[0]
+        self.timestamp = unpack('8s', packet[32:])[0]

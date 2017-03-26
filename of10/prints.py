@@ -658,7 +658,8 @@ def print_data(data):
             lldp = data.pop(0)
             tcpiplib.prints.print_lldp(lldp)
         elif next_protocol in [34998]:
-            print 'OESS FVD'
+            fvd = data.pop(0)
+            tcpiplib.prints.print_oessfvd(fvd)
         elif next_protocol in [2048]:
             ip = data.pop(0)
             tcpiplib.prints.print_layer3(ip)

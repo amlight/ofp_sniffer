@@ -197,6 +197,16 @@ def process_data(packet, start, msg):
     if len(packet[start:]) == 0:
         return payload
 
+    # OESS FVD
+    if etype in [34998]:
+        fvd = tcpiplib.packet.OessFvd()
+        try:
+            fvd.parse(packet[start:])
+        except Exception as error:
+            print(error)
+        payload.append(fvd)
+        return payload
+
     # LLDP - ETYPE 0x88CC or 35020 or BBDP - ETYPE 0x8942 or 35138
     if etype in [35020, 35138]:
         lldp = tcpiplib.packet.LLDP()
