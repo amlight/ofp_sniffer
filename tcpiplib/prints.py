@@ -247,8 +247,7 @@ def print_oessfvd(fvd):
     pa = port_id(fvd.port_a, invert=True)
     pz = port_id(fvd.port_z, invert=True)
     timestamp = str(datetime.fromtimestamp(fvd.timestamp))
-    print('OESS FVD: side_a: %s port_a: %s side_z: %s port_z: %s '
-          'time: %s'%
+    print('OESS FVD: %s:%s -> %s:%s time: %s' %
           (red(datapath_id(fvd.side_a, invert=True)), blue(pa),
            red(datapath_id(fvd.side_z, invert=True)), blue(pz),
            blue(timestamp)))
