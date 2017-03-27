@@ -11,6 +11,7 @@ import of10.prints
 import of10.packet
 import tcpiplib.tcpip
 import tcpiplib.packet
+from gen.packet import OFMessage
 
 
 # *************** Hello *****************
@@ -218,10 +219,11 @@ def process_data(packet, start, msg):
         if not isinstance(lldp, tcpiplib.packet.LLDP):
             lldp.c_id = 0
         else:
-            if msg.type is 13:
-                # Save DPID to handle proxies
-                gen.proxies.save_dpid(lldp)
-        payload.append(lldp)
+            if lldp.c_id is not None:
+                if msg.type is 13:
+                    # Save DPID to handle proxies
+                    gen.proxies.save_dpid(lldp)
+            payload.append(lldp)
         return payload
 
     # IP - ETYPE 0x800 or 2048

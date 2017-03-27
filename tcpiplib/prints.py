@@ -205,6 +205,10 @@ def print_lldp(lldp):
     Args:
         lldp: LLDP class
     """
+    if lldp.c_type is not 1 or lldp.p_type is not 2 or lldp.t_type is not 3 or lldp.e_type is not 0:
+        print ('LLDP: Malformed packet')
+        return
+
     if lldp.c_type is 1:
         print ('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' % (lldp.c_type, lldp.c_length, lldp.c_subtype,
                                                                          green(lldp.c_id)))
@@ -216,8 +220,6 @@ def print_lldp(lldp):
 
     if lldp.e_type is 0:
         print ('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
-    else:
-        print ('LLDP: Malformed packet')
 
 
 def port_id(a, invert=False):
