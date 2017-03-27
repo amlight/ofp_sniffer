@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from gen.prints import blue, yellow, red
 
 
 OFP_PACKET_IN = 10
@@ -45,7 +46,15 @@ class OessFvdTracer:
     def print_link_status(self, dpid, port):
         link = self.links[dpid][port]
         timestamp = str(datetime.fromtimestamp(link['timestamp']))
+
         diff = link['last_seen'] - datetime.fromtimestamp(link['timestamp'])
+        if timedelta(seconds=14) > diff > timedelta(seconds=4):
+            diff = yellow(diff)
+        elif diff > timedelta(seconds=14):
+            diff = red(diff)
+        else:
+            diff = blue(diff)
+
         print('%-24s %-4s %-24s %-4s %s\t %s\t %s' %
               (dpid, port, link['remote'], link['port'], link['last_seen'],
                timestamp, diff))
