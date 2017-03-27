@@ -13,7 +13,7 @@ class OessFvdTracer:
 
     def starting(self):
         print('OESS FVD Monitoring')
-        print('%-24s %-4s %-24s %-4s %s' % ('DPID', 'Port', 'Neighbor', 'Port', 'Last Seen'))
+        print('%-24s %-4s %-24s %-4s %s %s' % ('DPID', 'Port', 'Neighbor', 'Port', 'Last Seen', 'Timestamp'))
 
     def process_packet(self, pkt):
         for msg in pkt.ofmsgs:
@@ -43,8 +43,9 @@ class OessFvdTracer:
 
     def print_link_status(self, dpid, port):
         link = self.links[dpid][port]
-        print('%-24s %-4s %-24s %-4s %s' % (dpid, port, link['remote'],
-                                            link['port'], link['last_seen']))
+        timestamp = str(datetime.fromtimestamp(link['timestamp']))
+        print('%-24s %-4s %-24s %-4s %s %s' % (dpid, port, link['remote'],
+                                            link['port'], link['last_seen'], timestamp))
 
     def _is_oess_fvd(self, data):
 
