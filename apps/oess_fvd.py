@@ -13,8 +13,7 @@ class OessFvdTracer:
 
     def starting(self):
         print('OESS FVD Monitoring')
-        print('{:24} {:4}  {:24} {:4}  {:26}'.format('DPID', 'Port',
-                                                            'Neighbor', 'Port', 'Last Seen'))
+        print('%-24s %-4s %-24s %-4s %s' % ('DPID', 'Port', 'Neighbor', 'Port', 'Last Seen'))
 
     def process_packet(self, pkt):
         for msg in pkt.ofmsgs:
@@ -23,7 +22,6 @@ class OessFvdTracer:
                 if fvd is not False:
                     # print(fvd.side_a, fvd.port_a, fvd.side_a,fvd.port_a, fvd.timestamp)
                     self.add_link(msg.ofp.type, fvd)
-
 
     def add_link(self, mtype, fvd):
 
@@ -36,8 +34,8 @@ class OessFvdTracer:
                     return
 
         last_seen = 0 if mtype in [OFP_PACKET_OUT] else datetime.now()
-        self.links[fvd.side_a][fvd.port_a] = {'remote': fvd.side_a,
-                                              'port': fvd.port_a,
+        self.links[fvd.side_a][fvd.port_a] = {'remote': fvd.side_z,
+                                              'port': fvd.port_z,
                                               'timestamp': fvd.timestamp,
                                               'last_seen': last_seen}
         if mtype in [OFP_PACKET_IN]:
@@ -45,9 +43,8 @@ class OessFvdTracer:
 
     def print_link_status(self, dpid, port):
         link = self.links[dpid][port]
-
-        print('{:24} {:4}  {:24} {:4}  {}'.format(dpid, port, link['remote'],
-                                                      link['port'], link['last_seen']))
+        print('%-24s %-4s %-24s %-4s %s' % (dpid, port, link['remote'],
+                                            link['port'], link['last_seen']))
 
     def _is_oess_fvd(self, data):
 
