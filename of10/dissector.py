@@ -52,12 +52,12 @@ def get_ofp_error(error_type, code):
 
     # Error Codes per Error Type
     if error_type == 0:
-        if error_codes in range(0, 2):
+        if code in range(0, 2):
             error_codes = {0: 'Incompatible(0)',
                            1: 'EPerm(1)'}
 
     elif error_type == 1:
-        if error_codes in range(0, 9):
+        if code in range(0, 9):
             error_codes = {0: 'BadVersion(0)',
                            1: 'BadType(1)',
                            2: 'BadStat(2)',
@@ -69,7 +69,7 @@ def get_ofp_error(error_type, code):
                            8: 'BufferUnknown(8)'}
 
     elif error_type == 2:
-        if error_codes in range(0, 9):
+        if code in range(0, 9):
             error_codes = {0: 'BadType',
                            1: 'BadLength',
                            2: 'BadVendor',
@@ -81,7 +81,7 @@ def get_ofp_error(error_type, code):
                            8: 'BadQueue'}
 
     elif error_type == 3:
-        if error_codes == 0 or error_codes in range(2, 7):
+        if code == 0 or code in range(2, 7):
             error_codes = {0: 'AllTablesFull(0)',
                            2: 'Overlap(2)',
                            3: 'EPerm(3)',
@@ -90,12 +90,12 @@ def get_ofp_error(error_type, code):
                            6: 'Unsupported(6)'}
 
     elif error_type == 4:
-        if error_codes in range(0, 2):
+        if code in range(0, 2):
             error_codes = {0: 'BadPort(0)',
                            1: 'BadHwAddr(1)'}
 
     elif error_type == 5:
-        if error_codes in range(0, 3):
+        if code in range(0, 3):
             error_codes = {0: 'BadPort(0)',
                            1: 'BadQueue(1)',
                            2: 'EPerm(2)'}
