@@ -36,7 +36,7 @@ def get_ip_from_long(long_ip):
     return socket.inet_ntoa(struct.pack('!L', long_ip))
 
 
-def datapath_id(a, invert=False):
+def datapath_id(a):
     """
         Convert OpenFlow Datapath ID to human format
     Args:
@@ -45,12 +45,8 @@ def datapath_id(a, invert=False):
         DPID in human format
     """
     string = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x"
-    if not invert:
-        dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
-                         ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
-    else:
-        dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]), ord(a[4]),
-                         ord(a[3]), ord(a[2]), ord(a[1]), ord(a[0]))
+    dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
+                     ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
     return dpid
 
 
@@ -222,36 +218,15 @@ def print_lldp(lldp):
         print ('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
 
 
-def port_id(a, invert=False):
-    """
-        Convert OpenFlow Port ID to human format
-    Args:
-        a: DPID in "8s" format
-    Returns:
-        DPID in human format
-    """
-    string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
-    if not invert:
-        dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
-                         ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
-    else:
-        dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]), ord(a[4]),
-                         ord(a[3]), ord(a[2]), ord(a[1]), ord(a[0]))
-    return int(dpid, base=16)
-
-
 def print_oessfvd(fvd):
     """
         Print FVD fields
         Args:
             fvd: OessFvd class
     """
-    pa = port_id(fvd.port_a, invert=True)
-    pz = port_id(fvd.port_z, invert=True)
     timestamp = str(datetime.fromtimestamp(fvd.timestamp))
     print('OESS FVD: %s:%s -> %s:%s time: %s' %
-          (red(datapath_id(fvd.side_a, invert=True)), blue(pa),
-           red(datapath_id(fvd.side_z, invert=True)), blue(pz),
+          (red(fvd.side_a), blue(fvd.port_a), red(fvd.side_z), blue(fvd.port_z),
            blue(timestamp)))
 
 

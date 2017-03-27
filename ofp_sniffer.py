@@ -17,6 +17,7 @@ import sys
 import gen.cli
 from gen.packet import Packet
 from gen.check_dep import check_dependencies
+from apps.oess_fvd import OessFvdTracer
 
 
 # Global Variable
@@ -44,7 +45,12 @@ def process_packet(header, packet):
         if pkt.openflow_packet:
             result = pkt.process_openflow_messages()
             if result is 1:
-                pkt.print_packet()
+                # Adding support to apps
+                # If no apps are selected, just print
+                if isinstance(oft, OessFvdTracer):
+                    oft.process_packet(pkt)
+                else:
+                    pkt.print_packet()
         del pkt
     elif len(packet) is 0:
         sys.exit(0)
@@ -91,5 +97,12 @@ if __name__ == "__main__":
     if not check_dependencies():
         sys.exit(2)
     # Get CLI params and call the pcapy loop
-    cap, position, print_options, sanitizer = gen.cli.get_params(sys.argv)
+    cap, position, print_options, sanitizer, load_apps = gen.cli.get_params(sys.argv)
+
+    ## Start Apps
+    if 'oess_fvd' in load_apps:
+        oft = OessFvdTracer()
+    else:
+        oft = None
+
     main()

@@ -38,7 +38,8 @@ def usage(filename):
             '\t -h or --help : prints this guidance\n'
             '\t -c or --no-colors: removes colors\n'
             '\t -d or --debug: enable debug\n'
-            '\t -v or --version : prints version\n') % filename)
+            '\t -v or --version : prints version\n'
+            '\t -O or --oess-fvd: monitor OESS FVD status') % filename)
 
     sys.exit(0)
 
@@ -124,10 +125,10 @@ def get_params(argv):
             sanitizer - sanitizer filter
     """
     # Handle all input params
-    letters = 'f:F:i:r:P:p:ohvcd'
+    letters = 'f:F:i:r:P:p:ohvcdO'
     keywords = ['print=', 'pcap-filter=', 'sanitizer-file=', 'interface=',
                 'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'proxy-file=']
+                'proxy-file=', 'oess-fvd']
 
     # Default Values
     input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
@@ -140,6 +141,7 @@ def get_params(argv):
         usage(argv[0])
 
     print_options = {'min': 1, 'colors': 0, 'filters': 0, 'proxy': 0}
+    load_apps = []
 
     for option, param in opts:
         if option in ['-p', '--print']:
@@ -169,6 +171,8 @@ def get_params(argv):
         elif option in ['-c', '--no-colors']:
             global NO_COLOR
             NO_COLOR = True
+        elif option in ['-O', '--oess-fvd']:
+            load_apps.append('oess_fvd')
         else:
             usage(argv[0])
 
@@ -183,4 +187,4 @@ def get_params(argv):
 
     cap, position = start_capture(captured_file, input_filter, dev)
 
-    return cap, position, print_options, sanitizer
+    return cap, position, print_options, sanitizer, load_apps
