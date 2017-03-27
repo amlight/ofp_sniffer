@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from gen.prints import blue, yellow, red
 
 
 OFP_PACKET_IN = 10
@@ -48,12 +47,11 @@ class OessFvdTracer:
         timestamp = str(datetime.fromtimestamp(link['timestamp']))
 
         diff = link['last_seen'] - datetime.fromtimestamp(link['timestamp'])
-        if timedelta(seconds=14) > diff > timedelta(seconds=4):
-            diff = yellow(diff)
+        if timedelta(seconds=14) > diff > timedelta(seconds=8):
+            diff = str(diff) + '  <-- Attention!'
         elif diff > timedelta(seconds=14):
-            diff = red(diff)
-        else:
-            diff = blue(diff)
+            diff = str(diff) + '  <-- Over 15 seconds!!'
+
 
         print('%-24s %-4s %-24s %-4s %s\t %s\t %s' %
               (dpid, port, link['remote'], link['port'], link['last_seen'],
