@@ -1,5 +1,6 @@
 from functools import wraps
-import gen.cli
+
+import libs.cli
 
 
 def debug(func):
@@ -12,7 +13,7 @@ def debug(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        print '*** %s'% func.__name__
+        print('*** %s' % func.__name__)
         return func(*args, **kwargs)
     return wrapper
 
@@ -25,7 +26,7 @@ def debugclass(cls):
             cls: Any Class to be printed
         Returns: wrapper with cls, printing all method names
     """
-    if gen.cli.DEBUGGING:
+    if libs.cli.DEBUGGING:
         for key, val in vars(cls).items():
             if callable(val):
                 setattr(cls, key, debug(val))

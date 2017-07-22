@@ -1,10 +1,11 @@
 """
     OpenFlow 1.3 message definition
 """
+from pyof.v0x04.common.utils import unpack_message
 
 
-import prints as prints
-import parser as parser
+import of13.prints as prints
+import of13.parser as parser
 
 
 def instantiate(of_header):
@@ -59,6 +60,7 @@ class ofp_hello(ofp_header):
         self.elements = []  # Class ofp_hello_elem_header
 
     def process_msg(self, packet):
+
         parser.parse_hello(self, packet)
 
     def prints(self):
@@ -165,7 +167,15 @@ class ofp_switch_features_reply(ofp_header):
         self.reserved = None  # 4 bytes
 
     def process_msg(self, packet):
-        parser.parse_switch_features(self, packet)
+        data = unpack_message(packet)
+        self.datapath_id = data.datapath_id
+        self.n_buffers = data.n_buffers
+        self.n_tbls = data.n_tables
+        self.auxiliary_id = data.auxiliary_id
+        self.pad = data.pad
+        self.capabilities = data.capabilities
+        self.reserved = data.reserved
+        #parser.parse_switch_features(self, packet)
 
     def prints(self):
         prints.print_switch_features(self)
@@ -266,7 +276,11 @@ class ofp_port_status(ofp_header):
         self.desc = ofp_port()  # ofp_port class
 
     def process_msg(self, packet):
-        parser.parse_port_status(self, packet)
+        data = unpack_message(packet)
+        self.reason = data.reason
+        self.pad = data.pad
+        self.desc = data.desc
+        # parser.parse_port_status(self, packet)
 
     def prints(self):
         prints.print_port_status(self)

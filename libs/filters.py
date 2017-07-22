@@ -4,10 +4,10 @@
     Filters are provided via CLI option -F json-file
 """
 
-
+from libs.printing import PrintingOptions
 import tcpiplib.tcpip
 import tcpiplib.packet
-import of10
+# import of10
 
 
 def filter_msg(msg):
@@ -19,7 +19,7 @@ def filter_msg(msg):
         False: Don' filter packet
         True: Filter it (don't print)
     """
-    if msg.print_options['filters'] is 0:
+    if PrintingOptions().filters is 0:
         # User hasn't selected CLI option -F
         return False
 

@@ -129,6 +129,7 @@ class ofp_switch_features_reply(OFPHeader):
         self.ports = []  # array of class ofp_phy_port
 
     def process_msg(self, packet):
+
         parser.parse_FeatureRes(self, packet)
 
     def prints(self):

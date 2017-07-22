@@ -5,53 +5,63 @@ import netaddr
 from struct import unpack
 import of13.packet
 import of13.dissector
+from pyof.v0x04.common.utils import unpack_message
 
 
 # ################## OFPT_HELLO ############################
 
 
+# def parse_hello(msg, packet):
+#
+#     start = 0
+#     elements = []
+#
+#     # Get all Elements
+#     # Each Element has 0 - N bitmaps
+#     while len(packet[start:]) > 0:
+#         # Get element[]
+#         elem = unpack('!HH', packet[start:start+4])
+#         element = of13.packet.ofp_hello.ofp_hello_elem_header()
+#         element.type = elem[0]
+#         element.length = elem[1]
+#
+#         bitmaps_list = []
+#         bitmaps = packet[start+4:start+element.length]
+#         start_bit = 0
+#         while len(bitmaps[start_bit:]) > 0:
+#             bp = unpack('!HH', packet[start_bit:start_bit+4])
+#             bitmap = of13.packet.ofp_hello.ofp_hello_elem_versionbitmap()
+#             bitmap.type = bp[0]
+#             bitmap.length = bp[1]
+#
+#             bmp = unpack('!L', packet[start_bit+4:])
+#             bitmap.bitmaps = bmp[0]
+#
+#             start_bit = start_bit + 4 + bitmap.bitmaps
+#
+#             bitmap.bitmaps = bin(bitmap.bitmaps)
+#
+#             bitmaps_list.append(bitmap)
+#             del bitmap
+#
+#         element.versiobitmap = bitmaps_list
+#         start += element.length
+#
+#         elements.append(element)
+#
+#         del element
+#
+#     msg.elements = elements
+#     return 1
+
 def parse_hello(msg, packet):
-
-    start = 0
-    elements = []
-
-    # Get all Elements
-    # Each Element has 0 - N bitmaps
-    while len(packet[start:]) > 0:
-        # Get element[]
-        elem = unpack('!HH', packet[start:start+4])
-        element = of13.packet.ofp_hello.ofp_hello_elem_header()
-        element.type = elem[0]
-        element.length = elem[1]
-
-        bitmaps_list = []
-        bitmaps = packet[start+4:start+element.length]
-        start_bit = 0
-        while len(bitmaps[start_bit:]) > 0:
-            bp = unpack('!HH', packet[start_bit:start_bit+4])
-            bitmap = of13.packet.ofp_hello.ofp_hello_elem_versionbitmap()
-            bitmap.type = bp[0]
-            bitmap.length = bp[1]
-
-            bmp = unpack('!L', packet[start_bit+4:])
-            bitmap.bitmaps = bmp[0]
-
-            start_bit = start_bit + 4 + bitmap.bitmaps
-
-            bitmap.bitmaps = bin(bitmap.bitmaps)
-
-            bitmaps_list.append(bitmap)
-            del bitmap
-
-        element.versiobitmap = bitmaps_list
-        start += element.length
-
-        elements.append(element)
-
-        del element
-
-    msg.elements = elements
-    return 1
+    try:
+        print('parse_hello')
+        data = unpack_message(packet)
+        print('err')
+        print(data)
+    except Exception as err:
+        print(err)
 
 
 # ################## OFPT_ERROR ############################

@@ -9,6 +9,7 @@ import of10.dissector
 import of13.dissector
 import tcpiplib.tcpip
 from gen.prints import red, green, blue, yellow, cyan
+from libs.printing import PrintingOptions
 
 
 def eth_addr(a):
@@ -19,6 +20,8 @@ def eth_addr(a):
     Returns:
         mac in the human format
     """
+    if isinstance(a, bytes):
+        a = a.decode("latin")
     string = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x"
     mac = string % (ord(a[0]), ord(a[1]), ord(a[2]),
                     ord(a[3]), ord(a[4]), ord(a[5]))
@@ -45,6 +48,8 @@ def datapath_id(a):
         DPID in human format
     """
     string = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x"
+    if isinstance(a, bytes):
+        a = a.decode("latin")
     dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
                      ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
     return dpid
@@ -58,7 +63,7 @@ def print_headers(pkt, overwrite_min=0):
         pkt: OFMessage class
         overwrite_min: in case of problems, overwrite user definition
     """
-    if pkt.print_options['min'] == 1 and overwrite_min == 0:
+    if PrintingOptions().min == 1 and overwrite_min == 0:
         print_minimal(pkt.position, pkt.l1.time, pkt.l1.caplen, pkt.l3,
                       pkt.l4)
     else:
@@ -84,8 +89,8 @@ def print_minimal(position, date, getlen, ip, tcp):
     source = gen.proxies.get_ip_name(ip.s_addr, tcp.source_port)
     dest = gen.proxies.get_ip_name(ip.d_addr, tcp.dest_port)
 
-    print string % (position, date, cyan(source), cyan(tcp.source_port),
-                    cyan(dest), cyan(tcp.dest_port), getlen)
+    print(string % (position, date, cyan(source), cyan(tcp.source_port),
+                    cyan(dest), cyan(tcp.dest_port), getlen))
 
 
 
@@ -95,7 +100,7 @@ def print_position(position):
     Args:
         position: number of the packet captured in the sequence
     """
-    print ('Packet Number # %s' % position)
+    print('Packet Number # %s' % position)
 
 
 def print_layer1(date, getlen, caplen):
@@ -106,8 +111,8 @@ def print_layer1(date, getlen, caplen):
         getlen: total packet captured
         caplen: truncated size of the packet captured
     """
-    print ('%s: captured %d bytes, truncated to %d bytes' %
-           (date, getlen, caplen))
+    print('%s: captured %d bytes, truncated to %d bytes' %
+          (date, getlen, caplen))
 
 
 def print_layer2(eth):

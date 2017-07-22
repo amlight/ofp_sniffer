@@ -11,10 +11,12 @@ def print_pad(pad):
     """
         Used to print pads as a sequence of 0s: 0, 00, 000..
         Args:
-            pad: pad in str format
+            pad: pad in int format
         Returns: string with '0'
     """
-    pad_len = len(pad)
+    pad_len = pad
+
+    print(type(pad_len))
     string = '0'
     if pad_len == 1:
         return '0'
@@ -30,23 +32,23 @@ def print_hello(msg):
     count = 0
     for element in msg.elements:
         count += 1
-        print ("Hello - Element: %s Type: %s Length: %s" %
-               (count, element.type, element.length))
+        print("Hello - Element: %s Type: %s Length: %s" %
+              (count, element.type, element.length))
         count_bit = 0
         for bitmap in element.versiobitmap:
             count_bit += 1
-            print ("Hello - Bitmap: %s Type: %s Length: %s" %
-                   (count_bit, bitmap.type, bitmap.length))
-            print 'Bitmap: %08d' % int(bitmap.bitmaps.split('b')[1])
+            print("Hello - Bitmap: %s Type: %s Length: %s" %
+                  (count_bit, bitmap.type, bitmap.length))
+            print('Bitmap: %08d' % int(bitmap.bitmaps.split('b')[1]))
 
 
 # ################## OFPT_ERROR ############################
 
 
 def print_error_msg(msg):
-    print ("Error - Type: %s Code: %s" % (msg.error_type, msg.code))
+    print("Error - Type: %s Code: %s" % (msg.error_type, msg.code))
     if len(msg.data):
-        print hexdump(msg.data)
+        print(hexdump(msg.data))
     return 0
 
 
@@ -54,7 +56,8 @@ def print_error_msg(msg):
 
 
 def print_echo_request(msg):
-    print "Echo - Data: %s" % msg.data
+    if len(msg.data) > 1:
+        print("Echo - Data: %s" % msg.data)
     return 0
 
 
@@ -62,7 +65,8 @@ def print_echo_request(msg):
 
 
 def ofp_echo_reply(msg):
-    print "Echo - Data: %s" % msg.data
+    if len(msg.data) > 1:
+        print("Echo - Data: %s" % msg.data)
     return 0
 
 
@@ -75,25 +79,40 @@ def print_experimenter(msg):
 
 # ################## OFPT_FEATURE_REQUEST ############################
 
+def parse_bitmask(bitmask, array):
+    size = len(array)
+    for i in range(0, size):
+        mask = 2**i
+        aux = bitmask & mask
+        if aux == 0:
+            array.remove(mask)
+    return array
+
+
+def parse_capabilities(capabilities):
+    caps = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    return parse_bitmask(capabilities, caps)
+
 
 def print_switch_features(msg):
-    print "OpenFlow Switch Features:"
-    print ("Datapath_id: %s N_Buffers: %s N_Tbls: %s\nAuxiliary_id: %s "
-           "Pad: %s Reserved: %s" %
-           (red(tcpiplib.prints.datapath_id(msg.datapath_id)),
-            msg.n_buffers,  msg.n_tbls, msg.auxiliary_id,
-            print_pad(msg.pad), green(msg.reserved)))
-    print ("Capabilities: "),
-    for i in msg.caps:
-        print of13.dissector.get_feature_res_capabilities(i),
+    print("OpenFlow Switch Features:")
+    print("Datapath_id: %s N_Buffers: %s N_Tbls: %s\nAuxiliary_id: %s "
+          "Pad: %s Reserved: %s" %
+          (red(msg.datapath_id),
+           msg.n_buffers,  msg.n_tbls, msg.auxiliary_id,
+           msg.pad, green(msg.reserved)))
+    print("Capabilities: "),
+    caps = parse_capabilities(msg.capabilities)
+    for i in caps:
+        print(of13.dissector.get_feature_res_capabilities(i)),
     print
 
 # ########## OFPT_GET_CONFIG_REPLY & OFPT_SET_CONFIG ###############
 
 
 def print_switch_config(msg):
-    print ('Switch Configuration - Flag: %s Miss_Send_Len: %s' %
-           (msg.flag, msg.miss_send_len))
+    print('Switch Configuration - Flag: %s Miss_Send_Len: %s' %
+          (msg.flag, msg.miss_send_len))
     return 0
 
 
@@ -115,6 +134,12 @@ def print_flow_removed(msg):
 
 
 def print_port_status(msg):
+    print(msg.reason.__dict__)
+    print(msg.desc.__dict__)
+    string = ('PortStatus - Reason: %s Desc: %s Pad: %s' %
+              (msg.reason, msg.desc, msg.pad))
+
+    print(string)
     return 0
 
 
@@ -137,11 +162,11 @@ def print_flow_mod(msg):
     command = green(of13.dissector.get_flow_mod_command(msg.command))
     flags = green(of13.dissector.get_flow_mod_flags(msg.flags))
     port = green(of13.dissector.get_phy_port_id(msg.out_port))
-    print string % (msg.cookie, msg.cookie_mask,
+    print(string % (msg.cookie, msg.cookie_mask,
                     msg.table_id, command, msg.idle_timeout,
                     msg.hard_timeout, msg.priority,
                     msg.buffer_id, port, msg.out_group,
-                    flags, print_pad(msg.pad))
+                    flags, print_pad(msg.pad)))
 
     # Print print_match_type(msg)
     print_match_type(msg.match)
@@ -149,7 +174,7 @@ def print_flow_mod(msg):
 
 
 def print_match_type(match):
-    print ('Flow Matches - Type: %s Length: %s' % (match.type, match.length))
+    print('Flow Matches - Type: %s Length: %s' % (match.type, match.length))
     # print oxm_fields
     print_match_oxm_fields(match.oxm_fields)
 
@@ -161,9 +186,9 @@ def print_match_oxm_fields(oxm_fields):
 
 
 def print_match_generic(oxm):
-    print (' OXM Match: Class: %s Length: %s HasMask: %s Field: %s:' %
-           (hex(oxm.oxm_class), oxm.length, oxm.hasmask,
-            green(of13.dissector.get_flow_match_fields(oxm.field)))),
+    print(' OXM Match: Class: %s Length: %s HasMask: %s Field: %s:' %
+          (hex(oxm.oxm_class), oxm.length, oxm.hasmask,
+           green(of13.dissector.get_flow_match_fields(oxm.field)))),
 
 
 def print_match_oxm(oxm):
@@ -173,7 +198,7 @@ def print_match_oxm(oxm):
             oxm.payload.value = of13.dissector.get_phy_port_id(oxm.payload.value)
         # DL_DST or DL_SRC
         elif oxm.field in [3, 4, 24, 25, 32, 33]:
-            print green(tcpiplib.prints.eth_addr(oxm.payload.value))
+            print(green(tcpiplib.prints.eth_addr(oxm.payload.value)))
             return
         # DL_TYPE
         elif oxm.field in [5]:
@@ -191,9 +216,9 @@ def print_match_oxm(oxm):
         elif oxm.field in [39]:
             extensions = of13.parser.parse_ipv6_extension_header(oxm.payload.values)
             for i in extensions:
-                print green(of13.dissector.get_ipv6_extension(i)),
+                print(green(of13.dissector.get_ipv6_extension(i))),
 
-        print '%s' % green(oxm.payload.value)
+        print('%s' % green(oxm.payload.value))
 
     elif oxm.hasmask == 1:
         if oxm.field in [3, 4, 24, 25]:
@@ -203,22 +228,22 @@ def print_match_oxm(oxm):
             oxm.payload.value = tcpiplib.prints.get_ip_from_long(oxm.payload.value)
             oxm.payload.mask = tcpiplib.prints.get_ip_from_long(oxm.payload.mask)
 
-        print ('%s/%s' % (green(oxm.payload.value), green(oxm.payload.mask)))
+        print('%s/%s' % (green(oxm.payload.value), green(oxm.payload.mask)))
 
 
 def print_instruction(instructions):
-    print ('Flow Instructions:')
+    print('Flow Instructions:')
     for instruction in instructions:
-        print ' Instruction: Type %s Length: %s' %\
-              (instruction.type, instruction.length)
+        print(' Instruction: Type %s Length: %s' %
+              (instruction.type, instruction.length))
         for action in instruction.actions:
-            print ('  Action - Type %s Length %s' % (action.type, action.length)),
+            print('  Action - Type %s Length %s' % (action.type, action.length)),
             if action.type == 0:
-                print ("Port %s Max_Len %s Pad %s" %
-                       (action.port, action.max_len, print_pad(action.pad)))
+                print("Port %s Max_Len %s Pad %s" %
+                      (action.port, action.max_len, print_pad(action.pad)))
             if action.type == 1:
-                print ("VLAN_VID %s Pad %s" %
-                       (action.vlan_vid, print_pad(action.pad)))
+                print("VLAN_VID %s Pad %s" %
+                      (action.vlan_vid, print_pad(action.pad)))
 
 
 # ################## OFPT_GROUP_MOD ############################

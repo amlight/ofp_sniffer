@@ -66,6 +66,6 @@ def get_openflow_header(packet, start):
         return of_header
 
     except Exception as exception:
-        print exception
+        print(exception)
         of_header['version'] = -1
         return of_header

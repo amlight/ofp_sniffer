@@ -11,7 +11,7 @@ import of10.prints
 import of10.packet
 import tcpiplib.tcpip
 import tcpiplib.packet
-from gen.packet import OFMessage
+# from gen.packet import OFMessage
 
 
 # *************** Hello *****************
@@ -619,7 +619,7 @@ def parse_StatsReq(msg, packet):
         msg.instantiate(vendor_id)
 
     else:
-        print 'StatReq: Unknown Type: %s' % msg.stat_type
+        print('StatReq: Unknown Type: %s' % msg.stat_type)
 
     return 1
 
@@ -826,7 +826,7 @@ def parse_StatsRes(msg, packet):
         msg.instantiate(vendor_id, data)
 
     else:
-        print 'StatRes: Unknown Type: %s' % msg.stat_type
+        print('StatRes: Unknown Type: %s' % msg.stat_type)
     return 1
 
 

@@ -20,7 +20,7 @@ def load_names_file(device_names):
         with open(pfile) as jfile:
             json_content = json.loads(jfile.read())
     except Exception as error:
-        print "Error %s Opening file %s" % (error, pfile)
+        print("Error %s Opening file %s" % (error, pfile))
         return
 
     global dpid_dict
@@ -86,7 +86,7 @@ def get_name_dpid(dpid):
 
 
 def get_ip_name(ip, port):
-    for i, j in NET.iteritems():
+    for i, j in NET.items():
         if i == (ip, port):
             return '%s(%s)' % (ip, j)
     return ip
