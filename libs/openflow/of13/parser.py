@@ -1,11 +1,12 @@
 """
     Parser of the OpenFlow 1.3 message
 """
-import netaddr
 from struct import unpack
-import of13.packet
-import of13.dissector
+
+import netaddr
 from pyof.v0x04.common.utils import unpack_message
+
+import libs.openflow.of13.packet
 
 
 # ################## OFPT_HELLO ############################
@@ -73,7 +74,7 @@ def parse_error_msg(msg, packet):
     ofe_type = ofe[0]
     ofe_code = ofe[1]
 
-    msg.error_type, msg.code = of13.dissector.get_ofp_error(ofe_type, ofe_code)
+    msg.error_type, msg.code = libs.openflow.of13.dissector.get_ofp_error(ofe_type, ofe_code)
     return 1
 
 
@@ -145,7 +146,7 @@ def parse_switch_features(msg, packet):
 
 def parse_switch_config(msg, packet):
     options = unpack('!HH', packet[:4])
-    msg.flag = of13.dissector.get_config_flags(options[0])
+    msg.flag = libs.openflow.of13.dissector.get_config_flags(options[0])
     msg.miss_send_len = options[1]
 
     return 1
@@ -194,7 +195,7 @@ def parse_packet_out(msg, packet):
 def _parse_action_output(packet, start, a_type, a_length, offset=12):
     # Output has 12 bytes
     raw2 = unpack('!LH6s', packet[start:start + offset])
-    action = of13.packet.ofp_action_set_output(a_type, a_length)
+    action = libs.openflow.of13.packet.ofp_action_set_output(a_type, a_length)
     action.port = raw2[0]
     action.max_len = raw2[1]
     action.pad = raw2[2]
@@ -204,7 +205,7 @@ def _parse_action_output(packet, start, a_type, a_length, offset=12):
 def _parser_action_set_vlan_vid(packet, start, a_type, a_length, offset=4):
     # Set_vlan_vid has 4 bytes
     raw2 = unpack('!H2s', packet[start:start + offset])
-    action = of13.packet.ofp_action_set_vlan_vid(a_type, a_length)
+    action = libs.openflow.of13.packet.ofp_action_set_vlan_vid(a_type, a_length)
     action.vlan_vid = raw2[0]
     action.pad = raw2[1]
     return action, offset
@@ -277,19 +278,19 @@ def _parse_instructions(packet, start):
 
         # Call proper instruction
         if i_type == 1:
-            instruction = of13.packet.ofp_instruction_go_to(i_type, i_len)
+            instruction = libs.openflow.of13.packet.ofp_instruction_go_to(i_type, i_len)
             _inst_goto_table(packet, start, instruction)
         elif i_type == 2:
-            instruction = of13.packet.ofp_instruction_write_metadata(i_type, i_len)
+            instruction = libs.openflow.of13.packet.ofp_instruction_write_metadata(i_type, i_len)
             _inst_write_metadata(packet, start, instruction)
         elif i_type in [3, 4, 5]:
-            instruction = of13.packet.ofp_instruction_wac_actions(i_type, i_len)
+            instruction = libs.openflow.of13.packet.ofp_instruction_wac_actions(i_type, i_len)
             _inst_write_apply_clear_actions(packet[start + 4:], instruction)
         elif i_type == 6:
-            instruction = of13.packet.ofp_instruction_meter(i_type, i_len)
+            instruction = libs.openflow.of13.packet.ofp_instruction_meter(i_type, i_len)
             _inst_meter(packet, start, instruction)
         else:
-            instruction = of13.packet.ofp_instruction_experimenter(i_type, i_len)
+            instruction = libs.openflow.of13.packet.ofp_instruction_experimenter(i_type, i_len)
             _inst_experimenter(packet, start, instruction)
 
         instructions.append(instruction)
@@ -301,7 +302,7 @@ def _parse_instructions(packet, start):
 
 def unpack_oxm_payload(oxm_tlv, packet_oxm_payload):
 
-    payload = of13.packet.ofp_match_oxm_payload()
+    payload = libs.openflow.of13.packet.ofp_match_oxm_payload()
     len_packet_oxm_content = len(packet_oxm_payload)
     strg = ''
 
@@ -369,7 +370,7 @@ def _parse_matches(match, packet, start):
     while len(oxms[start_2:]) > 0:
         oxm_raw = unpack('!L', oxms[start_2:start_2 + 4])
 
-        oxm_tlv = of13.packet.ofp_match_oxm_fields()
+        oxm_tlv = libs.openflow.of13.packet.ofp_match_oxm_fields()
         oxm_tlv.oxm_class = (oxm_raw[0] >> 16)
         oxm_tlv.field = ((oxm_raw[0] >> 9) & 0x7f)
         oxm_tlv.hasmask = ((oxm_raw[0] >> 8) & 1)

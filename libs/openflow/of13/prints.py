@@ -2,9 +2,10 @@
     OpenFlow 1.3 prints
 """
 from hexdump import hexdump
-import of13.dissector
-import tcpiplib.prints
-from gen.prints import red, green
+
+import libs.tcpiplib.prints
+from libs.gen.prints import red, green
+from libs.openflow import of13
 
 
 def print_pad(pad):
@@ -104,7 +105,7 @@ def print_switch_features(msg):
     print("Capabilities: "),
     caps = parse_capabilities(msg.capabilities)
     for i in caps:
-        print(of13.dissector.get_feature_res_capabilities(i)),
+        print(libs.openflow.of13.dissector.get_feature_res_capabilities(i)),
     print
 
 # ########## OFPT_GET_CONFIG_REPLY & OFPT_SET_CONFIG ###############
@@ -159,9 +160,9 @@ def print_flow_mod(msg):
               'Idle/Hard Timeouts: %s/%s\nFlowMod - Priority: %s '
               'Buffer ID: %s Out Port: %s Out Group: %s Flags: %s Pad: %s')
 
-    command = green(of13.dissector.get_flow_mod_command(msg.command))
-    flags = green(of13.dissector.get_flow_mod_flags(msg.flags))
-    port = green(of13.dissector.get_phy_port_id(msg.out_port))
+    command = green(libs.openflow.of13.dissector.get_flow_mod_command(msg.command))
+    flags = green(libs.openflow.of13.dissector.get_flow_mod_flags(msg.flags))
+    port = green(libs.openflow.of13.dissector.get_phy_port_id(msg.out_port))
     print(string % (msg.cookie, msg.cookie_mask,
                     msg.table_id, command, msg.idle_timeout,
                     msg.hard_timeout, msg.priority,
@@ -188,17 +189,17 @@ def print_match_oxm_fields(oxm_fields):
 def print_match_generic(oxm):
     print(' OXM Match: Class: %s Length: %s HasMask: %s Field: %s:' %
           (hex(oxm.oxm_class), oxm.length, oxm.hasmask,
-           green(of13.dissector.get_flow_match_fields(oxm.field)))),
+           green(libs.openflow.of13.dissector.get_flow_match_fields(oxm.field)))),
 
 
 def print_match_oxm(oxm):
     if oxm.hasmask == 0:
         if oxm.field in [0]:
             oxm.payload.value = oxm.payload.value & 0xffff
-            oxm.payload.value = of13.dissector.get_phy_port_id(oxm.payload.value)
+            oxm.payload.value = libs.openflow.of13.dissector.get_phy_port_id(oxm.payload.value)
         # DL_DST or DL_SRC
         elif oxm.field in [3, 4, 24, 25, 32, 33]:
-            print(green(tcpiplib.prints.eth_addr(oxm.payload.value)))
+            print(green(libs.tcpiplib.prints.eth_addr(oxm.payload.value)))
             return
         # DL_TYPE
         elif oxm.field in [5]:
@@ -211,22 +212,22 @@ def print_match_oxm(oxm):
                 oxm.payload.value = oxm.payload.value & 0xfff
         # NW_SRC or NW_DST
         elif oxm.field in [11, 12, 22, 23]:
-            oxm.payload.value = tcpiplib.prints.get_ip_from_long(oxm.payload.value)
+            oxm.payload.value = libs.tcpiplib.prints.get_ip_from_long(oxm.payload.value)
         # IPv6 Extensions
         elif oxm.field in [39]:
             extensions = of13.parser.parse_ipv6_extension_header(oxm.payload.values)
             for i in extensions:
-                print(green(of13.dissector.get_ipv6_extension(i))),
+                print(green(libs.openflow.of13.dissector.get_ipv6_extension(i))),
 
         print('%s' % green(oxm.payload.value))
 
     elif oxm.hasmask == 1:
         if oxm.field in [3, 4, 24, 25]:
-            oxm.payload.value = tcpiplib.prints.eth_addr(oxm.payload.value)
-            oxm.payload.mask = tcpiplib.prints.eth_addr(oxm.payload.mask)
+            oxm.payload.value = libs.tcpiplib.prints.eth_addr(oxm.payload.value)
+            oxm.payload.mask = libs.tcpiplib.prints.eth_addr(oxm.payload.mask)
         if oxm.field in [11, 12, 22, 23]:
-            oxm.payload.value = tcpiplib.prints.get_ip_from_long(oxm.payload.value)
-            oxm.payload.mask = tcpiplib.prints.get_ip_from_long(oxm.payload.mask)
+            oxm.payload.value = libs.tcpiplib.prints.get_ip_from_long(oxm.payload.value)
+            oxm.payload.mask = libs.tcpiplib.prints.get_ip_from_long(oxm.payload.mask)
 
         print('%s/%s' % (green(oxm.payload.value), green(oxm.payload.mask)))
 

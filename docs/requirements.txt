@@ -2,3 +2,4 @@ termcolor
 hexdump
 netaddr
 pcapy
+python-openflow

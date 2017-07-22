@@ -4,9 +4,10 @@
     Filters are provided via CLI option -F json-file
 """
 
+import libs.tcpiplib.tcpip
 from libs.printing import PrintingOptions
-import tcpiplib.tcpip
-import tcpiplib.packet
+
+
 # import of10
 
 
@@ -51,7 +52,7 @@ def filter_of_version(msg):
             False: Don' filter packet
             True: Filter it (don't print)
     """
-    name_version = tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
+    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
     supported_versions = []
     try:
         for version in msg.sanitizer['allowed_of_versions']:
@@ -72,7 +73,7 @@ def filter_of_type(msg):
             False: Don' filter packet
             True: Filter it (don't print)
     """
-    name_version = tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
+    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
     # OF Types to be ignored through json file (-F)
     try:
         rejected_types = msg.sanitizer['allowed_of_versions'][name_version]
@@ -103,10 +104,10 @@ def ethertype_filters(msg):
             return False
         # Go to payload
         idx = 0
-        if isinstance(msg.ofp.data[idx], tcpiplib.packet.Ethernet):
+        if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.Ethernet):
             next_protocol = msg.ofp.data[idx].protocol
             idx += 1
-            if isinstance(msg.ofp.data[idx], tcpiplib.packet.VLAN):
+            if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.VLAN):
                 next_protocol = msg.ofp.data[idx].protocol
             try:
                 if next_protocol in [35020, 35138] and filters['lldp']:
@@ -149,10 +150,10 @@ def dpid_filters(msg):
 
     # It has to be a LLDP packet
     idx = 0
-    if isinstance(msg.ofp.data[idx], tcpiplib.packet.Ethernet):
+    if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.Ethernet):
         next_protocol = msg.ofp.data[idx].protocol
         idx += 1
-        if isinstance(msg.ofp.data[idx], tcpiplib.packet.VLAN):
+        if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.VLAN):
             next_protocol = msg.ofp.data[idx].protocol
         try:
             if next_protocol not in [35020, 35138]:

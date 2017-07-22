@@ -5,12 +5,13 @@
 import socket
 import struct
 from struct import unpack
-import gen.proxies
-import of10.dissector
-import of10.prints
-import of10.packet
-import tcpiplib.tcpip
-import tcpiplib.packet
+
+import libs.gen.proxies
+import libs.openflow.of10.packet
+import libs.openflow.of10.prints
+import libs.tcpiplib.tcpip
+
+
 # from gen.packet import OFMessage
 
 
@@ -90,8 +91,8 @@ def _parse_phy_curr(values):
 def _parse_phy_ports(packet):
     phy = unpack('!H6s16sLLLLLL', packet)
 
-    port_id = of10.dissector.get_phy_port_id(phy[0])
-    hw_addr = of10.prints.eth_addr(phy[1])
+    port_id = libs.openflow.of10.dissector.get_phy_port_id(phy[0])
+    hw_addr = libs.openflow.of10.prints.eth_addr(phy[1])
     config = _parse_phy_config(phy[3])
     state = _parse_phy_state(phy[4])
     curr = _parse_phy_curr(phy[5])
@@ -99,7 +100,7 @@ def _parse_phy_ports(packet):
     supported = _parse_phy_curr(phy[7])
     peer = _parse_phy_curr(phy[8])
 
-    port = of10.packet.OFP_Phy_port()
+    port = libs.openflow.of10.packet.OFP_Phy_port()
     port.port_id = port_id
     port.hw_addr = hw_addr
     port.name = phy[2]
@@ -132,7 +133,7 @@ def parse_FeatureRes(msg, packet):
     msg.ports = ports_array
 
     # Save DPID to handle proxies
-    gen.proxies.save_dpid(msg.datapath_id)
+    libs.gen.proxies.save_dpid(msg.datapath_id)
 
     return 1
 
@@ -146,7 +147,7 @@ def parse_GetConfigReq(msg, packet):
 def _parse_SetGetConfig(packet, h_size):
     pkt_raw = packet[h_size:h_size+4]
     pkt_list = unpack('!HH', pkt_raw)
-    flags = of10.dissector.get_configres_flags(pkt_list[0])
+    flags = libs.openflow.of10.dissector.get_configres_flags(pkt_list[0])
     return flags, pkt_list[1]
 
 
@@ -174,7 +175,7 @@ def process_data(packet, start, msg):
     """
     payload = []
     # Ethernet
-    eth = tcpiplib.packet.Ethernet()
+    eth = libs.tcpiplib.packet.Ethernet()
     eth.parse(packet[start:start + 14], 1)
     payload.append(eth)
 
@@ -186,7 +187,7 @@ def process_data(packet, start, msg):
         """
             Frame has VLAN
         """
-        vlan = tcpiplib.packet.VLAN()
+        vlan = libs.tcpiplib.packet.VLAN()
         vlan.parse(packet[start:start + 4])
         payload.append(vlan)
         etype = vlan.protocol
@@ -200,7 +201,7 @@ def process_data(packet, start, msg):
 
     # OESS FVD
     if etype in [34998]:
-        fvd = tcpiplib.packet.OessFvd()
+        fvd = libs.tcpiplib.packet.OessFvd()
         try:
             fvd.parse(packet[start:])
         except Exception as error:
@@ -211,35 +212,35 @@ def process_data(packet, start, msg):
     # LLDP - ETYPE 0x88CC or 35020 or
     # BBDP - ETYPE 0x8942 or 35138
     if etype in [35020, 35138]:
-        lldp = tcpiplib.packet.LLDP()
+        lldp = libs.tcpiplib.packet.LLDP()
         try:
             lldp.parse(packet[start:])
         except:
             pass
-        if not isinstance(lldp, tcpiplib.packet.LLDP):
+        if not isinstance(lldp, libs.tcpiplib.packet.LLDP):
             lldp.c_id = 0
         else:
             if lldp.c_id is not None:
                 if msg.type is 13:
                     # Save DPID to handle proxies
-                    gen.proxies.save_dpid(lldp)
+                    libs.gen.proxies.save_dpid(lldp)
             payload.append(lldp)
         return payload
 
     # IP - ETYPE 0x800 or 2048
     if etype in [2048]:
-        ip = tcpiplib.packet.IP()
+        ip = libs.tcpiplib.packet.IP()
         ip.parse(packet, start)
         payload.append(ip)
         if ip.protocol is 6:
-            tcp = tcpiplib.packet.TCP()
+            tcp = libs.tcpiplib.packet.TCP()
             tcp.parse(packet, start + ip.length)
             payload.append(tcp)
         return payload
 
     # ARP - ETYPE 0x806 or 2054
     if etype in [2054]:
-        arp = tcpiplib.packet.ARP()
+        arp = libs.tcpiplib.packet.ARP()
         arp.parse(packet[start:])
         payload.append(arp)
         return payload
@@ -251,7 +252,7 @@ def parse_PacketIn(msg, packet):
     # buffer_id(32), total_len(16), in_port(16), reason(8), pad(8)
     pkt_raw = packet[0:10]
     p_in = unpack('!LHHB1s', pkt_raw)
-    reason = of10.dissector.get_packet_in_reason(p_in[3])
+    reason = libs.openflow.of10.dissector.get_packet_in_reason(p_in[3])
     msg.buffer_id = p_in[0]
     msg.total_len = p_in[1]
     msg.in_port = p_in[2]
@@ -270,7 +271,7 @@ def parse_FlowRemoved(msg, packet):
     ofrem = unpack('!QHB1sLLH1s1sQQ', of_rem_body)
     cookie = ofrem[0] if ofrem[0] > 0 else 0
     cookie = '0x' + format(cookie, '02x')
-    reason = of10.dissector.get_flow_removed_reason(ofrem[2])
+    reason = libs.openflow.of10.dissector.get_flow_removed_reason(ofrem[2])
 
     msg.cookie = cookie
     msg.priority = ofrem[1]
@@ -289,7 +290,7 @@ def parse_FlowRemoved(msg, packet):
 def parse_PortStatus(msg, packet):
     port_raw = packet[0:8]
     port = unpack('!B7s', port_raw)
-    reason = of10.dissector.get_port_status_reason(port[0])
+    reason = libs.openflow.of10.dissector.get_port_status_reason(port[0])
     msg.reason = reason
     msg.pad = port[1]
     msg.desc = _parse_phy_ports(packet[8:64])
@@ -359,12 +360,12 @@ def get_ip_from_long(long_ip):
 
 
 def _parse_OFMatch(packet, h_size):
-    match_tmp = of10.packet.OFP_Match()
+    match_tmp = libs.openflow.of10.packet.OFP_Match()
     of_match = packet[h_size:h_size+40]
     ofm = unpack('!LH6s6sHBBHBBHLLHH', of_match)
     wildcard = ofm[0]
-    dl_src = of10.prints.eth_addr(ofm[2])
-    dl_dst = of10.prints.eth_addr(ofm[3])
+    dl_src = libs.openflow.of10.prints.eth_addr(ofm[2])
+    dl_dst = libs.openflow.of10.prints.eth_addr(ofm[3])
     nw_src = get_ip_from_long(ofm[11])
     nw_dst = get_ip_from_long(ofm[12])
     etype = hex(ofm[7])
@@ -519,7 +520,7 @@ def _parse_OFAction(packet, start):
                 total_length = 4
 
             ofa_action_payload = packet[start:start + total_length]
-            action = of10.packet.OFP_Action()
+            action = libs.openflow.of10.packet.OFP_Action()
             action.type = ofa_type
             action.length = ofa_length
             action.payload = ofa_action_payload
@@ -669,7 +670,7 @@ def parse_StatsRes(msg, packet):
             flow_raw = packet[start:start+4]
             flow = unpack('!HB1s', flow_raw)
 
-            eflow = of10.packet.OFP_STAT_FLOW()
+            eflow = libs.openflow.of10.packet.OFP_STAT_FLOW()
 
             eflow.length = flow[0]
             eflow.table_id = flow[1]
@@ -730,7 +731,7 @@ def parse_StatsRes(msg, packet):
             flow_raw = packet[start:start+64]
             flow = unpack('!B3s32sLLLQQ', flow_raw)
 
-            etable = of10.packet.OFP_STAT_TABLE()
+            etable = libs.openflow.of10.packet.OFP_STAT_TABLE()
             etable.table_id = flow[0]
             etable.pad = flow[1]
             etable.name = flow[2]
@@ -761,7 +762,7 @@ def parse_StatsRes(msg, packet):
             flow_raw = packet[start:start+104]
             flow = unpack('!H6sQQQQQQQQQQQQ', flow_raw)
 
-            eport = of10.packet.OFP_STAT_PORT()
+            eport = libs.openflow.of10.packet.OFP_STAT_PORT()
             eport.port_number = flow[0]
             eport.pad = flow[1]
             eport.rx_packets = flow[2]
@@ -797,7 +798,7 @@ def parse_StatsRes(msg, packet):
             flow_raw = packet[start:start+32]
             flow = unpack('!H2sLQQQ', flow_raw)
 
-            queue = of10.packet.OFP_STAT_QUEUE()
+            queue = libs.openflow.of10.packet.OFP_STAT_QUEUE()
             queue.length = flow[0]
             queue.pad = flow[1]
             queue.queue_id = flow[2]
@@ -863,7 +864,7 @@ def parse_QueueGetConfigRes(msg, packet):
         queue_raw = packet[start:start+8]
         queue = unpack('!LH2s', queue_raw)
 
-        equeue = of10.packet.OFP_QUEUE()
+        equeue = libs.openflow.of10.packet.OFP_QUEUE()
         equeue.queue_id = queue[0]
         equeue.length = queue[1]
         equeue.pad = queue[2]
@@ -879,11 +880,11 @@ def parse_QueueGetConfigRes(msg, packet):
             prop_raw = packet[q_start:q_start+8]
             prop = unpack('!HH4sH6s', prop_raw)
 
-            qproperty = of10.packet.OFP_QUEUE_PROPERTIES()
+            qproperty = libs.openflow.of10.packet.OFP_QUEUE_PROPERTIES()
             qproperty.property = prop[0]
             qproperty.length = prop[1]
             qproperty.pad = prop[2]
-            qproperty.payload = of10.packet.OFP_QUEUE_PROP_PAYLOAD()
+            qproperty.payload = libs.openflow.of10.packet.OFP_QUEUE_PROP_PAYLOAD()
             qproperty.payload.rate = prop[3]
             qproperty.payload.pad = prop[4]
 

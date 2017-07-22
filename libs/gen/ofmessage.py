@@ -1,12 +1,12 @@
 """
 
 """
-import gen.proxies
+
 import libs.filters
-import of10.packet
-import of13.packet
-import tcpiplib.packet
-import tcpiplib.prints
+import libs.gen.proxies
+import libs.tcpiplib.packet
+import libs.tcpiplib.prints
+import libs.openflow.instantiate
 from libs.debugging import debugclass
 
 
@@ -15,20 +15,19 @@ class OFMessage:
     """
         Used to process all data regarding this OpenFlow message
     """
-    def __init__(self, pkt):
+    def __init__(self, this_packet, position):
         """
             Instantiate OFMessage class
             Args:
                 self: this class
-                pkt: Packet class
+                this_packet: OpenFlow msg
+                position: packet number
         """
-        # main_packet = full TCP/IP packet
-        self.main_packet = pkt
-        self.packet = pkt.this_packet
+        self.position = position
+        self.packet = this_packet
         self.offset = 0
-        # self.print_options = self.main_packet.print_options
-        # self.sanitizer = self.main_packet.sanitizer
         self.message = None
+
         # ofp is the real OpenFlow message
         self.ofp = None
 
@@ -43,23 +42,11 @@ class OFMessage:
                 0: message type unknown or OpenFlow version non-dissected
                 1: No error
         """
-        if of_header['version'] is 1:
-            self.ofp = of10.packet.instantiate(of_header)
-            if isinstance(self.ofp, int):
-                print('Debug: Packet: %s not OpenFlow\n' %
-                      self.main_packet.position)
-                self.offset += 8
-                self.packet = self.packet[8:]
-                return 0
-        elif of_header['version'] is 4:
-            self.ofp = of13.packet.instantiate(of_header)
-            if isinstance(self.ofp, int):
-                print('Debug: Packet: %s not OpenFlow\n' %
-                      self.main_packet.position)
-                self.offset += 8
-                self.packet = self.packet[8:]
-                return 0
-        else:
+        self.ofp = libs.openflow.instantiate.instantiate_msg(of_header)
+        if isinstance(self.ofp, int):
+            print('Debug: Packet: %s not OpenFlow\n' % self.position)
+            self.offset += 8
+            self.packet = self.packet[8:]
             return 0
 
         self.offset += 8
@@ -73,7 +60,7 @@ class OFMessage:
             Args:
                 exception: generated expection
         """
-        string = ('!!! MalFormed Packet: %s' % self.main_packet.position)
+        string = ('!!! MalFormed Packet: %s' % self.position)
         print('message %s\n Details about the Error:' % string)
         print(exception)
 
@@ -87,18 +74,9 @@ class OFMessage:
                 1: Success
                 -1: Error processing the OpenFlow content
         """
-        if not self.process_openflow_header(of_header):
-            return 0
         try:
-            # support for proxies
-            # PacketOut will be used to collect DPID, but at this moment
-            # just save DEST IP and DEST TCP port
-            if of_header['type'] == 6:
-                gen.proxies.insert_ip_port(self.main_packet.l3.s_addr,
-                                           self.main_packet.l4.source_port)
-            if of_header['type'] == 13:
-                gen.proxies.insert_ip_port(self.main_packet.l3.d_addr,
-                                           self.main_packet.l4.dest_port)
+            if not self.process_openflow_header(of_header):
+                return 0
 
             self.ofp.process_msg(self.packet)
             return 1
@@ -118,10 +96,10 @@ class OFMessage:
             # Only prints TCP/IP header once
             # A TCP/IP packet might contain multiple OpenFlow messages
             if pkt.printed_header is False:
-                tcpiplib.prints.print_headers(pkt)
+                libs.tcpiplib.prints.print_headers(pkt)
                 pkt.printed_header = True
             # Print OpenFlow header - version independent
-            tcpiplib.prints.print_openflow_header(self.ofp)
+            libs.tcpiplib.prints.print_openflow_header(self.ofp)
             # Print OpenFlow message body
             self.ofp.prints()
             print()

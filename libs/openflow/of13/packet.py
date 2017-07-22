@@ -3,9 +3,7 @@
 """
 from pyof.v0x04.common.utils import unpack_message
 
-
-import of13.prints as prints
-import of13.parser as parser
+from libs.openflow import of13 as prints, of13 as parser
 
 
 def instantiate(of_header):

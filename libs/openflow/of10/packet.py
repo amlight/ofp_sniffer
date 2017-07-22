@@ -7,9 +7,8 @@
     The idea is to use the same name as used in the OpenFlow specification
 """
 
-
-import of10.prints as prints
-import of10.parser as parser
+import libs.openflow.of10.prints as prints
+import libs.openflow.of10.parser as parser
 
 
 def instantiate(of_header):

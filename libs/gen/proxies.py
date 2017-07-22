@@ -3,8 +3,8 @@
     If FlowSpace Firewall or FlowVisor is not used, this module is not useful.
 """
 import json
-from tcpiplib.packet import LLDP
 
+from libs.tcpiplib.packet import LLDP
 
 D_ADDR = None
 DEST_PORT = None

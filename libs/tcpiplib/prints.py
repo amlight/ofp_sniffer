@@ -1,15 +1,16 @@
 """
     Printing TCP/IP classes
 """
-from datetime import datetime
 import socket
 import struct
-import gen.proxies
-import of10.dissector
-import of13.dissector
-import tcpiplib.tcpip
-from gen.prints import red, green, blue, yellow, cyan
+from datetime import datetime
+
+from libs.gen.prints import red, green, blue, yellow, cyan
+
+import libs.gen.proxies
+import libs.tcpiplib.tcpip
 from libs.printing import PrintingOptions
+import libs.openflow.of10.dissector
 
 
 def eth_addr(a):
@@ -86,8 +87,8 @@ def print_minimal(position, date, getlen, ip, tcp):
     """
     string = 'Packet #%s - %s %s:%s -> %s:%s Size: %s Bytes'
 
-    source = gen.proxies.get_ip_name(ip.s_addr, tcp.source_port)
-    dest = gen.proxies.get_ip_name(ip.d_addr, tcp.dest_port)
+    source = libs.gen.proxies.get_ip_name(ip.s_addr, tcp.source_port)
+    dest = libs.gen.proxies.get_ip_name(ip.d_addr, tcp.dest_port)
 
     print(string % (position, date, cyan(source), cyan(tcp.source_port),
                     cyan(dest), cyan(tcp.dest_port), getlen))
@@ -123,7 +124,7 @@ def print_layer2(eth):
     """
     print ('Ethernet: Destination MAC: %s Source MAC: %s Protocol: %s' %
            (eth_addr(eth.dst_mac), eth_addr(eth.src_mac),
-            red(tcpiplib.tcpip.get_ethertype(eth.protocol))))
+            red(libs.tcpiplib.tcpip.get_ethertype(eth.protocol))))
 
 
 def print_vlan(vlan):
@@ -185,13 +186,13 @@ def print_openflow_header(ofp):
     Args:
         ofp: OFMessage class
     """
-    version = tcpiplib.tcpip.get_ofp_version(ofp.version)
+    version = libs.tcpiplib.tcpip.get_ofp_version(ofp.version)
     name_version = '%s(%s)' % (version, ofp.version)
     if version == '1.0':
-        name = of10.dissector.get_ofp_type(ofp.type)
+        name = libs.openflow.of10.dissector.get_ofp_type(ofp.type)
         name_type = '%s(%s)' % (name, ofp.type)
     elif version == '1.3':
-        name = of13.dissector.get_ofp_type(ofp.type)
+        name = libs.openflow.of13.dissector.get_ofp_type(ofp.type)
         name_type = '%s(%s)' % (name, ofp.type)
     else:
         name_type = '%s' % ofp.type

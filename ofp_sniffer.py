@@ -7,14 +7,13 @@
 
     Author: Jeronimo Bezerra <jab@amlight.net>
 """
-
 import datetime
 import sys
 import libs.cli
-from apps.oess_fvd import OessFvdTracer
-from gen.packet import Packet
+from libs.gen.packet import Packet
 from libs.printing import PrintingOptions
 from libs.sanitizer import Sanitizer
+from apps.oess_fvd import OessFvdTracer
 
 
 class RunSniffer(object):
@@ -36,8 +35,8 @@ class RunSniffer(object):
 
         """
         # Get CLI params and call the pcapy loop
-        self.cap, self.position, self.load_apps, sanitizer_file = libs.cli.get_params(sys.argv)
-        self.sanitizer.process_filters(sanitizer_file)
+        self.cap, self.position, self.load_apps, sanitizer = libs.cli.get_params(sys.argv)
+        self.sanitizer.process_filters(sanitizer)
 
         # Start Apps
         if 'oess_fvd' in self.load_apps:
@@ -79,10 +78,13 @@ class RunSniffer(object):
         """
         if len(packet) >= 62 and self.position_defined():
             time = datetime.datetime.now()
+
             pkt = Packet(packet, self.ctr)
             pkt.process_packet_header(header, time)
-            if pkt.openflow_packet:
+
+            if pkt.is_openflow_packet:
                 result = pkt.process_openflow_messages()
+
                 if result is 1:
                     # Adding support to apps
                     # If no apps are selected, just print
