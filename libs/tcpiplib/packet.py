@@ -4,7 +4,7 @@
 
 from struct import unpack
 import socket
-#from tcpiplib.prints import datapath_id
+from datetime import datetime
 
 
 IP_PROTOCOL = 8
@@ -22,11 +22,16 @@ class L1:
         self.truncate = None
         self.time = None
 
-    def parse(self, header, time):
+    def parse(self, header):
         self.caplen = header.getlen()
         self.truncate = header.getcaplen()
-        self.time = time
+        self.time = self.set_time(header.getts())
 
+    @staticmethod
+    def set_time(date):
+        date = datetime.fromtimestamp(date[0])
+        date = date.strftime('%Y-%m-%d %H:%M:%S')
+        return date
 
 class Ethernet:
     """

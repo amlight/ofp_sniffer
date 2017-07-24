@@ -13,7 +13,7 @@ class OessFvdTracer:
 
     def starting(self):
         print('OESS FVD Monitoring')
-        print('%-24s %-4s %-24s %-4s %s\t %s\t %s' %
+        print('%-24s %-4s %-24s %-4s %s\t\t\t\t\t %s\t\t\t\t\t %s' %
               ('DPID', 'Port', 'Neighbor', 'Port', 'Last Seen', 'Timestamp', 'Delay'))
 
     def process_packet(self, pkt):

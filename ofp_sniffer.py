@@ -77,10 +77,9 @@ class RunSniffer(object):
                 packet: packet captured from file or interface
         """
         if len(packet) >= 62 and self.position_defined():
-            time = datetime.datetime.now()
 
             pkt = Packet(packet, self.ctr)
-            pkt.process_packet_header(header, time)
+            pkt.process_packet_header(header)
 
             if pkt.is_openflow_packet:
                 result = pkt.process_openflow_messages()

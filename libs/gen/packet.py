@@ -46,7 +46,7 @@ class Packet:
         # an list of messages needs to be created
         self.ofmsgs = []
 
-    def process_packet_header(self, header, time):
+    def process_packet_header(self, header):
         """
             Process TCP/IP Header, from Layer 1 to TCP.
             Each layer has a different class. Methods parse are used
@@ -55,7 +55,7 @@ class Packet:
                 header: header of the captured packet
                 time: time the packet was captured
         """
-        self.l1.parse(header, time)
+        self.l1.parse(header)
         self.offset = self.l2.parse(self.packet)
         if self.l2.protocol == IP_PROTOCOL:
             self.offset = self.l3.parse(self.packet, self.offset)

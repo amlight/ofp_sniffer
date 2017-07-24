@@ -125,8 +125,11 @@ def ethertype_filters(msg):
 
             # Other Ethertypes listed as hex
             for protocol in filters['others']:
-                if next_protocol == int(protocol, 16):
-                    return True
+                try:
+                    if next_protocol == int(protocol, 16):
+                        return True
+                except ValueError:
+                    pass
 
     return False
 
@@ -167,12 +170,12 @@ def dpid_filters(msg):
         # If it is a PacketIn ...
         if msg.ofp.type in [10]:
             # It has to have a packetIn_filter filter
-            filters = msg.sanitizer['filters']['packetIn_filter']
+            filters = Sanitizer().filters['packetIn_filter']
             filter_port = filters['in_port']
         # If it a PacketOut...
         else:
             # It has to have a packetOut_filter filter
-            filters = msg.sanitizer['filters']['packetOut_filter']
+            filters = Sanitizer().filters['packetOut_filter']
             filter_port = filters['out_port']
 
         filter_dpid = filters['switch_dpid']
