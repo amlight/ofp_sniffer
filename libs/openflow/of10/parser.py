@@ -10,9 +10,8 @@ import libs.gen.proxies
 import libs.openflow.of10.packet
 import libs.openflow.of10.prints
 import libs.tcpiplib.tcpip
-
-
-# from gen.packet import OFMessage
+import libs.tcpiplib.packet
+import libs.openflow.of10.dissector
 
 
 # *************** Hello *****************
@@ -417,7 +416,15 @@ def _parse_OFMatch(packet, h_size):
             action = 'match_tmp.%s="%s"'
         else:
             action = 'match_tmp.%s=%s'
-        exec (action) % (match, ofmatch.get(match))
+        try:
+            #print(match)
+            #print(ofmatch.get(match))
+            action = action % (match, ofmatch.get(match))
+            #print(action)
+            exec(action)
+            #exec(action) % (match, ofmatch.get(match))
+        except Exception as err:
+            print(err)
 
     return match_tmp
 
@@ -675,7 +682,6 @@ def parse_StatsRes(msg, packet):
             eflow.length = flow[0]
             eflow.table_id = flow[1]
             eflow.pad = flow[2]
-
             eflow.match = _parse_OFMatch(packet, start+4)
 
             flow_raw = packet[start+44:start+44+44]

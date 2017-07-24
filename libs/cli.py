@@ -134,7 +134,7 @@ def get_params(argv):
         elif option in ['-P', '--proxy-file']:
             PrintingOptions().proxy = param
         elif option in ['-c', '--no-colors']:
-            PrintingOptions().color = False
+            PrintingOptions().colors = False
         elif option in ['-O', '--oess-fvd']:
             load_apps.append('oess_fvd')
         elif option in ['-v', '--version']:

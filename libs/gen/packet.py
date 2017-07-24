@@ -143,8 +143,8 @@ class Packet:
             just save DEST IP and DEST TCP port
         """
         if msg.type == 6:
-            libs.gen.proxies.insert_ip_port(self.main_packet.l3.s_addr,
-                                            self.main_packet.l4.source_port)
+            libs.gen.proxies.insert_ip_port(self.l3.s_addr,
+                                            self.l4.source_port)
         elif msg.type == 13:
-            libs.gen.proxies.insert_ip_port(self.main_packet.l3.d_addr,
-                                            self.main_packet.l4.dest_port)
+            libs.gen.proxies.insert_ip_port(self.l3.d_addr,
+                                            self.l4.dest_port)

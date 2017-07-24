@@ -175,6 +175,7 @@ class LLDP:
         self.c_type = chassis[0] >> 9
         if self.c_type is not 1:
             return {}
+
         self.c_length = chassis[0] & 0xFF
         self.c_subtype = chassis[1]
         length = self.c_length - 1
@@ -182,7 +183,7 @@ class LLDP:
         chassis_raw = packet[3:3 + length]
         string = '!%ss' % length
         chassis = unpack(string, chassis_raw)
-        self.c_id = chassis[0]
+        self.c_id = chassis[0].decode("utf-8")
 
         start = 3 + length
 
@@ -253,6 +254,7 @@ class LLDP:
         self.e_length = end[0] & 0xFF
 
 
+
 class ARP:
     """
         Class to dissect ARP fields
@@ -294,52 +296,37 @@ class OessFvd:
         self.timestamp = None
 
     def parse(self, packet):
-        self.side_a = self.reverse_datapath_id(unpack('!8s', packet[0:8])[0])
-        self.port_a = self.port_id(unpack('!8s', packet[8:16])[0])
-        self.side_z = self.reverse_datapath_id(unpack('8s', packet[16:24])[0])
-        self.port_z = self.port_id(unpack('8s', packet[24:32])[0])
+        self.side_a = self.get_datapath_id(packet[0:8])
+        self.port_a = self.port_id(packet[8:16])
+        self.side_z = self.get_datapath_id(packet[16:24])
+        self.port_z = self.port_id(packet[24:32])
         self.timestamp = self.get_timestamp(packet[32:])
 
-    def reverse_datapath_id(self, a):
+    def read_field(self, value):
+        """
+
+        """
+        string = '%02x' * len(value)
+        return string % tuple(value)[::-1]
+
+    def get_datapath_id(self, dpid):
         """
             Convert OpenFlow Datapath ID to human format
-        Args:
-            a: DPID in "8s" format
-        Returns:
-            DPID in human format
         """
-        string = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x"
-        dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]), ord(a[4]),
-                         ord(a[3]), ord(a[2]), ord(a[1]), ord(a[0]))
-        return dpid
+        dpid = self.read_field(dpid)
+        return ':'.join(dpid[i:i+2] for i in range(0, 16, 2))
 
-    def get_timestamp(self, a):
+    def get_timestamp(self, timestamp):
         """
             Convert binary to timestamp
         """
-        dpid = None
-        if len(a) == 8:
-            string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
-            dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]),
-                             ord(a[4]), ord(a[3]), ord(a[2]),
-                             ord(a[1]), ord(a[0]))
-        elif len(a) == 10:
-            string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
-            dpid = string % (ord(a[9]), ord(a[8]), ord(a[7]),
-                             ord(a[6]), ord(a[5]), ord(a[4]),
-                             ord(a[3]), ord(a[2]), ord(a[1]),
-                             ord(a[0]))
-        return int(dpid, base=16) / 1000
+        timestamp = self.read_field(timestamp)
 
-    def port_id(self, a):
+        return int(timestamp, base=16) / 1000
+
+    def port_id(self, port):
         """
             Convert OpenFlow Port ID to human format
-        Args:
-            a: DPID in "8s" format
-        Returns:
-            DPID in human format
         """
-        string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
-        dpid = string % (ord(a[7]), ord(a[6]), ord(a[5]), ord(a[4]),
-                         ord(a[3]), ord(a[2]), ord(a[1]), ord(a[0]))
-        return int(dpid, base=16)
+        port = self.read_field(port)
+        return int(port, base=16)

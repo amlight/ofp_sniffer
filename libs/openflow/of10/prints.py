@@ -8,6 +8,7 @@ import libs.cli
 import libs.openflow.of10.parser
 import libs.tcpiplib.tcpip
 from libs.gen.prints import red, green
+import libs.openflow.of10.dissector
 
 
 def print_type_unknown(pkt):
@@ -53,20 +54,20 @@ def print_of_feature_res(msg):
     dpid = datapath_id(msg.datapath_id)
     print('FeatureRes - datapath_id: %s n_buffers: %s n_tbls: %s, pad: %s'
           % (green(dpid), msg.n_buffers, msg.n_tbls, print_pad(msg.pad)))
-    print('FeatureRes - Capabilities:'),
+    print('FeatureRes - Capabilities:', end='')
     for i in msg.capabilities:
         print(libs.openflow.of10.dissector.get_feature_res_capabilities(i)),
-    print
-    print('FeatureRes - Actions:'),
+    print()
+    print('FeatureRes - Actions:', end='')
     for i in msg.actions:
         print(libs.openflow.of10.dissector.get_feature_res_actions(i)),
-    print
+    print()
     print_of_ports(msg.ports)
 
 
 def _dont_print_0(printed):
     if printed is False:
-        print('0'),
+        print('0', end='')
     return False
 
 
@@ -74,13 +75,13 @@ def print_port_field(port_id, variable, name):
     port_id = '%s' % green(port_id)
     printed = False
 
-    print('Port_id: %s - %s:' % (port_id, name)),
+    print('Port_id: %s - %s:' % (port_id, name), end='')
     for i in variable:
-        print(libs.openflow.of10.dissector.get_phy_feature(i)),
+        print(libs.openflow.of10.dissector.get_phy_feature(i), end='')
         printed = True
     else:
         printed = _dont_print_0(printed)
-    print
+    print()
 
 
 def print_ofp_phy_port(port):
@@ -89,22 +90,22 @@ def print_ofp_phy_port(port):
     print('Port_id: %s - hw_addr: %s name: %s' % (
           port_id, green(port.hw_addr), green(port.name)))
 
-    print('Port_id: %s - config:' % port_id),
+    print('Port_id: %s - config:' % port_id, end='')
     printed = False
     for i in port.config:
-        print(libs.openflow.of10.dissector.get_phy_config(i)),
+        print(libs.openflow.of10.dissector.get_phy_config(i), end='')
         printed = True
     else:
         printed = _dont_print_0(printed)
-    print
+    print()
 
     print('Port_id: %s - state:' % port_id),
     for i in port.state:
-        print(libs.openflow.of10.dissector.get_phy_state(i)),
+        print(libs.openflow.of10.dissector.get_phy_state(i), end='')
         printed = True
     else:
         printed = _dont_print_0(printed)
-    print
+    print()
 
     # TODO: fix it
     print_port_field(port_id, port.curr, 'curr')
@@ -122,7 +123,7 @@ def print_of_ports(ports):
 
 
 def print_ofp_match(match):
-    print('Match -'),
+    print('Match - ', end='')
     # Collect all variables from class ofp_match
     # print those that are not 'None'
     for match_item in match.__dict__:
@@ -135,8 +136,8 @@ def print_ofp_match(match):
             elif match_item is 'dl_type':
                 match_item_value = libs.tcpiplib.tcpip.get_ethertype(match_item_value)
 
-            print("%s: %s" % (match_item, green(match_item_value))),
-    print
+            print("%s: %s " % (match_item, green(match_item_value)), end='')
+    print()
 
 
 def print_ofp_body(msg):
@@ -342,16 +343,16 @@ def print_ofp_ovs(msg):
                 ofactions.append(value)
 
         flag = get_flag(msg.flags)
-        print('ovs-ofctl %s tcp:%s:%s \"' % (ovs_command, switch_ip, switch_port)),
+        print('ovs-ofctl %s tcp:%s:%s \"' % (ovs_command, switch_ip, switch_port), end='')
         if msg.flags != 0:
-            print('%s,' % flag),
+            print('%s,' % flag, end='')
         if msg.priority != 32678:
-            print('priority=%s,' % msg.priority),
+            print('priority=%s,' % msg.priority, end='')
         if msg.idle_timeout != 0:
-            print('idle_timeout=%s,' % msg.idle_timeout),
+            print('idle_timeout=%s,' % msg.idle_timeout, end='')
         if msg.hard_timeout != 0:
-            print('hard_timeout=%s,' % msg.hard_timeout),
-        print('%s ' % matches),
+            print('hard_timeout=%s,' % msg.hard_timeout, end='')
+        print('%s ' % matches, end='')
         print('action=%s\"' % ''.join(ofactions))
     else:
         ovs_msg_del = 'ovs-ofctl %s tcp:%s:%s %s '
@@ -367,14 +368,14 @@ def print_of_FlowMod(msg):
 
 def _print_portMod_config_mask(variable, name):
 
-    print('PortMod %s:' % name),
+    print('PortMod %s:' % name, end='')
     printed = False
     for i in variable:
-        print(libs.openflow.of10.dissector.get_phy_config(i)),
+        print(libs.openflow.of10.dissector.get_phy_config(i), end='')
         printed = True
     else:
         printed = _dont_print_0(printed)
-    print
+    print()
 
 
 def print_of_PortMod(msg):
@@ -491,7 +492,7 @@ def print_ofp_statResFlow(flow):
     print('StatRes Type: Flow(1)')
     print('StatRes Length: %s Table_id: %s Pad: %s ' %
            (flow.length, flow.table_id, print_pad(flow.pad)))
-    print('StatRes'),
+    print('StatRes ', end='')
     print_ofp_match(flow.match)
     print('StatRes duration_sec: %s, duration_nsec: %s, priority: %s,'
           ' idle_timeout: %s, hard_timeout: %s, pad: %s, cookie: %s,'
@@ -501,7 +502,7 @@ def print_ofp_statResFlow(flow):
            flow.hard_timeout, print_pad(flow.pad),
            flow.cookie,
            flow.packet_count, flow.byte_count))
-    print('StatRes'),
+    print('StatRes ', end='')
     print_actions(flow.actions)
 
 
@@ -607,12 +608,12 @@ def print_portStatus(msg):
 
 
 def print_packetInOut_layer2(of_xid, eth):
-    print('%s' % of_xid),
+    print('%s' % of_xid, end='')
     libs.tcpiplib.prints.print_layer2(eth)
 
 
 def print_packetInOut_vlan(of_xid, vlan):
-    print('%s Ethernet:' % of_xid),
+    print('%s Ethernet:' % of_xid, end='')
     libs.tcpiplib.prints.print_vlan(vlan)
 
 
