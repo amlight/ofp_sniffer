@@ -3,6 +3,7 @@
 """
 from hexdump import hexdump
 from libs.tcpiplib.prints import eth_addr, datapath_id
+from libs.printing import PrintingOptions
 
 import libs.cli
 import libs.openflow.of10.parser
@@ -54,13 +55,15 @@ def print_of_feature_res(msg):
     dpid = datapath_id(msg.datapath_id)
     print('FeatureRes - datapath_id: %s n_buffers: %s n_tbls: %s, pad: %s'
           % (green(dpid), msg.n_buffers, msg.n_tbls, print_pad(msg.pad)))
-    print('FeatureRes - Capabilities:', end='')
+    print('FeatureRes - Capabilities: ', end='')
     for i in msg.capabilities:
-        print(libs.openflow.of10.dissector.get_feature_res_capabilities(i)),
+        print(libs.openflow.of10.dissector.get_feature_res_capabilities(i) + ' ', end='')
+        # print(' ', end='')
     print()
-    print('FeatureRes - Actions:', end='')
+    print('FeatureRes - Actions: ', end='')
     for i in msg.actions:
-        print(libs.openflow.of10.dissector.get_feature_res_actions(i)),
+        print(libs.openflow.of10.dissector.get_feature_res_actions(i) + ' ', end='')
+        # print(' ', end='')
     print()
     print_of_ports(msg.ports)
 
@@ -75,9 +78,9 @@ def print_port_field(port_id, variable, name):
     port_id = '%s' % green(port_id)
     printed = False
 
-    print('Port_id: %s - %s:' % (port_id, name), end='')
+    print('Port_id: %s - %s: ' % (port_id, name), end='')
     for i in variable:
-        print(libs.openflow.of10.dissector.get_phy_feature(i), end='')
+        print(libs.openflow.of10.dissector.get_phy_feature(i) + ' ', end='')
         printed = True
     else:
         printed = _dont_print_0(printed)
@@ -88,9 +91,9 @@ def print_ofp_phy_port(port):
     port_id = '%s' % green(port.port_id)
 
     print('Port_id: %s - hw_addr: %s name: %s' % (
-          port_id, green(port.hw_addr), green(port.name)))
+          port_id, green(port.hw_addr), green(port.name.decode("utf-8"))))
 
-    print('Port_id: %s - config:' % port_id, end='')
+    print('Port_id: %s - config: ' % port_id, end='')
     printed = False
     for i in port.config:
         print(libs.openflow.of10.dissector.get_phy_config(i), end='')
@@ -99,7 +102,7 @@ def print_ofp_phy_port(port):
         printed = _dont_print_0(printed)
     print()
 
-    print('Port_id: %s - state:' % port_id),
+    print('Port_id: %s - state: ' % port_id, end='')
     for i in port.state:
         print(libs.openflow.of10.dissector.get_phy_state(i), end='')
         printed = True
@@ -317,7 +320,7 @@ def print_ofp_ovs(msg):
         If -o or --print-ovs is provided by user, print a ovs-ofctl add-dump
     """
 
-    if libs.cli.print_ovs is not True:
+    if PrintingOptions().print_ovs is not True:
         return
 
     switch_ip = 'SWITCH_IP'

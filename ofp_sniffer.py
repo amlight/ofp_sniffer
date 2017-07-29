@@ -7,7 +7,6 @@
 
     Author: Jeronimo Bezerra <jab@amlight.net>
 """
-import datetime
 import sys
 import libs.cli
 from libs.gen.packet import Packet
@@ -78,13 +77,12 @@ class RunSniffer(object):
         """
         if len(packet) >= 62 and self.position_defined():
 
-            pkt = Packet(packet, self.ctr)
-            pkt.process_packet_header(header)
+            pkt = Packet(packet, self.ctr, header)
 
             if pkt.is_openflow_packet:
-                result = pkt.process_openflow_messages()
+                valid_result = pkt.process_openflow_messages()
 
-                if result is 1:
+                if valid_result:
                     # Adding support to apps
                     # If no apps are selected, just print
                     if isinstance(self.oft, OessFvdTracer):

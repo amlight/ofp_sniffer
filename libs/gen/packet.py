@@ -16,7 +16,7 @@ class Packet:
     """
         Used to save all data about the TCP/IP packet
     """
-    def __init__(self, packet, ctr):
+    def __init__(self, packet, ctr, header):
         """
             Instantiate this class
             Args:
@@ -46,6 +46,10 @@ class Packet:
         # an list of messages needs to be created
         self.ofmsgs = []
 
+        # Process packet
+        self.process_packet_header(header)
+
+
     def process_packet_header(self, header):
         """
             Process TCP/IP Header, from Layer 1 to TCP.
@@ -71,34 +75,36 @@ class Packet:
 
         """
         self.remaining_bytes = self.get_remaining_bytes()
+
         while self.remaining_bytes >= 8:
             # self.this_packet is the OpenFlow message
             # let's get the current OpenFlow message from the packet
             of_header, length = self.get_of_message_length()
             if length < 8:
                 # MalFormed Packet - it could be a fragment
-                return 0
-            self.this_packet = self.packet[self.offset:self.offset+length]
+                return False
 
+            self.this_packet = self.packet[self.offset:self.offset+length]
             if len(self.this_packet) != length:
                 # it means packet is smaller than it should be
                 # propably MTU issue
-                return 1
+                return False
 
             version = self.add_of_msg_to_list(of_header, self.this_packet)
 
             if version is 0:
-                return 0
+                return False
             elif version is -1:
                 break
 
             self.remaining_bytes -= length
             self.offset += length
+
             # If there are other OpenFlow messages, let's continue
             if self.remaining_bytes >= 8:
                 self.cur_msg += 1
 
-        return 1
+        return True
 
     def add_of_msg_to_list(self, of_header, this_packet):
         """

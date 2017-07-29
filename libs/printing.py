@@ -11,4 +11,4 @@ class PrintingOptions(metaclass=Singleton):
         self.colors = True
         self.filters = 0
         self.proxy = 0
-        self.print_ovs = None
+        self.print_ovs = False
