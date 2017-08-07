@@ -186,19 +186,19 @@ def print_openflow_header(ofp):
     Args:
         ofp: OFMessage class
     """
-    version = libs.tcpiplib.tcpip.get_ofp_version(ofp.version)
-    name_version = '%s(%s)' % (version, ofp.version)
+    version = libs.tcpiplib.tcpip.get_ofp_version(ofp.header.version.value)
+    name_version = '%s(%s)' % (version, ofp.header.version.value)
     if version == '1.0':
-        name = libs.openflow.of10.dissector.get_ofp_type(ofp.type)
-        name_type = '%s(%s)' % (name, ofp.type)
+        name = "%s" % ofp.header.message_type
+        name_type = '%s(%s)' % (name.split('.')[1], ofp.header.message_type.value)
     elif version == '1.3':
-        name = libs.openflow.of13.dissector.get_ofp_type(ofp.type)
-        name_type = '%s(%s)' % (name, ofp.type)
+        name = libs.openflow.of13.dissector.get_ofp_type(ofp.header.message_type)
+        name_type = '%s(%s)' % (name, ofp.header.message_type.value)
     else:
-        name_type = '%s' % ofp.type
+        name_type = '%s' % ofp.header.message_type
 
     print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
-           (name_version, yellow(name_type), ofp.length, red(ofp.xid)))
+           (name_version, yellow(name_type), ofp.header.length, red(ofp.header.xid)))
 
 
 def print_lldp(lldp):

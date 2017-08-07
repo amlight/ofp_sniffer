@@ -41,7 +41,8 @@ def usage(filename, msg=None):
            '\t -c or --no-colors: removes colors\n'
            '\t -d or --debug: enable debug\n'
            '\t -v or --version : prints version\n'
-           '\t -O or --oess-fvd: monitor OESS FVD status') % filename)
+           '\t -O or --oess-fvd: monitor OESS FVD status\n'
+           '\t -S or --enable-statistics: creates statistics') % filename)
 
     sys.exit(0)
 
@@ -108,10 +109,10 @@ def get_params(argv):
     load_apps = []
 
     # Handle all input params
-    letters = 'f:F:i:r:P:pohvcdO'
+    letters = 'f:F:i:r:P:pohvcdOSq'
     keywords = ['pcap-filter=', 'sanitizer-file=', 'interface=',
                 'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'proxy-file=', 'oess-fvd']
+                'proxy-file=', 'oess-fvd', 'enable-statistics', 'no-output']
 
     try:
         opts, extraparams = getopt.getopt(argv[1:], letters, keywords)
@@ -135,8 +136,12 @@ def get_params(argv):
             PrintingOptions().proxy = param
         elif option in ['-c', '--no-colors']:
             PrintingOptions().colors = False
+        elif option in ['-q', '--no-output']:
+            PrintingOptions().set_no_print()
         elif option in ['-O', '--oess-fvd']:
             load_apps.append('oess_fvd')
+        elif option in ['-S', '--enable-statistics']:
+            load_apps.append('statistics')
         elif option in ['-v', '--version']:
             print('OpenFlow Sniffer version %s' % VERSION)
             sys.exit(0)

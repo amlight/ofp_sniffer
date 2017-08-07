@@ -9,10 +9,11 @@
 """
 import sys
 import libs.cli
+from apps.oess_fvd import OessFvdTracer
+from apps.ofp_stats import OFStats
 from libs.gen.packet import Packet
 from libs.printing import PrintingOptions
 from libs.sanitizer import Sanitizer
-from apps.oess_fvd import OessFvdTracer
 
 
 class RunSniffer(object):
@@ -23,6 +24,7 @@ class RunSniffer(object):
         self.printing_options = PrintingOptions()
         self.sanitizer = Sanitizer()
         self.oft = None
+        self.stats = None
         self.cap = None
         self.position = None
         self.load_apps = []
@@ -41,6 +43,10 @@ class RunSniffer(object):
         if 'oess_fvd' in self.load_apps:
             self.oft = OessFvdTracer()
 
+        if 'statistics' in self.load_apps:
+            pass
+#            self.stats = OFStats()
+
     def run(self):
         """
             This is how it starts: cap.loop continuously capture packets w/ pcapy
@@ -52,16 +58,19 @@ class RunSniffer(object):
                 3 - Interface or file not found
         """
         exit_code = 0
+
         self.cap.loop(-1, self.process_packet)
         try:
             pass
-            # self.cap.loop(-1, self.process_packet)
+            #self.cap.loop(-1, self.process_packet)
         except KeyboardInterrupt:
             exit_code = 1
         except Exception as exception:
             print('Error: %s ' % exception)
             exit_code = 2
         finally:
+            #import time
+            # time.sleep(200)
             print('Exiting...')
             sys.exit(exit_code)
 
@@ -83,13 +92,20 @@ class RunSniffer(object):
                 valid_result = pkt.process_openflow_messages()
 
                 if valid_result:
-                    # Adding support to apps
-                    # If no apps are selected, just print
+                    # Apps go here:
                     if isinstance(self.oft, OessFvdTracer):
+                        # FVD_Tracer does not print the packets
                         self.oft.process_packet(pkt)
                     else:
+                        if isinstance(self.stats, OFStats):
+                            # OFStats print the packets
+                            self.stats.compute_packet(pkt)
+
+                        # Print Packets
                         pkt.print_packet()
+
             del pkt
+
         elif len(packet) is 0:
             sys.exit(0)
         self.ctr += 1

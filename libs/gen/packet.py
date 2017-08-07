@@ -112,14 +112,20 @@ class Packet:
             A TCP/IP packet might contain multiple OpenFlow messages
             Process the content, using cur_msg position of the array of msgs
         """
-        self.ofmsgs.insert(self.cur_msg, OFMessage(this_packet, self.position))
-        # Time to convert from Binary to OpenFlow!!
-        result = self.ofmsgs[self.cur_msg].process_openflow_body(of_header)
-        if result == 1:
-            # Extra Feature
-            self.proxy_support(self.ofmsgs[self.cur_msg].ofp)
-        else:
-            return result
+        # TODO: fix it
+        ofmsg = OFMessage(this_packet, self.position)
+        try:
+            if isinstance(ofmsg, libs.gen.ofmessage.OFMessage):
+                self.ofmsgs.insert(self.cur_msg, ofmsg)
+                self.proxy_support(self.ofmsgs[self.cur_msg].ofp)
+
+            else:
+                return ofmsg
+
+        except TypeError as err:
+            print("ERROR on Packet no. %s: " % self.position, end='')
+            print(err)
+            print()
 
     def print_packet(self):
         """
@@ -148,9 +154,9 @@ class Packet:
             PacketOut will be used to collect DPID, but at this moment
             just save DEST IP and DEST TCP port
         """
-        if msg.type == 6:
+        if msg.header.message_type == 6:
             libs.gen.proxies.insert_ip_port(self.l3.s_addr,
                                             self.l4.source_port)
-        elif msg.type == 13:
+        elif msg.header.message_type == 13:
             libs.gen.proxies.insert_ip_port(self.l3.d_addr,
                                             self.l4.dest_port)

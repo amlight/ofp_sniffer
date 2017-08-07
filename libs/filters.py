@@ -10,9 +10,6 @@ from libs.sanitizer import Sanitizer
 import libs.tcpiplib.packet
 
 
-# import of10
-
-
 def filter_msg(msg):
     """
         This method will be the core of all filters. Any new filter comes here
@@ -22,6 +19,10 @@ def filter_msg(msg):
         False: Don' filter packet
         True: Filter it (don't print)
     """
+
+    if PrintingOptions().quiet:
+        return True
+
     if PrintingOptions().filters is 0:
         # User hasn't selected CLI option -F
         return False
@@ -54,7 +55,7 @@ def filter_of_version(msg):
             False: Don' filter packet
             True: Filter it (don't print)
     """
-    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
+    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.header.version.value)
     supported_versions = []
     try:
         for version in Sanitizer().allowed_of_versions:
@@ -75,11 +76,11 @@ def filter_of_type(msg):
             False: Don' filter packet
             True: Filter it (don't print)
     """
-    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.version)
+    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.header.version.value)
     # OF Types to be ignored through json file (-F)
     try:
         rejected_types = Sanitizer().allowed_of_versions[name_version]
-        if msg.ofp.type in rejected_types['rejected_of_types']:
+        if msg.ofp.header.message_type in rejected_types['rejected_of_types']:
             return True
     except KeyError:
         pass
@@ -96,7 +97,7 @@ def ethertype_filters(msg):
             False: Don' filter packet
             True: Filter it (don't print)
     """
-    if msg.ofp.type in [10, 13]:
+    if msg.ofp.header.message_type in [10, 13]:
         try:
             filters = Sanitizer().filters['ethertypes']
         except KeyError:
@@ -150,7 +151,7 @@ def dpid_filters(msg):
     """
 
     # It has to be a PacketOut or PacketIn
-    if msg.ofp.type not in [10, 13]:
+    if msg.ofp.header.message_type not in [10, 13]:
         return False
 
     # It has to be a LLDP packet

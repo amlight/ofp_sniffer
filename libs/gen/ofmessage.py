@@ -8,10 +8,13 @@ import libs.tcpiplib.packet
 import libs.tcpiplib.prints
 import libs.openflow.instantiate
 from libs.debugging import debugclass
+from pyof.v0x01.common.utils import unpack_message
+
+from libs.openflow.of10.prints import prints_ofp
 
 
 @debugclass
-class OFMessage:
+class OFMessage(object):
     """
         Used to process all data regarding this OpenFlow message
     """
@@ -24,66 +27,7 @@ class OFMessage:
                 position: packet number
         """
         self.position = position
-        self.packet = this_packet
-        self.offset = 0
-        self.message = None
-
-        # ofp is the real OpenFlow message
-        self.ofp = None
-
-    def process_openflow_header(self, of_header):
-        """
-            This method instantiate the class equivalent to the OpenFlow
-                message type.
-            Args:
-                of_header: dictionary of the OpenFlow header
-
-            Returns:
-                0: message type unknown or OpenFlow version non-dissected
-                1: No error
-        """
-        self.ofp = libs.openflow.instantiate.instantiate_msg(of_header)
-        if isinstance(self.ofp, int):
-            print('Debug: Packet: %s not OpenFlow\n' % self.position)
-            self.offset += 8
-            self.packet = self.packet[8:]
-            return 0
-
-        self.offset += 8
-        self.packet = self.packet[8:]
-        return 1
-
-    def handle_malformed_pkts(self, exception):
-        """
-            In case the OpenFlow message processing crashes, this
-                function tries to give some ideas of what happened
-            Args:
-                exception: generated expection
-        """
-        string = ('!!! MalFormed Packet: %s' % self.position)
-        print('message %s\n Details about the Error:' % string)
-        print(exception)
-
-    def process_openflow_body(self, of_header):
-        """
-            Process the OpenFlow content - starts with header
-            Args:
-                of_header: dictionary of the OpenFlow header
-            Returns:
-                0: Error with the OpenFlow header
-                1: Success
-                -1: Error processing the OpenFlow content
-        """
-        try:
-            if not self.process_openflow_header(of_header):
-                return 0
-
-            self.ofp.process_msg(self.packet)
-            return 1
-
-        except Exception as exception:
-            self.handle_malformed_pkts(exception)
-            return -1
+        self.ofp = unpack_message(this_packet)
 
     def print_packet(self, pkt):
         """
@@ -101,5 +45,5 @@ class OFMessage:
             # Print OpenFlow header - version independent
             libs.tcpiplib.prints.print_openflow_header(self.ofp)
             # Print OpenFlow message body
-            self.ofp.prints()
+            prints_ofp(self.ofp)
             print()

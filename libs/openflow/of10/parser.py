@@ -12,10 +12,12 @@ import libs.openflow.of10.prints
 import libs.tcpiplib.tcpip
 import libs.tcpiplib.packet
 import libs.openflow.of10.dissector
+from pyof.v0x01.common.utils import unpack_message
 
 
 # *************** Hello *****************
 def parse_Hello(msg, packet):
+    binary = unpack_message(packet)
     msg.data = packet
 
 
@@ -575,6 +577,9 @@ def parse_StatsReq(msg, packet):
             msg:
             packet:
     """
+
+    aaa = unpack_message(packet)
+
 
     # Get type = 16bits
     # Get flags = 16bits

@@ -26,13 +26,21 @@ def instantiate(of_header):
         return 0
 
 
-class OFPHeader:
+class OFPHeader(object):
 
     def __init__(self, of_header):
         self.version = 1
         self.type = of_header['type']
         self.length = of_header['length']
         self.xid = of_header['xid']
+        self.msg = dict()
+        self.to_h_dict()
+
+    def to_h_dict(self):
+        self.msg['version'] = self.version
+        self.msg['type'] = self.type
+        self.msg['length'] = self.length
+        self.msg['xid'] = self.xid
 
 
 class ofp_hello(OFPHeader):
@@ -292,10 +300,10 @@ class OFPT_PORT_MOD(OFPHeader):
 class OFPT_STATS_REQ(OFPHeader):
 
     def __init__(self, of_header):
-        OFPHeader.__init__(self, of_header)
         self.stat_type = None
         self.flags = None
         self.stats = None
+        OFPHeader.__init__(self, of_header)
 
     def instantiate(self, *args):
         if self.stat_type in [1, 2]:
@@ -312,6 +320,12 @@ class OFPT_STATS_REQ(OFPHeader):
 
     def prints(self):
         prints.print_ofp_statReq(self)
+
+    def to_dict(self):
+        self.msg['stat_type'] = self.stat_type
+        self.msg['flags'] = self.flags
+        self.msg['stats'] = self.stats.to_dict()
+        return self.msg
 
 
 class OFPT_STATS_RES(OFPHeader):
@@ -451,6 +465,12 @@ class OFP_STATSREQ_FLOWAGG:
         self.table_id = table_id
         self.pad = pad
         self.out_port = out_port
+
+    def to_dict(self):
+        msg = dict()
+        # msg['match'] = self.match
+        msg['table_id'] = self.table_id
+        msg['out_port'] = self.out_port
 
 
 class OFP_STATREQ_PORT:

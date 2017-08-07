@@ -12,3 +12,7 @@ class PrintingOptions(metaclass=Singleton):
         self.filters = 0
         self.proxy = 0
         self.print_ovs = False
+        self.quiet = False
+
+    def set_no_print(self):
+        self.quiet = True
