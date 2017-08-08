@@ -1,6 +1,6 @@
 from functools import wraps
 
-import libs.cli
+import libs.core.cli
 
 
 def debug(func):
@@ -26,7 +26,7 @@ def debugclass(cls):
             cls: Any Class to be printed
         Returns: wrapper with cls, printing all method names
     """
-    if libs.cli.DEBUGGING:
+    if libs.core.cli.DEBUGGING:
         for key, val in vars(cls).items():
             if callable(val):
                 setattr(cls, key, debug(val))

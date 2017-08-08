@@ -1,7 +1,7 @@
 """
     Class with CLI printing options
 """
-from libs.singleton import Singleton
+from libs.core.singleton import Singleton
 
 
 class PrintingOptions(metaclass=Singleton):

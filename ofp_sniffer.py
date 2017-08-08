@@ -8,12 +8,12 @@
     Author: Jeronimo Bezerra <jab@amlight.net>
 """
 import sys
-import libs.cli
+from libs.core.printing import PrintingOptions
+import libs.core.cli
 from apps.oess_fvd import OessFvdTracer
 from apps.ofp_stats import OFStats
+from libs.core.sanitizer import Sanitizer
 from libs.gen.packet import Packet
-from libs.printing import PrintingOptions
-from libs.sanitizer import Sanitizer
 
 
 class RunSniffer(object):
@@ -36,7 +36,7 @@ class RunSniffer(object):
 
         """
         # Get CLI params and call the pcapy loop
-        self.cap, self.position, self.load_apps, sanitizer = libs.cli.get_params(sys.argv)
+        self.cap, self.position, self.load_apps, sanitizer = libs.core.cli.get_params(sys.argv)
         self.sanitizer.process_filters(sanitizer)
 
         # Start Apps
@@ -62,14 +62,14 @@ class RunSniffer(object):
         self.cap.loop(-1, self.process_packet)
         try:
             pass
-            #self.cap.loop(-1, self.process_packet)
+            # self.cap.loop(-1, self.process_packet)
         except KeyboardInterrupt:
             exit_code = 1
         except Exception as exception:
             print('Error: %s ' % exception)
             exit_code = 2
         finally:
-            #import time
+            # import time
             # time.sleep(200)
             print('Exiting...')
             sys.exit(exit_code)

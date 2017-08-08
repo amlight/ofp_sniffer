@@ -2,11 +2,13 @@
     Prints for OpenFlow 1.0 only
 """
 from hexdump import hexdump
+from pyof.foundation.basic_types import BinaryData
 from pyof.v0x01.common.phy_port import ListOfPhyPorts
 from libs.gen.prints import red, green, yellow
 import libs.tcpiplib.tcpip
 import libs.openflow.of10.dissector as dissector
 from libs.tcpiplib.prints import print_openflow_header
+from libs.openflow.of10.process_data import dissect_data
 # from libs.tcpiplib.prints import eth_addr
 # from libs.printing import PrintingOptions
 # import libs.openflow.of10.parser
@@ -228,6 +230,8 @@ def print_data(data):
         Args:
             data: msg.data - array of protocols
     """
+    if isinstance(data, BinaryData):
+        data = dissect_data(data)
 
     try:
         next_protocol = '0x0000'
@@ -331,7 +335,7 @@ def print_ofp_match(match):
     """
 
     Args:
-        msg: OpenFlow message unpacked by python-openflow
+        match:
     """
     print('Match - ', end='')
     for match_item in match.__dict__:

@@ -5,12 +5,11 @@ import socket
 import struct
 from datetime import datetime
 
-from libs.gen.prints import red, green, blue, yellow, cyan
-
 import libs.gen.proxies
-import libs.tcpiplib.tcpip
-from libs.printing import PrintingOptions
 import libs.openflow.of10.dissector
+import libs.tcpiplib.tcpip
+from libs.core.printing import PrintingOptions
+from libs.gen.prints import red, green, blue, yellow, cyan
 
 
 def eth_addr(a):

@@ -2,13 +2,13 @@
     Class Packet: used to process EACH IP packet. Each IP packet
         might have multiple OpenFlow messages (class OFMessage)
 """
-from libs.tcpiplib.packet import IP_PROTOCOL, TCP_PROTOCOL, TCP_FLAG_PUSH
-from libs.gen.ofmessage import OFMessage
-from libs.tcpiplib.tcpip import get_openflow_header
-from libs.debugging import debugclass
+import libs.gen.proxies
 import libs.tcpiplib.packet
 import libs.tcpiplib.prints
-import libs.gen.proxies
+from libs.core.debugging import debugclass
+from libs.gen.ofmessage import OFMessage
+from libs.tcpiplib.packet import IP_PROTOCOL, TCP_PROTOCOL, TCP_FLAG_PUSH
+from libs.tcpiplib.tcpip import get_openflow_header
 
 
 @debugclass
@@ -49,7 +49,6 @@ class Packet:
         # Process packet
         self.process_packet_header(header)
 
-
     def process_packet_header(self, header):
         """
             Process TCP/IP Header, from Layer 1 to TCP.
@@ -57,7 +56,6 @@ class Packet:
                 per layer to dissect it
             Args:
                 header: header of the captured packet
-                time: time the packet was captured
         """
         self.l1.parse(header)
         self.offset = self.l2.parse(self.packet)
@@ -79,7 +77,7 @@ class Packet:
         while self.remaining_bytes >= 8:
             # self.this_packet is the OpenFlow message
             # let's get the current OpenFlow message from the packet
-            of_header, length = self.get_of_message_length()
+            length = self.get_of_message_length()
             if length < 8:
                 # MalFormed Packet - it could be a fragment
                 return False
@@ -90,7 +88,7 @@ class Packet:
                 # propably MTU issue
                 return False
 
-            version = self.add_of_msg_to_list(of_header, self.this_packet)
+            version = self.add_of_msg_to_list(OFMessage(self.this_packet))
 
             if version is 0:
                 return False
@@ -106,26 +104,25 @@ class Packet:
 
         return True
 
-    def add_of_msg_to_list(self, of_header, this_packet):
+    def add_of_msg_to_list(self, ofmsg):
         """
             Instantiate the OpenFlow message in the ofmsgs array
             A TCP/IP packet might contain multiple OpenFlow messages
             Process the content, using cur_msg position of the array of msgs
         """
-        # TODO: fix it
-        ofmsg = OFMessage(this_packet, self.position)
         try:
             if isinstance(ofmsg, libs.gen.ofmessage.OFMessage):
                 self.ofmsgs.insert(self.cur_msg, ofmsg)
                 self.proxy_support(self.ofmsgs[self.cur_msg].ofp)
 
             else:
-                return ofmsg
+                raise TypeError
 
         except TypeError as err:
             print("ERROR on Packet no. %s: " % self.position, end='')
             print(err)
             print()
+            return ofmsg
 
     def print_packet(self):
         """
@@ -146,7 +143,7 @@ class Packet:
 
         """
         of_h = get_openflow_header(self.packet, self.offset)
-        return of_h, of_h['length']
+        return of_h['length']
 
     def proxy_support(self, msg):
         """

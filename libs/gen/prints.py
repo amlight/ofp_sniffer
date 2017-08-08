@@ -4,7 +4,8 @@
 
 
 from termcolor import colored
-from libs.printing import PrintingOptions
+
+from libs.core.printing import PrintingOptions
 
 
 def red(string):

@@ -7,7 +7,7 @@ from _thread import start_new_thread as new_thread
 from datetime import datetime
 
 from apps.rest import CreateRest
-from libs.singleton import Singleton
+from libs.core.singleton import Singleton
 
 
 class CircularList(object):

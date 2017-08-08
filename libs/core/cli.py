@@ -8,7 +8,7 @@ import pcapy
 import sys
 
 import libs.gen.proxies as proxies
-from libs.printing import PrintingOptions
+from libs.core.printing import PrintingOptions
 
 VERSION = '0.4-dev'
 # Change variable below to activate debugging

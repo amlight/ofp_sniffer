@@ -1,10 +1,10 @@
 """
     Sanitizer Class
 """
-import sys
 import json
-from libs.singleton import Singleton
-from libs.printing import PrintingOptions
+import sys
+from libs.core.singleton import Singleton
+from libs.core.printing import PrintingOptions
 
 
 class Sanitizer(metaclass=Singleton):

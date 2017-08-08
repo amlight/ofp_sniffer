@@ -4,10 +4,10 @@
     Filters are provided via CLI option -F json-file
 """
 
-import libs.tcpiplib.tcpip
-from libs.printing import PrintingOptions
-from libs.sanitizer import Sanitizer
+from libs.core.printing import PrintingOptions
 import libs.tcpiplib.packet
+import libs.tcpiplib.tcpip
+from libs.core.sanitizer import Sanitizer
 
 
 def filter_msg(msg):
