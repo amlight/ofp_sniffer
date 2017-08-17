@@ -13,7 +13,9 @@ def support_fsfw(print_options, lldp):
 
     ip = print_options['device_ip']
     port = print_options['device_port']
-    dpid = lldp['c_id'].split(':')[1]
+    dpid = lldp['c_id']
+    if ':' in dpid:
+        dpid = dpid.split(':')[1]
 
     name = get_name_dpid(dpid)
     NET[ip, port] = name
