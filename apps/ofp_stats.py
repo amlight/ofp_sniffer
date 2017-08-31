@@ -1,17 +1,22 @@
 """
-
+    This app process all OF messages to create statistics
+    export via REST. Main user is Zabbix and SDN-LG
 """
+
+
 import json
 import time
 from _thread import start_new_thread as new_thread
 from datetime import datetime
-
 from apps.rest import CreateRest
 from libs.core.singleton import Singleton
 
 
 class CircularList(object):
-
+    """
+        This class only creates a new type: a CircularList.
+        The idea is to export the last LIMIT messages via REST.
+    """
     LIMIT = 500
 
     def __init__(self):
@@ -20,11 +25,14 @@ class CircularList(object):
 
     @property
     def items(self):
+        """
+            Return all items
+        """
         return self._queue
 
     def add(self, msg):
         """
-
+            Add an OF message to the CircularList
         """
 
         if self._num_items < self.LIMIT - 1:
@@ -36,6 +44,9 @@ class CircularList(object):
 
 
 class OFStats(metaclass=Singleton):
+    """
+        This class process the OF messages for statistics.
+    """
 
     def __init__(self):
         self.start_time = str(datetime.now())
@@ -44,31 +55,51 @@ class OFStats(metaclass=Singleton):
         self.type_packets = self.init_type_packets()
         new_thread(self._run_rest, tuple())
 
-    def init_type_packets(self):
+    @staticmethod
+    def init_type_packets():
+        """
+            Initialize all dictionaries
+        """
         types = dict()
         types['1'] = dict()
-        # for of_type in range(0, 20):
-        #     types['1'][str(of_type)] = 0
         types['4'] = dict()
-        # for of_type in range(0, 23):
-        #     types['4'][str(of_type)] = 0
         return types
 
     @staticmethod
     def _run_rest():
+        """
+            This app only exports data via REST.
+            So, load up the REST interface
+        """
         CreateRest()
 
     @staticmethod
     def to_json(msg):
+        """
+            Convert dictionaries to JSON to export
+            via REST
+            Args:
+                msg: message to be converted
+            Returns:
+                json.dumps
+        """
         result = dict()
         result['result'] = msg
         return json.dumps(result)
 
-    def get_unix_time(self):
+    @staticmethod
+    def get_unix_time():
+        """
+            Returns datetime.now() in unixstamp format.
+        """
         date = datetime.now()
         return time.mktime(date.timetuple())
 
-    def get_time(self):
+    @staticmethod
+    def get_time():
+        """
+            Returns datetime.now() in string format.
+        """
         return str(datetime.now())
 
     # REST Methods
@@ -98,6 +129,9 @@ class OFStats(metaclass=Singleton):
     # Main Methods
 
     def compute_packet(self, pkt):
+        """
+            Method called by ofp_sniffer.py to process the OF message
+        """
         self.num_packets += 1
 
         for of_msg in pkt.ofmsgs:
