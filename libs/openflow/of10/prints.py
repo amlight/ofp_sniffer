@@ -553,9 +553,11 @@ def print_ofpt_stats_request(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow
         """
-        vendor = dissector.get_ofp_vendor(msg.stats.vendor_id)
-        print('StatReq Type: Vendor(%s): Vendor_ID: %s' % (msg.stat_type,
-              vendor))
+        vendor_id = dissector.get_ofp_vendor(msg.body[0].vendor.value)
+        print('StatReq Type: Vendor(%s): Vendor_ID: %s' %
+              (hex(msg.body_type.value), vendor_id))
+        print("StatReq Vendor Data:")
+        hexdump(msg.body[0].body.value)
 
     if msg.body_type == 0:
         print_ofpt_stats_request_description(msg)
@@ -743,10 +745,10 @@ def print_ofpt_stats_reply(msg):
             print('StatRes Vendor Data: ')
             hexdump(data)
 
-        print('StatRes Type: Vendor(%s)' % hex(65535))
-        # TODO: Vendor_ID
-        print('StatRes Vendor_Id: %s' % red(111))
-        print_ofpt_stats_reply_vendor_data(msg.body.value)
+
+        print('StatRes Type: Vendor(%s)' % hex(msg.body_type.value))
+        print('StatRes Vendor_Id: %s' % red(hex(msg.body[0].vendor.value)))
+        print_ofpt_stats_reply_vendor_data(msg.body[0].body.value)
 
     if msg.body_type == 0:
         print_ofpt_stats_reply_description(msg)
