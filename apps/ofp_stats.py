@@ -12,40 +12,9 @@ from apps.rest import CreateRest
 from libs.core.singleton import Singleton
 
 
-class CircularList(object):
-    """
-        This class only creates a new type: a CircularList.
-        The idea is to export the last LIMIT messages via REST.
-    """
-    LIMIT = 500
-
-    def __init__(self):
-        self._queue = dict()
-        self._num_items = 0
-
-    @property
-    def items(self):
-        """
-            Return all items
-        """
-        return self._queue
-
-    def add(self, msg):
-        """
-            Add an OF message to the CircularList
-        """
-
-        if self._num_items < self.LIMIT - 1:
-            self._queue[self._num_items] = {'time': str(datetime.now()), 'type': msg.header.message_type}
-            self._num_items += 1
-        elif self._num_items == self.LIMIT - 1:
-            self._queue[self._num_items] = msg
-            self._num_items = 0
-
-
 class OFStats(metaclass=Singleton):
     """
-        This class process the OF messages for statistics.
+        This class processes the OF messages for statistics.
     """
 
     def __init__(self):
@@ -144,3 +113,34 @@ class OFStats(metaclass=Singleton):
                 self.type_packets[version][message_type] = 1
 
             self.last_msgs.add(of_msg.ofp)
+
+
+class CircularList(object):
+    """
+        This class only creates a new type: a CircularList.
+        The idea is to export the last LIMIT messages via REST.
+    """
+    LIMIT = 500
+
+    def __init__(self):
+        self._queue = dict()
+        self._num_items = 0
+
+    @property
+    def items(self):
+        """
+            Return all items
+        """
+        return self._queue
+
+    def add(self, msg):
+        """
+            Add an OF message to the CircularList
+        """
+
+        if self._num_items < self.LIMIT - 1:
+            self._queue[self._num_items] = {'time': str(datetime.now()), 'type': msg.header.message_type}
+            self._num_items += 1
+        elif self._num_items == self.LIMIT - 1:
+            self._queue[self._num_items] = msg
+            self._num_items = 0
