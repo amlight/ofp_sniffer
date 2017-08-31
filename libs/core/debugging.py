@@ -1,5 +1,4 @@
 from functools import wraps
-
 import libs.core.cli
 
 
@@ -20,7 +19,7 @@ def debug(func):
 
 def debugclass(cls):
     """
-        Decorator to help troubleshooting
+        Decorator to help troubleshooting classes
           Call debug for each method of the cls
         Args:
             cls: Any Class to be printed

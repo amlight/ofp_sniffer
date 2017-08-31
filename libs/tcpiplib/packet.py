@@ -33,6 +33,7 @@ class L1:
         date = date.strftime('%Y-%m-%d %H:%M:%S')
         return date
 
+
 class Ethernet:
     """
         Class to dissect Ethernet fields
@@ -50,7 +51,7 @@ class Ethernet:
         self.src_mac = ethernet[1]
 
         # When Ethernet is captured directly from the wire,
-        # use host_order big-endian. When the frame is encapsulated
+        # it uses host_order big-endian. When the frame is encapsulated
         # inside an OpenFlow PacketIn or Out, it is little-endian
         if not host_order:
             self.protocol = socket.ntohs(ethernet[2])
@@ -259,7 +260,6 @@ class LLDP:
         self.e_length = end[0] & 0xFF
 
 
-
 class ARP:
     """
         Class to dissect ARP fields
@@ -307,7 +307,8 @@ class OessFvd:
         self.port_z = self.port_id(packet[24:32])
         self.timestamp = self.get_timestamp(packet[32:])
 
-    def read_field(self, value):
+    @staticmethod
+    def read_field(value):
         """
 
         """

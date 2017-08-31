@@ -3,8 +3,11 @@
     If FlowSpace Firewall or FlowVisor is not used, this module is not useful.
 """
 import json
-
 from libs.tcpiplib.packet import LLDP
+
+
+# TODO: fix it
+
 
 D_ADDR = None
 DEST_PORT = None
@@ -90,3 +93,9 @@ def get_ip_name(ip, port):
         if i == (ip, port):
             return '%s(%s)' % (ip, j)
     return ip
+
+
+class OFProxy(object):
+
+    def load_names_file(self, a):
+        pass

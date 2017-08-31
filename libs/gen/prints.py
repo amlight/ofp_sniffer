@@ -1,10 +1,9 @@
 """
-    Generic printing functions
+    Generic printing: colors
 """
 
 
 from termcolor import colored
-
 from libs.core.printing import PrintingOptions
 
 

@@ -9,9 +9,6 @@ import libs.tcpiplib.tcpip
 import libs.openflow.of10.dissector as dissector
 from libs.tcpiplib.prints import print_openflow_header
 from libs.openflow.of10.process_data import dissect_data
-# from libs.tcpiplib.prints import eth_addr
-# from libs.printing import PrintingOptions
-# import libs.openflow.of10.parser
 
 
 # ******************** Points to the right printing function ****************
@@ -25,10 +22,11 @@ def prints_ofp(msg):
     Returns:
 
     """
+
     try:
         of_types = {0: print_ofpt_hello,
                     1: print_ofpt_error,
-                    2: print_ofpt_echo_req,
+                    2: print_ofpt_echo_request,
                     3: print_ofpt_echo_reply,
                     4: print_ofpt_vendor,
                     5: print_ofpt_features_request,
@@ -78,16 +76,20 @@ def print_ofpt_error(msg):
     """
     etype, ecode = dissector.get_ofp_error(msg.error_type.value, msg.code.value)
     print('OpenFlow Error - Type: %s Code: %s' % (red(etype), red(ecode)))
-    print('OpenFlow Error Message:\n------ BEGIN ------')
-    print_openflow_header(msg.data)
-    prints_ofp(msg.data)
-    print('OpenFlow Error Message:\n------- END -------')
+
+    if not isinstance(msg.data, BinaryData):
+        print('OpenFlow Error Message:\n------ BEGIN ------')
+        print_openflow_header(msg.data)
+        prints_ofp(msg.data)
+        print('OpenFlow Error Message:\n------- END -------')
+    else:
+        print(red('OpenFlow Error Data could not be processed!!'))
 
 
 # *************************** OFPT_ECHO_REQUEST ******************************
 
 
-def print_ofpt_echo_req(msg):
+def print_ofpt_echo_request(msg):
     """ Prints OFPT_ECHO_REQUEST messages. msg.data can be any content. The
     controller that sent the ECHO knows what it means. As a sniffer, we do
     not know what it means so we print in hex.
@@ -95,7 +97,8 @@ def print_ofpt_echo_req(msg):
     Args:
         msg: OpenFlow message unpacked by python-openflow
     """
-    print(hexdump(msg.data.value))
+    if len(msg.data.value) > 0:
+        hexdump(msg.data.value)
 
 
 # *************************** OFPT_ECHO_REPLY ********************************
@@ -109,7 +112,8 @@ def print_ofpt_echo_reply(msg):
     Args:
         msg: OpenFlow message unpacked by python-openflow
     """
-    print(hexdump(msg.data.value))
+    if len(msg.data.value) > 0:
+        hexdump(msg.data.value)
 
 
 # ****************************** OFPT_VENDOR *********************************
@@ -226,7 +230,7 @@ def print_ofpt_packet_in(msg):
 
 def print_data(data):
     """
-        Print msg.data from both PacketIn and Packetout
+        Print msg.data from both PacketIn and PacketOut
         Args:
             data: msg.data - array of protocols
     """
@@ -234,7 +238,6 @@ def print_data(data):
         data = dissect_data(data)
 
     try:
-        next_protocol = '0x0000'
         eth = data.pop(0)
         libs.tcpiplib.prints.print_layer2(eth)
         next_protocol = eth.protocol

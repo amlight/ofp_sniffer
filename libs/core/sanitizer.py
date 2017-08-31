@@ -17,13 +17,14 @@ class Sanitizer(metaclass=Singleton):
         """
             Read the JSON file provided through -F
             Args:
-                sanitizer_file: file provided
+                filters_file: file provided
             Returns:
                 json content of the file provided
         """
         try:
             with open(sanitizer_file) as jfile:
                 json_content = json.loads(jfile.read())
+
         except Exception as error:
             msg = 'Error Opening the sanitizer file\n'
             msg += 'Please check your JSON file. Maybe the permission is wrong'
@@ -34,13 +35,16 @@ class Sanitizer(metaclass=Singleton):
             sys.exit(0)
         return json_content
 
-    def process_filters(self, sanitizer_file):
+    def process_filters(self, filters_file):
         """
+            If -F file is provided, read the file and import all filters.
+            Args:
+                filters_file: file with filters
 
         """
-        if len(sanitizer_file) == 0:
+        if len(filters_file) == 0:
             return
-        configs = self.read_file(sanitizer_file)
+        configs = self.read_file(filters_file)
         if len(configs) != 0:
             PrintingOptions().filters = 1
             self.allowed_of_versions = configs['allowed_of_versions']

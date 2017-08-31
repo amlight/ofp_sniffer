@@ -28,10 +28,10 @@ class CircularList(object):
         """
 
         if self._num_items < self.LIMIT - 1:
-            self._queue[self._num_items] = msg.to_dict()
+            self._queue[self._num_items] = {'time': str(datetime.now()), 'type': msg.header.message_type}
             self._num_items += 1
         elif self._num_items == self.LIMIT - 1:
-            self._queue[self._num_items] = msg.to_dict()
+            self._queue[self._num_items] = msg
             self._num_items = 0
 
 
@@ -47,11 +47,11 @@ class OFStats(metaclass=Singleton):
     def init_type_packets(self):
         types = dict()
         types['1'] = dict()
-        for of_type in range(0, 20):
-            types['1'][str(of_type)] = 0
+        # for of_type in range(0, 20):
+        #     types['1'][str(of_type)] = 0
         types['4'] = dict()
-        for of_type in range(0, 23):
-            types['4'][str(of_type)] = 0
+        # for of_type in range(0, 23):
+        #     types['4'][str(of_type)] = 0
         return types
 
     @staticmethod
@@ -100,11 +100,13 @@ class OFStats(metaclass=Singleton):
     def compute_packet(self, pkt):
         self.num_packets += 1
 
-        # self.last_msgs.add(of_msg.ofp)
-
         for of_msg in pkt.ofmsgs:
-            # TODO: per DPID
+            version = str(of_msg.ofp.header.version.value)
+            message_type = str(of_msg.ofp.header.message_type)
+            message_type = message_type.split('.')[1]
+            try:
+                self.type_packets[version][message_type] += 1
+            except KeyError:
+                self.type_packets[version][message_type] = 1
 
-            if of_msg.ofp.type == 16:
-                self.last_msgs.add(of_msg.ofp)
-            self.type_packets[str(of_msg.ofp.version)][str(of_msg.ofp.type)] += 1
+            self.last_msgs.add(of_msg.ofp)

@@ -4,10 +4,12 @@
     Filters are provided via CLI option -F json-file
 """
 
+
 from libs.core.printing import PrintingOptions
 import libs.tcpiplib.packet
 import libs.tcpiplib.tcpip
 from libs.core.sanitizer import Sanitizer
+from libs.tcpiplib.tcpip import get_ofp_version
 
 
 def filter_msg(msg):
@@ -16,11 +18,12 @@ def filter_msg(msg):
     Args:
         msg: OFMessage class
     Returns:
-        False: Don' filter packet
+        False: Don't filter packet
         True: Filter it (don't print)
     """
 
     if PrintingOptions().quiet:
+        # Don't print anything. Used in conjunction with some apps.
         return True
 
     if PrintingOptions().filters is 0:
@@ -43,6 +46,7 @@ def filter_msg(msg):
     if dpid_filters(msg):
         return True
 
+    # Don't filter
     return False
 
 
@@ -52,10 +56,10 @@ def filter_of_version(msg):
         Args:
             msg: OFMessage class
         Returns:
-            False: Don' filter packet
+            False: Don't filter packet
             True: Filter it (don't print)
     """
-    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.header.version.value)
+    name_version = get_ofp_version(msg.ofp.header.version.value)
     supported_versions = []
     try:
         for version in Sanitizer().allowed_of_versions:
@@ -73,10 +77,10 @@ def filter_of_type(msg):
         Args:
             msg: OFMessage class
         Returns:
-            False: Don' filter packet
+            False: Don't filter packet
             True: Filter it (don't print)
     """
-    name_version = libs.tcpiplib.tcpip.get_ofp_version(msg.ofp.header.version.value)
+    name_version = get_ofp_version(msg.ofp.header.version.value)
     # OF Types to be ignored through json file (-F)
     try:
         rejected_types = Sanitizer().allowed_of_versions[name_version]

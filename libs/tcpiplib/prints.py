@@ -93,7 +93,6 @@ def print_minimal(position, date, getlen, ip, tcp):
                     cyan(dest), cyan(tcp.dest_port), getlen))
 
 
-
 def print_position(position):
     """
         Print the packet counter (ctr) number
@@ -121,9 +120,9 @@ def print_layer2(eth):
     Args:
         eth: Ethernet class
     """
-    print ('Ethernet: Destination MAC: %s Source MAC: %s Protocol: %s' %
-           (eth_addr(eth.dst_mac), eth_addr(eth.src_mac),
-            red(libs.tcpiplib.tcpip.get_ethertype(eth.protocol))))
+    print('Ethernet: Destination MAC: %s Source MAC: %s Protocol: %s' %
+          (eth_addr(eth.dst_mac), eth_addr(eth.src_mac),
+           red(libs.tcpiplib.tcpip.get_ethertype(eth.protocol))))
 
 
 def print_vlan(vlan):
@@ -132,8 +131,8 @@ def print_vlan(vlan):
     Args:
         vlan: VLAN class
     """
-    print ('VLAN: PCP: %s CFI: %s VID: %s Protocol: %s' %
-           (vlan.pcp, vlan.cfi, red(vlan.vid), hex(vlan.ethertype)))
+    print('VLAN: PCP: %s CFI: %s VID: %s Protocol: %s' %
+          (vlan.pcp, vlan.cfi, red(vlan.vid), hex(vlan.ethertype)))
 
 
 def print_arp(arp):
@@ -142,14 +141,14 @@ def print_arp(arp):
     Args:
         arp: ARP class
     """
-    print ('ARP: Hardware Type: %s Protocol Type: %s '
-           'HW Length: %s Prot Length: %s Opcode: %s '
-           '\nARP: Source MAC: %s Source IP: %s Destination MAC: %s '
-           'Destination IP: %s'
-           % (arp.hw_type, arp.prot_type, arp.hw_len,
-              arp.prot_len, arp.opcode,
-              eth_addr(arp.src_mac), get_ip_from_long(arp.src_ip),
-              eth_addr(arp.dst_mac), get_ip_from_long(arp.dst_ip)))
+    print('ARP: Hardware Type: %s Protocol Type: %s '
+          'HW Length: %s Prot Length: %s Opcode: %s '
+          '\nARP: Source MAC: %s Source IP: %s Destination MAC: %s '
+          'Destination IP: %s'
+          % (arp.hw_type, arp.prot_type, arp.hw_len,
+             arp.prot_len, arp.opcode,
+             eth_addr(arp.src_mac), get_ip_from_long(arp.src_ip),
+             eth_addr(arp.dst_mac), get_ip_from_long(arp.dst_ip)))
 
 
 def print_layer3(ip):
@@ -158,10 +157,10 @@ def print_layer3(ip):
     Args:
         ip: IP class
     """
-    print (('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '
-           'Source Address: %s Destination Address: %s') %
-           (ip.version, ip.length, ip.ttl, ip.protocol,
-            blue(ip.s_addr), blue(ip.d_addr)))
+    print(('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '
+          'Source Address: %s Destination Address: %s') %
+          (ip.version, ip.length, ip.ttl, ip.protocol,
+           blue(ip.s_addr), blue(ip.d_addr)))
 
 
 def print_tcp(tcp):
@@ -170,13 +169,13 @@ def print_tcp(tcp):
     Args:
         tcp: TCP class
     """
-    print ('TCP Source Port: %s Dest Port: %s Sequence Number: %s '
-           'Acknowledgement: %s TCP header length: %s Flags: CWR: %s '
-           'ECE: %s URG: %s ACK: %s PSH: %s RST: %s SYN: %s FYN: %s' %
-           (tcp.source_port, tcp.dest_port, tcp.sequence,
-            tcp.acknowledgement, tcp.length, tcp.flag_cwr,
-            tcp.flag_ece, tcp.flag_urg, tcp.flag_ack, tcp.flag_psh,
-            tcp.flag_rst, tcp.flag_syn, tcp.flag_fyn))
+    print('TCP Source Port: %s Dest Port: %s Sequence Number: %s '
+          'Acknowledgement: %s TCP header length: %s Flags: CWR: %s '
+          'ECE: %s URG: %s ACK: %s PSH: %s RST: %s SYN: %s FYN: %s' %
+          (tcp.source_port, tcp.dest_port, tcp.sequence,
+           tcp.acknowledgement, tcp.length, tcp.flag_cwr,
+           tcp.flag_ece, tcp.flag_urg, tcp.flag_ack, tcp.flag_psh,
+           tcp.flag_rst, tcp.flag_syn, tcp.flag_fyn))
 
 
 def print_openflow_header(ofp):
@@ -187,17 +186,12 @@ def print_openflow_header(ofp):
     """
     version = libs.tcpiplib.tcpip.get_ofp_version(ofp.header.version.value)
     name_version = '%s(%s)' % (version, ofp.header.version.value)
-    if version == '1.0':
-        name = "%s" % ofp.header.message_type
-        name_type = '%s(%s)' % (name.split('.')[1], ofp.header.message_type.value)
-    elif version == '1.3':
-        name = libs.openflow.of13.dissector.get_ofp_type(ofp.header.message_type)
-        name_type = '%s(%s)' % (name, ofp.header.message_type.value)
-    else:
-        name_type = '%s' % ofp.header.message_type
 
-    print ('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
-           (name_version, yellow(name_type), ofp.header.length, red(ofp.header.xid)))
+    name = "%s" % ofp.header.message_type
+    name_type = '%s(%s)' % (name.split('.')[1], ofp.header.message_type.value)
+
+    print('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
+          (name_version, yellow(name_type), ofp.header.length, red(ofp.header.xid)))
 
 
 def print_lldp(lldp):
@@ -207,20 +201,20 @@ def print_lldp(lldp):
         lldp: LLDP class
     """
     if lldp.c_type is not 1 or lldp.p_type is not 2 or lldp.t_type is not 3 or lldp.e_type is not 0:
-        print ('LLDP: Malformed packet')
+        print('LLDP: Malformed packet')
         return
 
     if lldp.c_type is 1:
-        print ('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' % (lldp.c_type, lldp.c_length, lldp.c_subtype,
-                                                                         green(lldp.c_id)))
+        print('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' % (lldp.c_type, lldp.c_length, lldp.c_subtype,
+                                                                        green(lldp.c_id)))
     if lldp.p_type is 2:
-        print ('LLDP: Port Type(%s) Length: %s SubType: %s ID: %s' % (lldp.p_type, lldp.p_length, lldp.p_subtype,
-                                                                      green(lldp.p_id)))
+        print('LLDP: Port Type(%s) Length: %s SubType: %s ID: %s' % (lldp.p_type, lldp.p_length, lldp.p_subtype,
+                                                                     green(lldp.p_id)))
     if lldp.t_type is 3:
-        print ('LLDP: TTL(%s) Length: %s Seconds: %s' % (lldp.t_type, lldp.t_length, lldp.t_ttl))
+        print('LLDP: TTL(%s) Length: %s Seconds: %s' % (lldp.t_type, lldp.t_length, lldp.t_ttl))
 
     if lldp.e_type is 0:
-        print ('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
+        print('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
 
 
 def print_oessfvd(fvd):
@@ -236,5 +230,10 @@ def print_oessfvd(fvd):
 
 
 def print_connection_restablished(pkt):
+    """
+        Just prints that the TCP connection was restablished.
+        Args:
+            pkt: Packet class
+    """
     print_headers(pkt, overwrite_min=0)
     print(red("!!!! Attention: Connection Re-Established!!\n"))

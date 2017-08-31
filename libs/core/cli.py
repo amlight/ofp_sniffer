@@ -6,11 +6,11 @@
 import getopt
 import pcapy
 import sys
-
-import libs.gen.proxies as proxies
 from libs.core.printing import PrintingOptions
+from libs.gen.proxies import OFProxy
 
-VERSION = '0.4-dev'
+
+VERSION = '0.4'
 # Change variable below to activate debugging
 DEBUGGING = False
 
@@ -30,16 +30,15 @@ def usage(filename, msg=None):
            ' [-i dev] [-r pcap_file]\n'
            '\t -p : print full headers'
            ' packet headers. Default: min\n'
-           '\t -f pcap_filter or --pcap-filter=pcap_filter : add a libpcap'
+           '\t -f pcap_filter or --pcap-filter=pcap_filter: add a libpcap'
            ' filter\n'
-           '\t -F sanitizer_file.json or --sanitizer-file=sanitizerfile.json\n'
+           '\t -F filters_file.json or --filters-file=filters.json\n'
            '\t -i interface or --interface=interface. Default: eth0\n'
            '\t -r captured.pcap or --src-file=captured.pcap\n'
-           '\t -P devices_list.json or --proxy-file=devices_list.json\n'
+           '\t -P topology.json or --topology-file=topology.json\n'
            '\t -o or --print-ovs : print using ovs-ofctl format\n'
            '\t -h or --help : prints this guidance\n'
            '\t -c or --no-colors: removes colors\n'
-           '\t -d or --debug: enable debug\n'
            '\t -v or --version : prints version\n'
            '\t -O or --oess-fvd: monitor OESS FVD status\n'
            '\t -S or --enable-statistics: creates statistics') % filename)
@@ -100,19 +99,22 @@ def get_params(argv):
         Args:
             argv: CLI params
         Returns:
-            cap - pcap object
-            position - position to read
+            cap: pcap object
+            position: packet number to read
+            load_apps: apps to load
+            filters_file: filters
     """
     # Default Values
-    input_filter, sanitizer_file, dev, captured_file = '', '', 'eth0', ''
+    input_filter, filters_file, dev, captured_file = '', '', 'eth0', ''
+    topology_file = 0
     opts = None
     load_apps = []
 
     # Handle all input params
-    letters = 'f:F:i:r:P:pohvcdOSq'
-    keywords = ['pcap-filter=', 'sanitizer-file=', 'interface=',
+    letters = 'f:F:i:r:T:pohvcOSq'
+    keywords = ['pcap-filter=', 'filters-file=', 'interface=',
                 'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'proxy-file=', 'oess-fvd', 'enable-statistics', 'no-output']
+                'topology-file=', 'oess-fvd', 'enable-statistics', 'no-output']
 
     try:
         opts, extraparams = getopt.getopt(argv[1:], letters, keywords)
@@ -124,16 +126,16 @@ def get_params(argv):
             PrintingOptions().min = False
         elif option in ['-f', '--pcap-filter']:
             input_filter = param
-        elif option in ['-F', '--sanitizer-file']:
-            sanitizer_file = param
+        elif option in ['-F', '--filters-file']:
+            filters_file = param
         elif option in ['-i', '--interface']:
             dev = param
         elif option in ['-r', '--captured-file']:
             captured_file = param
         elif option in ['-o', '--print-ovs']:
             PrintingOptions().print_ovs = True
-        elif option in ['-P', '--proxy-file']:
-            PrintingOptions().proxy = param
+        elif option in ['-T', '--topology-file']:
+            topology_file = param
         elif option in ['-c', '--no-colors']:
             PrintingOptions().colors = False
         elif option in ['-q', '--no-output']:
@@ -148,9 +150,10 @@ def get_params(argv):
         else:
             usage(argv[0])
 
-    # Load devices' names in case of proxy
-    proxies.load_names_file(PrintingOptions().proxy)
+    # Load switch names
+    # TODO: instantiate topology
+    OFProxy().load_names_file(topology_file)
 
     cap, position = start_capture(captured_file, input_filter, dev)
 
-    return cap, position, load_apps, sanitizer_file
+    return cap, position, load_apps, filters_file

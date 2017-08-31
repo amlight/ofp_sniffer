@@ -14,29 +14,38 @@ from apps.oess_fvd import OessFvdTracer
 from apps.ofp_stats import OFStats
 from libs.core.sanitizer import Sanitizer
 from libs.gen.packet import Packet
+from libs.gen.proxies import OFProxy
+from libs.core.topo_reader import TopoReader
+from pyof.foundation.exceptions import UnpackException
 
 
 class RunSniffer(object):
     """
-
+        The RunSniffer class is the main class for the OpenFlow Sniffer.
+        This class instantiate all auxiliary classes, captures the packets,
+        instantiate new OpenFlow messages and triggers all applications.
     """
     def __init__(self):
         self.printing_options = PrintingOptions()
         self.sanitizer = Sanitizer()
+        self.ofproxy = OFProxy()
+        self.toporeader = TopoReader()
         self.oft = None
         self.stats = None
         self.cap = None
-        self.position = None
+        self.packet_number = None
         self.load_apps = []
-        self.ctr = 1
+        self.packet_count = 1
         self.load_config()
 
     def load_config(self):
         """
-
+            Parses the parameters received and instantiates the
+            apps requested.
         """
         # Get CLI params and call the pcapy loop
-        self.cap, self.position, self.load_apps, sanitizer = libs.core.cli.get_params(sys.argv)
+        self.cap, self.packet_number, \
+            self.load_apps, sanitizer = libs.core.cli.get_params(sys.argv)
         self.sanitizer.process_filters(sanitizer)
 
         # Start Apps
@@ -44,13 +53,12 @@ class RunSniffer(object):
             self.oft = OessFvdTracer()
 
         if 'statistics' in self.load_apps:
-            pass
-#            self.stats = OFStats()
+            self.stats = OFStats()
 
     def run(self):
         """
-            This is how it starts: cap.loop continuously capture packets w/ pcapy
-            print_options and sanitizer are global variables
+            cap.loop continuously capture packets w/ pcapy. For every
+            captured packet, self.process_packet method is called.
             Exits:
                 0 - Normal, reached end of file
                 1 - Normal, user requested with CRTL + C
@@ -59,38 +67,43 @@ class RunSniffer(object):
         """
         exit_code = 0
 
-        self.cap.loop(-1, self.process_packet)
+        #self.cap.loop(-1, self.process_packet)
         try:
-            pass
-            # self.cap.loop(-1, self.process_packet)
+            self.cap.loop(-1, self.process_packet)
+
+            # Temporary while testing
+            import time
+            time.sleep(200)
+
         except KeyboardInterrupt:
             exit_code = 1
+
         except Exception as exception:
-            print('Error: %s ' % exception)
+            print('Error on packet %s: %s ' % (self.packet_count, exception))
             exit_code = 2
+
         finally:
-            # import time
-            # time.sleep(200)
             print('Exiting...')
             sys.exit(exit_code)
 
     def process_packet(self, header, packet):
         """
             Every packet captured by cap.loop is then processed here.
-            If packets are bigger than 62 Bytes, we process them. If it is 0, means there are
-                no more packets. If it is something in between, it is a fragment,
-                we ignore for now.
+            If packets are bigger than 62 Bytes, we process them.
+            If it is 0, means there are no more packets. If it is
+            something in between, it is a fragment, we ignore for now.
             Args:
                 header: header of the captured packet
                 packet: packet captured from file or interface
         """
-        if len(packet) >= 62 and self.position_defined():
+        if len(packet) >= 62 and self.packet_number_defined():
 
-            pkt = Packet(packet, self.ctr, header)
+            # DEBUG:
+            # print("Packet Number: %s" % self.packet_count)
+            pkt = Packet(packet, self.packet_count, header)
 
             if pkt.is_openflow_packet:
                 valid_result = pkt.process_openflow_messages()
-
                 if valid_result:
                     # Apps go here:
                     if isinstance(self.oft, OessFvdTracer):
@@ -108,19 +121,20 @@ class RunSniffer(object):
 
         elif len(packet) is 0:
             sys.exit(0)
-        self.ctr += 1
+        self.packet_count += 1
 
-    def position_defined(self):
+    def packet_number_defined(self):
         """
             In case user wants to see a specific packet inside a
-                specific pcap file, provide file name with the position
-                -r file.pcap:position
+            specific pcap file, provide file name with the specific
+            packet number
+                -r file.pcap:packet_number
             Returns:
-                True if ctr is good
-                False: if ctr is not good
+                True if packet_count matches
+                False: if packet_count does not match
         """
-        if self.position > 0:
-            return True if self.ctr == self.position else False
+        if self.packet_number > 0:
+            return True if self.packet_count == self.packet_number else False
         else:
             return True
 

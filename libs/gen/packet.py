@@ -16,7 +16,7 @@ class Packet:
     """
         Used to save all data about the TCP/IP packet
     """
-    def __init__(self, packet, ctr, header):
+    def __init__(self, packet, packet_number, header):
         """
             Instantiate this class
             Args:
@@ -27,10 +27,9 @@ class Packet:
         self.packet = packet
 
         # Controls
-        self.position = ctr
+        self.position = packet_number
         self.offset = 0
         self.is_openflow_packet = False
-        self.cur_msg = 0
         self.printed_header = False
         self.this_packet = None
         self.remaining_bytes = None
@@ -44,6 +43,7 @@ class Packet:
         # OpenFlow messages Array
         # As multiple OpenFlow messages per packet is possible
         # an list of messages needs to be created
+        self.cur_msg = 0
         self.ofmsgs = []
 
         # Process packet
@@ -70,7 +70,8 @@ class Packet:
 
     def process_openflow_messages(self):
         """
-
+            Because an IP packet can have multiple OpenFlow messages
+            let's get all of them here.
         """
         self.remaining_bytes = self.get_remaining_bytes()
 
@@ -85,15 +86,10 @@ class Packet:
             self.this_packet = self.packet[self.offset:self.offset+length]
             if len(self.this_packet) != length:
                 # it means packet is smaller than it should be
-                # propably MTU issue
+                # propably MTU issue or message was cut by the datapath
                 return False
 
-            version = self.add_of_msg_to_list(OFMessage(self.this_packet))
-
-            if version is 0:
-                return False
-            elif version is -1:
-                break
+            self.add_of_msg_to_list(OFMessage(self.this_packet))
 
             self.remaining_bytes -= length
             self.offset += length
@@ -112,8 +108,9 @@ class Packet:
         """
         try:
             if isinstance(ofmsg, libs.gen.ofmessage.OFMessage):
-                self.ofmsgs.insert(self.cur_msg, ofmsg)
-                self.proxy_support(self.ofmsgs[self.cur_msg].ofp)
+                if not isinstance(ofmsg.ofp, int):
+                    self.ofmsgs.insert(self.cur_msg, ofmsg)
+                    self.proxy_support(self.ofmsgs[self.cur_msg].ofp)
 
             else:
                 raise TypeError
@@ -151,9 +148,13 @@ class Packet:
             PacketOut will be used to collect DPID, but at this moment
             just save DEST IP and DEST TCP port
         """
-        if msg.header.message_type == 6:
-            libs.gen.proxies.insert_ip_port(self.l3.s_addr,
-                                            self.l4.source_port)
-        elif msg.header.message_type == 13:
-            libs.gen.proxies.insert_ip_port(self.l3.d_addr,
-                                            self.l4.dest_port)
+        # TODO: fix it
+        if int(msg.header.message_type) is 6:
+            ip, port = self.l3.s_addr, self.l4.source_port
+            dpid = msg.datapath_id
+
+        # elif int(msg.header.message_type) is 13:
+        #     ip, port = self.l3.d_addr, self.l4.dest_port
+        #     dpid =
+        #
+        # OFProxy().insert_ip_port(ip, port, dpid)
