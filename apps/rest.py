@@ -1,5 +1,6 @@
 """
-
+    This app creates the REST interface to be used
+    by all apps that want to.
 """
 from flask import Flask
 import apps.ofp_stats
@@ -14,24 +15,17 @@ class CreateRest(object):
         self.run()
 
     @staticmethod
-    @app.route("/members/<string:name>/")
-    def get_member(name):
-        return name
-
-    # Production
-
-    @staticmethod
-    @app.route("/ofp_sniffer/start_time")
+    @app.route("/ofp_sniffer/ofp_stats/start_time")
     def start_time():
         return apps.ofp_stats.OFStats().get_start_time()
 
     @staticmethod
-    @app.route("/ofp_sniffer/packet_totals")
+    @app.route("/ofp_sniffer/ofp_stats/packet_totals")
     def index():
         return apps.ofp_stats.OFStats().get_counter()
 
     @staticmethod
-    @app.route("/ofp_sniffer/last_msgs")
+    @app.route("/ofp_sniffer/ofp_stats/last_msgs")
     def last_msgs():
         return apps.ofp_stats.OFStats().get_last_msgs()
 
