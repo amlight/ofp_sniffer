@@ -1,5 +1,9 @@
 """
-
+    This app was created to specifically monitor the
+    OESS-FVD communication. It could be used to generate alarms
+    when a packetIn is received with current time sent by the FVD
+    too high compared with the time when the packet was
+    captured.
 """
 
 from datetime import datetime, timedelta
@@ -16,7 +20,8 @@ class OessFvdTracer:
         self.links = dict()
         self.starting()
 
-    def starting(self):
+    @staticmethod
+    def starting():
         print('OESS FVD Monitoring')
         print('%-24s %s\t\t\t\t\t\t %s\t\t\t\t\t %s' %
               ('Link', 'Sent', 'Seen', 'Delay'))
@@ -71,7 +76,8 @@ class OessFvdTracer:
                   (dpid, port, link['remote'], link['port'], timestamp, link['last_seen'],
                    diff))
 
-    def _is_oess_fvd(self, data):
+    @staticmethod
+    def _is_oess_fvd(data):
         from libs.openflow.of10.process_data import dissect_data
         from pyof.foundation.basic_types import BinaryData
 
@@ -79,7 +85,6 @@ class OessFvdTracer:
             data = dissect_data(data)
 
         try:
-            next_protocol = '0x0000'
             eth = data.pop(0)
             next_protocol = eth.protocol
 
