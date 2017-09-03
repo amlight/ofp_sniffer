@@ -1,6 +1,11 @@
 """
-    Sanitizer Class
+    Filters/Sanitizer Class
+    Used for filtering specific OpenFlow versions and
+    message types. Filters are provided via JSON file
+    in the cli with option -F or --filters-file
 """
+
+
 import json
 import sys
 from libs.core.singleton import Singleton
@@ -10,10 +15,11 @@ from libs.core.printing import PrintingOptions
 class Sanitizer(metaclass=Singleton):
 
     def __init__(self):
-        self.allowed_versions = dict()
+        self.allowed_of_versions = dict()
         self.filters = dict()
 
-    def read_file(self, sanitizer_file):
+    @staticmethod
+    def read_file(filters_file):
         """
             Read the JSON file provided through -F
             Args:
@@ -22,7 +28,7 @@ class Sanitizer(metaclass=Singleton):
                 json content of the file provided
         """
         try:
-            with open(sanitizer_file) as jfile:
+            with open(filters_file) as jfile:
                 json_content = json.loads(jfile.read())
 
         except Exception as error:
@@ -30,7 +36,7 @@ class Sanitizer(metaclass=Singleton):
             msg += 'Please check your JSON file. Maybe the permission is wrong'
             msg += ' or the JSON syntax is incorrect. Try the following:\n'
             msg += 'cat %s | python -m json.tool'
-            print(msg % sanitizer_file)
+            print(msg % filters_file)
             print("Error seen: %s" % error)
             sys.exit(0)
         return json_content
