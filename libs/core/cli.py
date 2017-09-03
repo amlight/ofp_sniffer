@@ -3,11 +3,10 @@
 """
 
 
+import sys
 import getopt
 import pcapy
-import sys
 from libs.core.printing import PrintingOptions
-from libs.gen.proxies import OFProxy
 
 
 VERSION = '0.4'
@@ -93,8 +92,30 @@ def start_capture(capfile, infilter, dev):
     return cap, position
 
 
+def read_params(argv):
+    """
+        Parser params received via CLI
+
+        Args:
+            argv: inputs
+        Return:
+            opts: getopt object
+    """
+    letters = 'f:F:i:r:T:pohvcOSq'
+    keywords = ['pcap-filter=', 'filters-file=', 'interface=',
+                'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
+                'topology-file=', 'oess-fvd', 'enable-statistics', 'no-output']
+
+    try:
+        opts, _ = getopt.getopt(argv[1:], letters, keywords)
+        return opts
+    except getopt.GetoptError as err:
+        usage(argv[0], err)
+
+
 def get_params(argv):
     """
+
         Get CLI params provided by user
         Args:
             argv: CLI params
@@ -106,20 +127,10 @@ def get_params(argv):
     """
     # Default Values
     input_filter, filters_file, dev, captured_file = '', '', 'eth0', ''
-    topology_file = 0
-    opts = None
+    topology_file = "./docs/topology.json"
     load_apps = []
 
-    # Handle all input params
-    letters = 'f:F:i:r:T:pohvcOSq'
-    keywords = ['pcap-filter=', 'filters-file=', 'interface=',
-                'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'topology-file=', 'oess-fvd', 'enable-statistics', 'no-output']
-
-    try:
-        opts, extraparams = getopt.getopt(argv[1:], letters, keywords)
-    except getopt.GetoptError as err:
-        usage(argv[0], err)
+    opts = read_params(argv)
 
     for option, param in opts:
         if option in ['-p']:
@@ -150,10 +161,6 @@ def get_params(argv):
         else:
             usage(argv[0])
 
-    # Load switch names
-    # TODO: instantiate topology
-    OFProxy().load_names_file(topology_file)
-
     cap, position = start_capture(captured_file, input_filter, dev)
 
-    return cap, position, load_apps, filters_file
+    return cap, position, load_apps, filters_file, topology_file

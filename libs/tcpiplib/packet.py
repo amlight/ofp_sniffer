@@ -23,12 +23,23 @@ class L1:
         self.time = None
 
     def parse(self, header):
+        """
+            Parse object
+        """
         self.caplen = header.getlen()
         self.truncate = header.getcaplen()
         self.time = self.set_time(header.getts())
 
     @staticmethod
     def set_time(date):
+        """
+            Get the time when the packet was captured
+
+            Args:
+                date: array provided by libpcap
+            Returns:
+                date processed by datetime
+        """
         date = date[0] + date[1] / 100000
         date = datetime.fromtimestamp(date)
         date = date.strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -46,6 +57,13 @@ class Ethernet:
         self.length = 14  # Ethernet header has 14 bytes
 
     def parse(self, packet, host_order=0):
+        """
+            Parses packet, converting from binary to Ethernet
+
+            Args:
+                packet: binary object
+                host_order: just to help defining the host order
+        """
         eth_raw = packet[:self.length]
         ethernet = unpack('!6s6sH', eth_raw)
         self.dst_mac = ethernet[0]
@@ -75,6 +93,13 @@ class IP:
         self.d_addr = None
 
     def parse(self, packet, offset):
+        """
+            Parses packet, converting from binary to IP
+
+            Args:
+                packet: binary object
+                offset: position to start
+        """
         ip_raw = packet[offset:self.length + offset]
         iph = unpack('!BBHHHBBH4s4s', ip_raw)
         version_ihl = iph[0]
@@ -108,6 +133,13 @@ class TCP:
         self.flag_fyn = None
 
     def parse(self, packet, offset):
+        """
+            Parses packet, converting from binary to TCP
+
+            Args:
+                packet: binary object
+                offset: position to start
+        """
         tcp_raw = packet[offset:offset + self.length]
         tcph = unpack('!HHLLBBHHH', tcp_raw)
         self.source_port = tcph[0]
@@ -141,6 +173,12 @@ class VLAN:
         self.ethertype = None
 
     def parse(self, packet):
+        """
+            Parses packet, converting from binary to VLAN
+
+            Args:
+                packet: binary object
+        """
         vlan_length = 2
         ethertype = 2
         vlan_raw = packet[:vlan_length + ethertype]
@@ -174,6 +212,12 @@ class LLDP:
         self.e_length = None
 
     def parse(self, packet):
+        """
+            Parses packet, converting from binary to LLDP
+
+            Args:
+                packet: binary object
+        """
 
         # Chassis
         # TLV (1) + Length = 2 bytes | Sub-type = 1 Byte
@@ -277,6 +321,12 @@ class ARP:
         self.dst_ip = None
 
     def parse(self, packet):
+        """
+            Parses packet, converting from binary to ARP
+
+            Args:
+                packet: binary object
+        """
         arp_raw = packet[:28]
         arp = unpack('!HHBBH6sL6sL', arp_raw)
         self.hw_type = arp[0]
@@ -302,6 +352,12 @@ class OessFvd:
         self.timestamp = None
 
     def parse(self, packet):
+        """
+            Parses packet, converting from binary to OESS FVD
+
+            Args:
+                packet: binary object
+        """
         self.side_a = self.get_datapath_id(packet[0:8])
         self.port_a = self.port_id(packet[8:16])
         self.side_z = self.get_datapath_id(packet[16:24])
@@ -311,7 +367,8 @@ class OessFvd:
     @staticmethod
     def read_field(value):
         """
-
+            Method used to convert from bytes to string
+            Created to work with Python3
         """
         string = '%02x' * len(value)
         return string % tuple(value)[::-1]

@@ -1,3 +1,9 @@
+"""
+    This module helps to translate numbers to names in the
+    TCP/IP stack
+"""
+
+
 from struct import unpack
 
 

@@ -6,10 +6,11 @@
 
 
 from libs.core.printing import PrintingOptions
-import libs.tcpiplib.packet
-import libs.tcpiplib.tcpip
 from libs.core.sanitizer import Sanitizer
 from libs.tcpiplib.tcpip import get_ofp_version
+from libs.tcpiplib.process_data import is_protocol
+from libs.tcpiplib.process_data import get_protocol
+from libs.gen.dpid_handling import clear_dpid
 
 
 def filter_msg(msg):
@@ -93,12 +94,12 @@ def filter_of_type(msg):
 
 def ethertype_filters(msg):
     """
-        Filter PacketIn and PacketOut messages with LLDP or BDDP
+        Filter PacketIn and PacketOut messages based on Ethertype
         Sanitizer filter (-F), entry "filters", "ethertype"
         Args:
             msg: class OFMessage
         Returns:
-            False: Don' filter packet
+            False: Don't filter packet
             True: Filter it (don't print)
     """
     if msg.ofp.header.message_type in [10, 13]:
@@ -106,35 +107,29 @@ def ethertype_filters(msg):
             filters = Sanitizer().filters['ethertypes']
         except KeyError:
             return False
+
         if not len(filters):
             # No filters
             return False
-        # Go to payload
-        idx = 0
-        if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.Ethernet):
-            next_protocol = msg.ofp.data[idx].protocol
-            idx += 1
-            if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.VLAN):
-                next_protocol = msg.ofp.data[idx].protocol
-            try:
-                if next_protocol in [35020, 35138] and filters['lldp']:
-                    return True
-                if next_protocol in [34998] and filters['fvd']:
-                    return True
-                if next_protocol in [2054] and filters['arp']:
-                    return True
-            except KeyError:
-                # If there is no entry 'lldp' for example, Python will complain.
-                # So, just ignore because user does not want to filter lldp.
-                pass
 
-            # Other Ethertypes listed as hex
-            for protocol in filters['others']:
-                try:
-                    if next_protocol == int(protocol, 16):
-                        return True
-                except ValueError:
-                    pass
+        # Go to payload
+        try:
+            if is_protocol(msg.ofp.data, lldp=True) and filters['lldp']:
+                return True
+            if is_protocol(msg.ofp.data, oess=True) and filters['fvd']:
+                return True
+            if is_protocol(msg.ofp.data, arp=True) and filters['arp']:
+                return True
+        except KeyError:
+            pass
+
+        # Other Ethertypes listed as hex
+        for protocol in filters['others']:
+            try:
+                if is_protocol(msg.ofp.data) == int(protocol, 16):
+                    return True
+            except ValueError:
+                pass
 
     return False
 
@@ -159,24 +154,16 @@ def dpid_filters(msg):
         return False
 
     # It has to be a LLDP packet
-    idx = 0
-    if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.Ethernet):
-        next_protocol = msg.ofp.data[idx].protocol
-        idx += 1
-        if isinstance(msg.ofp.data[idx], libs.tcpiplib.packet.VLAN):
-            next_protocol = msg.ofp.data[idx].protocol
-        try:
-            if next_protocol not in [35020, 35138]:
-                return False
-        except KeyError:
-            return False
+    if not is_protocol(msg.ofp.data, lldp=True):
+        return False
 
     try:
         # If it is a PacketIn ...
-        if msg.ofp.type in [10]:
+        if msg.ofp.header.message_type in [10]:
             # It has to have a packetIn_filter filter
             filters = Sanitizer().filters['packetIn_filter']
             filter_port = filters['in_port']
+
         # If it a PacketOut...
         else:
             # It has to have a packetOut_filter filter
@@ -197,14 +184,11 @@ def dpid_filters(msg):
 
     # If we got here, it means we have content to avoid printing
     print_it = False
-    lldp_msg = msg.ofp.data[idx+1]
-    try:
-        switch_dpid = filter_dpid.split(':')[1]
-    except:
-        switch_dpid = filter_dpid
+    lldp_msg = get_protocol(msg.ofp.data, lldp=True)
+    switch_dpid = clear_dpid(filter_dpid)
 
     if print_switch_dpid(switch_dpid, lldp_msg.c_id):
-        if msg.ofp.type in [10]:
+        if msg.ofp.header.message_type in [10]:
             if print_port(filter_port, str(msg.ofp.in_port)):
                 print_it = True
         else:
@@ -213,21 +197,24 @@ def dpid_filters(msg):
 
     if print_it:
         return False
-    else:
-        return True
+
+    return True
 
 
 def print_switch_dpid(filter_dpid, packet_dpid):
-    try:
-        p_dpid = packet_dpid.split(':')[1]
-    except:
-        p_dpid = packet_dpid
-    if filter_dpid in [p_dpid, 'Any', 'any', 'ANY']:
+    """
+        Confirm if filter_dpid is packet_dpid or any
+    """
+    packet_dpid = clear_dpid(packet_dpid)
+    if filter_dpid in [packet_dpid, 'Any', 'any', 'ANY']:
         return True
     return False
 
 
 def print_port(filter_port, packet_port):
+    """
+        Confirm if filter_port is packet_port or any
+    """
     if filter_port in [packet_port, 'Any', 'any', 'ANY']:
         return True
     return False

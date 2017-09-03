@@ -4,13 +4,12 @@
 import socket
 import struct
 from datetime import datetime
-
 import libs.openflow.of10.dissector
 import libs.tcpiplib.tcpip
 from libs.core.printing import PrintingOptions
 from libs.gen.prints import red, green, blue, yellow, cyan
-from apps.ofp_proxies import OFProxy
 from libs.tcpiplib.tcpip import get_ethertype
+from apps.ofp_proxies import OFProxy
 
 
 def eth_addr(a):
@@ -75,20 +74,20 @@ def print_headers(pkt, overwrite_min=0):
         print_tcp(pkt.l4)
 
 
-def print_minimal(position, date, getlen, ip, tcp):
+def print_minimal(position, date, getlen, ip_addr, tcp):
     """
         Print TCP/IP header with minimal information
     Args:
         position: packet count
         date: date/time packet was captured
         getlen: total number of bytes captured
-        ip: IP class
+        ip_addr: IP class
         tcp: TCP class
     """
     string = 'Packet #%s - %s %s:%s -> %s:%s Size: %s Bytes'
 
-    source = OFProxy().get_name(ip.s_addr, tcp.source_port)
-    dest = OFProxy().get_name(ip.d_addr, tcp.dest_port)
+    source = OFProxy().get_name(ip_addr.s_addr, tcp.source_port)
+    dest = OFProxy().get_name(ip_addr.d_addr, tcp.dest_port)
 
     print(string % (position, date, cyan(source), cyan(tcp.source_port),
                     cyan(dest), cyan(tcp.dest_port), getlen))
@@ -153,16 +152,16 @@ def print_arp(arp):
              eth_addr(arp.dst_mac), get_ip_from_long(arp.dst_ip)))
 
 
-def print_layer3(ip):
+def print_layer3(ip_addr):
     """
         Prints IP headers
     Args:
         ip: IP class
     """
     print(('IP Version: %d IP Header Length: %d TTL: %d Protocol: %d '
-          'Source Address: %s Destination Address: %s') %
-          (ip.version, ip.length, ip.ttl, ip.protocol,
-           blue(ip.s_addr), blue(ip.d_addr)))
+           'Source Address: %s Destination Address: %s') %
+          (ip_addr.version, ip_addr.length, ip_addr.ttl, ip_addr.protocol,
+           blue(ip_addr.s_addr), blue(ip_addr.d_addr)))
 
 
 def print_tcp(tcp):
@@ -202,18 +201,20 @@ def print_lldp(lldp):
     Args:
         lldp: LLDP class
     """
-    if lldp.c_type is not 1 or lldp.p_type is not 2 or lldp.t_type is not 3 or lldp.e_type is not 0:
+    if lldp.c_type is not 1 or lldp.p_type is not 2 \
+            or lldp.t_type is not 3 or lldp.e_type is not 0:
         print('LLDP: Malformed packet')
         return
 
     if lldp.c_type is 1:
-        print('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' % (lldp.c_type, lldp.c_length, lldp.c_subtype,
-                                                                        green(lldp.c_id)))
+        print('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' %
+              (lldp.c_type, lldp.c_length, lldp.c_subtype, green(lldp.c_id)))
     if lldp.p_type is 2:
-        print('LLDP: Port Type(%s) Length: %s SubType: %s ID: %s' % (lldp.p_type, lldp.p_length, lldp.p_subtype,
-                                                                     green(lldp.p_id)))
+        print('LLDP: Port Type(%s) Length: %s SubType: %s ID: %s' %
+              (lldp.p_type, lldp.p_length, lldp.p_subtype, green(lldp.p_id)))
     if lldp.t_type is 3:
-        print('LLDP: TTL(%s) Length: %s Seconds: %s' % (lldp.t_type, lldp.t_length, lldp.t_ttl))
+        print('LLDP: TTL(%s) Length: %s Seconds: %s' %
+              (lldp.t_type, lldp.t_length, lldp.t_ttl))
 
     if lldp.e_type is 0:
         print('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))

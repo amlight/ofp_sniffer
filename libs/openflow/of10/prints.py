@@ -8,7 +8,7 @@ from libs.gen.prints import red, green, yellow
 import libs.tcpiplib.tcpip
 import libs.openflow.of10.dissector as dissector
 from libs.tcpiplib.prints import print_openflow_header
-from libs.openflow.of10.process_data import dissect_data
+from libs.tcpiplib.process_data import dissect_data
 
 
 # ******************** Points to the right printing function ****************

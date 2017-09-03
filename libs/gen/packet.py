@@ -130,13 +130,13 @@ class Packet:
 
     def get_remaining_bytes(self):
         """
-
+            Calculate how many bytes to be processed
         """
         return self.l1.caplen - self.offset
 
     def get_of_message_length(self):
         """
-
+            Get the openflow header length
         """
         of_h = get_openflow_header(self.packet, self.offset)
         return of_h['length']

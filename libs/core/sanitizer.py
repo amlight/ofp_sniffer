@@ -13,6 +13,12 @@ from libs.core.printing import PrintingOptions
 
 
 class Sanitizer(metaclass=Singleton):
+    """
+        Filters/Sanitizer Class
+        Used for filtering specific OpenFlow versions and
+        message types. Filters are provided via JSON file
+        in the cli with option -F or --filters-file
+    """
 
     def __init__(self):
         self.allowed_of_versions = dict()

@@ -1,3 +1,8 @@
+"""
+    Module created just to help with debugging
+"""
+
+
 from functools import wraps
 import libs.core.cli
 
@@ -12,6 +17,9 @@ def debug(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
+        """
+            Wraps to preserve docs
+        """
         print('*** %s' % func.__name__)
         return func(*args, **kwargs)
     return wrapper
