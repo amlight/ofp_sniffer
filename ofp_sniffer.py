@@ -10,13 +10,13 @@
 import time
 import sys
 from libs.core.printing import PrintingOptions
-import libs.core.cli
-from apps.oess_fvd import OessFvdTracer
-from apps.ofp_stats import OFStats
 from libs.core.sanitizer import Sanitizer
 from libs.gen.packet import Packet
-from libs.gen.proxies import OFProxy
 from libs.core.topo_reader import TopoReader
+from libs.core.cli import get_params
+from apps.oess_fvd import OessFvdTracer
+from apps.ofp_stats import OFStats
+from apps.ofp_proxies import OFProxy
 
 
 class RunSniffer(object):
@@ -28,14 +28,14 @@ class RunSniffer(object):
     def __init__(self):
         self.printing_options = PrintingOptions()
         self.sanitizer = Sanitizer()
-        self.ofproxy = OFProxy()
-        self.toporeader = TopoReader()
         self.oft = None
         self.stats = None
         self.cap = None
         self.packet_number = None
         self.load_apps = []
         self.packet_count = 1
+        self.topo_reader = TopoReader()
+        self.ofp_proxy = None
         self.load_config()
 
     def load_config(self):
@@ -45,8 +45,11 @@ class RunSniffer(object):
         """
         # Get CLI params and call the pcapy loop
         self.cap, self.packet_number, \
-            self.load_apps, sanitizer = libs.core.cli.get_params(sys.argv)
+            self.load_apps, sanitizer, topo_file = get_params(sys.argv)
         self.sanitizer.process_filters(sanitizer)
+
+        # Load TopologyReader
+        self.topo_reader.readfile(topo_file)
 
         # Start Apps
         if 'oess_fvd' in self.load_apps:
@@ -54,6 +57,9 @@ class RunSniffer(object):
 
         if 'statistics' in self.load_apps:
             self.stats = OFStats()
+
+        # Load Proxy
+        self.ofp_proxy = OFProxy()
 
     def run(self):
         """
@@ -67,9 +73,9 @@ class RunSniffer(object):
         """
         exit_code = 0
 
-        #self.cap.loop(-1, self.process_packet)
+        self.cap.loop(-1, self.process_packet)
         try:
-            self.cap.loop(-1, self.process_packet)
+            # self.cap.loop(-1, self.process_packet)
 
             if 'statistics' in self.load_apps:
                 # If OFP_Stats is running, set a timer
@@ -108,14 +114,19 @@ class RunSniffer(object):
             if pkt.is_openflow_packet:
                 valid_result = pkt.process_openflow_messages()
                 if valid_result:
+
                     # Apps go here:
                     if isinstance(self.oft, OessFvdTracer):
                         # FVD_Tracer does not print the packets
-                        self.oft.process_fv_packet(pkt)
+                        self.oft.process_packet(pkt)
+
+                    if isinstance(self.ofp_proxy, OFProxy):
+                        # OFP_PROXY associates IP:PORT to DPID
+                        self.ofp_proxy.process_packet(pkt)
 
                     if isinstance(self.stats, OFStats):
                         # OFStats print the packets
-                        self.stats.compute_packet(pkt)
+                        self.stats.process_packet(pkt)
 
                     if not isinstance(self.oft, OessFvdTracer):
                         # Print Packets
@@ -125,6 +136,7 @@ class RunSniffer(object):
 
         elif len(packet) is 0:
             sys.exit(0)
+
         self.packet_count += 1
 
     def packet_number_defined(self):
@@ -139,8 +151,8 @@ class RunSniffer(object):
         """
         if self.packet_number > 0:
             return True if self.packet_count == self.packet_number else False
-        else:
-            return True
+
+        return True
 
 
 if __name__ == "__main__":
