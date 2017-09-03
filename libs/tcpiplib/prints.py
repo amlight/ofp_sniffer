@@ -5,11 +5,12 @@ import socket
 import struct
 from datetime import datetime
 
-import libs.gen.proxies
 import libs.openflow.of10.dissector
 import libs.tcpiplib.tcpip
 from libs.core.printing import PrintingOptions
 from libs.gen.prints import red, green, blue, yellow, cyan
+from apps.ofp_proxies import OFProxy
+from libs.tcpiplib.tcpip import get_ethertype
 
 
 def eth_addr(a):
@@ -86,8 +87,8 @@ def print_minimal(position, date, getlen, ip, tcp):
     """
     string = 'Packet #%s - %s %s:%s -> %s:%s Size: %s Bytes'
 
-    source = libs.gen.proxies.get_ip_name(ip.s_addr, tcp.source_port)
-    dest = libs.gen.proxies.get_ip_name(ip.d_addr, tcp.dest_port)
+    source = OFProxy().get_name(ip.s_addr, tcp.source_port)
+    dest = OFProxy().get_name(ip.d_addr, tcp.dest_port)
 
     print(string % (position, date, cyan(source), cyan(tcp.source_port),
                     cyan(dest), cyan(tcp.dest_port), getlen))
@@ -132,7 +133,8 @@ def print_vlan(vlan):
         vlan: VLAN class
     """
     print('VLAN: PCP: %s CFI: %s VID: %s Protocol: %s' %
-          (vlan.pcp, vlan.cfi, red(vlan.vid), hex(vlan.ethertype)))
+          (vlan.pcp, vlan.cfi, red(vlan.vid),
+           red(get_ethertype(vlan.ethertype))))
 
 
 def print_arp(arp):
