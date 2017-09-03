@@ -7,9 +7,8 @@
 """
 
 from datetime import datetime, timedelta
-from pyof.foundation.basic_types import BinaryData
 from libs.core.topo_reader import TopoReader
-from libs.openflow.of10.process_data import dissect_data
+from libs.tcpiplib.process_data import is_protocol
 
 
 OFP_PACKET_IN = 10
@@ -19,6 +18,9 @@ CRITICAL = 30
 
 
 class OessFvdTracer:
+    """
+        OessFvdTracer is an app to evaluate the OESS FVD app.
+    """
 
     def __init__(self):
         self.links = dict()
@@ -28,6 +30,9 @@ class OessFvdTracer:
 
     @staticmethod
     def starting():
+        """
+            Just print the app name
+        """
         print('OESS Forwarding Verification Monitoring')
 
     def process_packet(self, pkt):
@@ -37,50 +42,20 @@ class OessFvdTracer:
             messages coming from the switch, which means, the end of
             the OESS FV cycle:
                 (OESS -> packetOut -> dpid -> packetIn -> OESS)
+
             Args:
                 pkt: Packet class
         """
         for msg in pkt.ofmsgs:
             if msg.ofp.header.message_type in [OFP_PACKET_IN]:
-                fvd = self._is_oess_fvd(msg.ofp.data)
+                fvd = is_protocol(msg.ofp.data, oess=True)
                 if fvd is not False:
                     self.add_link(fvd, pkt.l1.time)
-
-    @staticmethod
-    def _is_oess_fvd(data):
-        """
-            Check if the PacketIn Data is an OESS FV payload
-            Args:
-                data: PacketIn data
-            Returns:
-                OESS class if it is an OESS payload
-                False if it is not
-        """
-
-        if isinstance(data, BinaryData):
-            data = dissect_data(data)
-
-        try:
-            eth = data.pop(0)
-            next_protocol = eth.protocol
-
-            if next_protocol in [33024]:
-                vlan = data.pop(0)
-                next_protocol = vlan.protocol
-
-            if next_protocol in [34998]:
-                fvd = data.pop(0)
-                return fvd
-
-            return False
-
-        except Exception as error:
-            print(error)
-            return False
 
     def add_link(self, fvd, capture_time):
         """
             Add detected OESS link to self.links dictionary
+
             Args:
                 fvd: OESS class
                 capture_time: time when the packet was capture
