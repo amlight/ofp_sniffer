@@ -34,6 +34,9 @@ class TopoReader(metaclass=Singleton):
 
     def get_datapath_name(self, dpid=None):
         try:
+            if dpid.find(":"):
+                dpid = dpid.replace(":", "")
+
             return self._dpids[dpid]
         except KeyError:
             return dpid
@@ -51,10 +54,6 @@ class TopoReader(metaclass=Singleton):
         pass
 
     def clear_dpid(self, dpid):
-
-        if dpid.find(":"):
-            dpid = dpid.replace(":", "")
-
         return self.get_datapath_name(dpid)
 
     def get_link_aliases(self, dp_a, port_a, dp_z, port_z, option="Full"):
