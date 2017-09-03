@@ -62,7 +62,10 @@ class OFProxy(metaclass=Singleton):
             Returns:
                 name: datapath name
         """
-        return self.dpid_dict[dpid]
+        try:
+            return self.dpid_dict[dpid]
+        except:
+            return 'DPID_' + str(dpid)
 
     def add_dpid_to_proxy_db(self, ip_addr, port, dpid):
         """
@@ -92,7 +95,7 @@ class OFProxy(metaclass=Singleton):
             if msg.ofp.header.message_type.value == 6:
                 ip_addr = pkt.l3.s_addr
                 port = pkt.l4.source_port
-                self.add_dpid_to_proxy_db(ip_addr, port, msg.ofp.datapath_id)
+                self.add_dpid_to_proxy_db(ip_addr, port, msg.ofp.datapath_id.value)
 
             elif msg.ofp.header.message_type.value == 13:
                 ip_addr = pkt.l3.d_addr
