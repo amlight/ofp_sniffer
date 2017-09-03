@@ -1,122 +1,48 @@
 {
   "switches": {
-      "ampath1": {
-          "aliases": ["ampath1", "ampath01", "mct01"],
-          "description": "Brocade MLXe-8 NI 5.8g at NOTA/Miami",
-          "dns": "ampath1.sdn.amlight.net",
-          "dpids": ["24389406000000", "0024389406000000"],
+      "sw1": {
+          "aliases": ["sw1", "switch01"],
+          "dpids": ["1", "0000000000000001"],
           "ports": {
-              "eth2/5": {"alias": "eth2/5", "ofport_no": 53, "snmp_no:": 1, "type": "link", "speed": "10G"},
-              "eth7/1": {"alias": "eth7/1", "ofport_no": 289, "snmp_no:": 1, "type": "link", "speed": "100G"},
-              "eth7/2": {"alias": "eth7/2", "ofport_no": 290, "snmp_no:": 1, "type": "link", "speed": "100G"}
-          },
-          "serial_no": "BGB2535G00B"
+              "eth1": {"alias": "eth1", "ofport_no": 1, "snmp_no:": 1, "type": "link", "speed": "10G"},
+              "eth2": {"alias": "eth2", "ofport_no": 2, "snmp_no:": 2, "type": "link", "speed": "10G"},
+              "eth3": {"alias": "eth3", "ofport_no": 3, "snmp_no:": 3, "type": "link", "speed": "10G"}
+          }
       },
-      "ampath2": {
-          "aliases": ["ampath2", "ampath02", "mct02"],
-          "description": "Brocade MLXe-8 NI 5.8g at NOTA/Miami",
-          "dns": "ampath2.sdn.amlight.net",
-          "dpids": ["2438af17000000", "002438af17000000"],
+      "sw2": {
+          "aliases": ["sw2", "switch02"],
+          "dpids": ["2", "0000000000000002"],
           "ports": {
-              "eth2/5": {"alias": "eth2/5", "ofport_no": 53, "snmp_no:": 1, "type": "link", "speed": "10G"},
-              "eth7/1": {"alias": "eth7/1", "ofport_no": 289, "snmp_no:": 1, "type": "link", "speed": "100G"},
-              "eth7/2": {"alias": "eth7/2", "ofport_no": 290, "snmp_no:": 1, "type": "link", "speed": "100G"}
-          },
-          "serial_no": "BGB2503J003"
+              "eth1": {"alias": "eth1", "ofport_no": 1, "snmp_no:": 1, "type": "link", "speed": "10G"},
+              "eth2": {"alias": "eth2", "ofport_no": 2, "snmp_no:": 2, "type": "link", "speed": "10G"},
+              "eth3": {"alias": "eth3", "ofport_no": 3, "snmp_no:": 3, "type": "link", "speed": "10G"}
+          }
       },
-      "sol2": {
-          "aliases": ["sol2", "southernlight2"],
-          "description": "Brocade MLXe-16 NI 5.8g at NAP/Brazil",
-          "dns": "sol2.sdn.amlight.net",
-          "dpids": ["cc4e244b11000000"],
+      "sw3": {
+          "aliases": ["sw3", "switch03"],
+          "dpids": ["3", "0000000000000003"],
           "ports": {
-              "eth1/4": {"alias": "eth1/4", "ofport_no": 4, "snmp_no:": 1, "type": "link", "speed": "10G"},
-              "eth2/4": {"alias": "eth2/4", "ofport_no": 52, "snmp_no:": 1, "type": "link", "speed": "10G"},
-              "eth6/1": {"alias": "eth6/1", "ofport_no": 241, "snmp_no:": 1, "type": "link", "speed": "100G"},
-              "eth7/1": {"alias": "eth7/1", "ofport_no": 289, "snmp_no:": 1, "type": "link", "speed": "100G"}
-          },
-          "serial_no": "BGB2544K009"
-      },
-      "andes1": {
-          "aliases": ["andes1", "andeslight1"],
-          "description": "Brocade MLXe-4 NI 5.8g at Level3/Chile",
-          "dns": "andes1.sdn.amlight.net",
-          "dpids": ["cc4e249126000000"],
-          "ports": {
-              "eth2/1": {"alias": "eth2/1", "ofport_no": 49, "snmp_no:": 1, "type": "link", "speed": "10G"},
-              "eth2/2": {"alias": "eth2/2", "ofport_no": 50, "snmp_no:": 1, "type": "link", "speed": "10G"}
-          },
-          "serial_no": "BGD2515L006"
-      },
-      "andes2": {
-          "aliases": ["andes2", "andeslight2"],
-          "description": "Brocade MLXe-4 NI 5.8g at Level3/Chile",
-          "dns": "andes2.sdn.amlight.net",
-          "dpids": ["cc4e249102000000"],
-          "ports": {
-              "eth2/1": {"alias": "eth2/1", "ofport_no": 49, "snmp_no:": 1, "type": "link", "speed": "10G"},
-              "eth2/2": {"alias": "eth2/2", "ofport_no": 50, "snmp_no:": 1, "type": "link", "speed": "10G"}
-          },
-          "serial_no": "BGD2515L005"
+              "eth1": {"alias": "eth1", "ofport_no": 1, "snmp_no:": 1, "type": "link", "speed": "10G"},
+              "eth2": {"alias": "eth2", "ofport_no": 2, "snmp_no:": 2, "type": "link", "speed": "10G"},
+              "eth3": {"alias": "eth3", "ofport_no": 3, "snmp_no:": 3, "type": "link", "speed": "10G"}
+          }
       }
   },
 
   "links": {
-      "ALT001MI1MI1100G": {
-          "aliases": ["ALT001", "ALT001MI1MI1100G", "ampath1-ampath2-100g"],
-          "datapath_a": "ampath1",
-          "port_a": "eth7/1",
-          "datapath_z": "ampath2",
-          "port_z": "eth7/1"
+      "link1": {
+          "aliases": ["link1"],
+          "datapath_a": "sw1",
+          "port_a": "eth1",
+          "datapath_z": "sw2",
+          "port_z": "eth1"
       },
-      "ALT002MI1SP1100G": {
-          "aliases": ["FIU030", "FIU030WMI2SP3NN", "ALT002", "ALT002MI1SP1100G", "ampath1-sol2-100g"],
-          "datapath_a": "ampath1",
-          "port_a": "eth7/2",
-          "datapath_z": "sol2",
-          "port_z": "eth6/1"
-      },
-      "ALT003MI1SP110G": {
-          "aliases": ["FIU020", "FIU020UMI2SP1NN", "ALT003", "ALT003MI1SP110G", "ampath1-sol2-10g"],
-          "datapath_a": "ampath1",
-          "port_a": "eth2/5",
-          "datapath_z": "sol2",
-          "port_z": "eth2/4"
-      },
-      "ALT004MI1CL110G": {
-          "aliases": ["FIU026", "FIU026UMI2SA1NN", "ALT004", "ALT004MI1CL110G", "ampath2-andes2-10g"],
-          "datapath_a": "ampath2",
-          "port_a": "eth2/5",
-          "datapath_z": "andes2",
-          "port_z": "eth2/1"
-      },
-      "ALT005CL1CL110G": {
-          "aliases": ["ALT005", "ALT005CL1CL110G", "andes2-andes1-10g"],
-          "datapath_a": "andes2",
-          "port_a": "eth2/2",
-          "datapath_z": "andes1",
-          "port_z": "eth2/1"
-      },
-      "ALT006CL1SP110G": {
-          "aliases": ["FIU025", "FIU025USA1SP1NN", "ALT006", "ALT006CL1SP110G", "sol2-andes1-10g"],
-          "datapath_a": "sol2",
-          "port_a": "eth1/4",
-          "datapath_z": "andes1",
-          "port_z": "eth2/2"
-      },
-      "ALT007MI1SP1100G": {
-          "aliases": ["FIU031", "FIU031WMI2SP3NN", "ALT007", "ALT007MI1SP1100G", "ampath2-sol2-100g"],
-          "datapath_a": "ampath2",
-          "port_a": "eth7/2",
-          "datapath_z": "sol2",
-          "port_z": "eth7/1"
+      "link2": {
+          "aliases": ["link2"],
+          "datapath_a": "sw2",
+          "port_a": "eth2",
+          "datapath_z": "sw3",
+          "port_z": "eth1"
       }
-  },
-
-  "controllers": {
-      "oess": {"ip": ["190.103.184.130", "190.103.184.132", "190.103.184.134"]},
-      "fsfw": {"ip": ["190.103.184.131", "190.103.184.133", "190.103.184.135"]},
-      "nsi": {"ip": "190.103.187.4"}
   }
-
 }
