@@ -7,109 +7,24 @@
 
 
 from libs.core.singleton import Singleton
-from libs.tcpiplib.packet import LLDP
-from libs.core.topo_reader import TopoReader
-from pyof.foundation.basic_types import BinaryData
-from libs.openflow.of10.process_data import dissect_data
 from libs.core.debugging import debugclass
-
-
-#
-#
-# D_ADDR = None
-# DEST_PORT = None
-# NET = {}
-# dpid_dict = {}
-#
-#
-# def load_names_file(device_names):
-#     default = 'docs/devices_list.json'
-#     pfile = default if device_names == 0 else device_names
-#
-#     try:
-#         with open(pfile) as jfile:
-#             json_content = json.loads(jfile.read())
-#     except Exception as error:
-#         print("Error %s Opening file %s" % (error, pfile))
-#         return
-#
-#     global dpid_dict
-#     dpid_dict = json_content
-#
-#
-# def insert_ip_port(dest_ip, dest_port):
-#     """
-#         Once the TCP/IP packet is dissected and a OpenFlow message type 13
-#            (PacketOut) is seen, save both destination IP and TCP port
-#         Args:
-#             dest_ip: destination IP address
-#             dest_port: destination TCP port
-#     """
-#     global D_ADDR
-#     global DEST_PORT
-#     D_ADDR = dest_ip
-#     DEST_PORT = dest_port
-#
-#
-# def clean_dpid(lldp):
-#     try:
-#         dpid = lldp.c_id.split(':')[1]
-#     except IndexError:
-#         dpid = lldp.c_id
-#     return dpid
-#
-#
-# def datapath_id(a):
-#     """
-#         Convert OpenFlow Datapath ID to human format
-#     """
-#     string = "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x"
-#     dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
-#                      ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
-#     return dpid
-#
-#
-# def save_dpid(lldp):
-#     """
-#         Get the DPID from the LLDP.c_id
-#         Args:
-#             lldp: LLDP class
-#     """
-#     global NET
-#
-#     ip = D_ADDR
-#     port = DEST_PORT
-#     if isinstance(lldp, LLDP):
-#         dpid = clean_dpid(lldp)
-#     else:
-#         dpid = datapath_id(lldp)
-#
-#     sw_name = get_name_dpid(dpid)
-#     NET[ip, port] = sw_name
-#
-#
-# def get_name_dpid(dpid):
-#     sw_name = dpid_dict.get(dpid)
-#     if sw_name is not None:
-#         return sw_name
-#     return 'OFswitch'
-#
-#
-# def get_ip_name(ip, port):
-#     for i, j in NET.items():
-#         if i == (ip, port):
-#             return '%s(%s)' % (ip, j)
-#     return ip
+from libs.core.topo_reader import TopoReader
+from libs.tcpiplib.packet import LLDP
+from libs.tcpiplib.process_data import is_protocol
+from libs.gen.dpid_handling import clear_dpid
 
 
 @debugclass
 class OFProxy(metaclass=Singleton):
     """
-
+        This app is used to help identifying switches when openflow
+        proxies are in the middle, such as flowvisor and fsfw. It is
+        not possible to deactivate it.
     """
     def __init__(self):
         self.dpid_dict = dict()  # dpid to alias dict
         self.proxy_db = dict()  # [ip, port] to alias dict
+        self.active = False
         self.load_topology_dpids()
 
     def load_topology_dpids(self):
@@ -118,9 +33,15 @@ class OFProxy(metaclass=Singleton):
             topology.
         """
         topo = TopoReader().get_topology()
-        for switch in topo['switches']:
-            for dpid in topo['switches'][switch]['dpids']:
-                self.add_dpid(dpid, TopoReader().get_datapath_name(dpid))
+
+        try:
+            for switch in topo['switches']:
+                for dpid in topo['switches'][switch]['dpids']:
+                    self.add_dpid(dpid, TopoReader().get_datapath_name(dpid))
+            self.active = True
+        except KeyError:
+            pass
+
 
     def add_dpid(self, dpid, name):
         """
@@ -134,96 +55,66 @@ class OFProxy(metaclass=Singleton):
 
     def get_datapath_name(self, dpid):
         """
+            Get the switch name using dpid
 
-        :param dpid:
-        :return:
+            Args:
+                dpid: datapath_id
+            Returns:
+                name: datapath name
         """
         return self.dpid_dict[dpid]
 
-    def add_dpid_to_proxy_db(self, ip, port, dpid):
+    def add_dpid_to_proxy_db(self, ip_addr, port, dpid):
         """
+            Receives the IP, TCP port and DPID and save them to the
+            proxy_db. IP and TCP port are the indexes.
 
-        :param ip:
-        :param port:
-        :param dpid:
-        :return:
+            Args:
+                ip_addr: IP address
+                port: TCP port
+                dpid: switch datapath id
         """
-        dpid = self.clean_dpid(dpid)
-        self.proxy_db[ip, port] = self.get_datapath_name(dpid)
-
-    def clean_dpid(self, dpid):
-        """
-
-        :param dpid:
-        :return:
-        """
-
-        if len(dpid.split(":")) == 2:
-            return dpid.split(":")[1]
-
-        elif len(dpid.split(":")) > 2:
-            return dpid.replace(":", "")
-        return dpid
+        dpid = clear_dpid(dpid)
+        self.proxy_db[ip_addr, port] = self.get_datapath_name(dpid)
 
     def process_packet(self, pkt):
         """
             Go through all OFMessages in Pkt.
-            IF FeaturesReply or PacketOut...
-        :param pkt:
-        :return:
+            IF FeaturesReply or PacketOut, get the DPID
+
+            pkt: packet class
         """
+
+        if not self.active:
+            return
+
         for msg in pkt.ofmsgs:
             if msg.ofp.header.message_type.value == 6:
-                ip = pkt.l3.s_addr
+                ip_addr = pkt.l3.s_addr
                 port = pkt.l4.source_port
-                self.add_dpid_to_proxy_db(ip, port, msg.ofp.datapath_id)
+                self.add_dpid_to_proxy_db(ip_addr, port, msg.ofp.datapath_id)
 
             elif msg.ofp.header.message_type.value == 13:
-                ip = pkt.l3.d_addr
+                ip_addr = pkt.l3.d_addr
                 port = pkt.l4.dest_port
-                lldp = self._is_lldp(msg.ofp.data)
+                lldp = is_protocol(msg.ofp.data, lldp=True)
                 if isinstance(lldp, LLDP):
-                    self.add_dpid_to_proxy_db(ip, port, lldp.c_id)
+                    self.add_dpid_to_proxy_db(ip_addr, port, lldp.c_id)
 
-    @staticmethod
-    def _is_lldp(data):
+    def get_name(self, ip_addr, port):
         """
-            Check if Data is LLDP
+            Method used by the tcpiplib printing to associate
+            ip:port to a switch name
+
             Args:
-                data: PacketOut data
-            Returns:
-                LLDP class if it is an LLDP payload
-                False if it is not
+                ip_addr: IP address
+                port: TCP port
+                dpid: switch datapath id
         """
+        if not self.active:
+            return ip_addr
 
-        if isinstance(data, BinaryData):
-            data = dissect_data(data)
-
-        try:
-            eth = data.pop(0)
-            next_protocol = eth.protocol
-
-            if next_protocol in [33024]:
-                vlan = data.pop(0)
-                next_protocol = vlan.protocol
-
-            if next_protocol in [35020]:
-                return data.pop(0)
-
-            return False
-
-        except Exception as error:
-            print(error)
-            return False
-
-    def get_name(self, ip, port):
-        """
-
-        :param ip:
-        :param port:
-        :return:
-        """
         for ip_port, name in self.proxy_db.items():
-            if ip_port == (ip, port):
-                return '%s(%s)' % (ip, name)
-        return ip
+            if ip_port == (ip_addr, port):
+                return '%s(%s)' % (ip_addr, name)
+        return ip_addr
