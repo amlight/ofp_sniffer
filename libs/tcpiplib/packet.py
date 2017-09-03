@@ -29,8 +29,9 @@ class L1:
 
     @staticmethod
     def set_time(date):
-        date = datetime.fromtimestamp(date[0])
-        date = date.strftime('%Y-%m-%d %H:%M:%S')
+        date = date[0] + date[1] / 100000
+        date = datetime.fromtimestamp(date)
+        date = date.strftime('%Y-%m-%d %H:%M:%S.%f')
         return date
 
 
@@ -96,7 +97,7 @@ class TCP:
         self.dest_port = None
         self.sequence = None
         self.acknowledgement = None
-        self.length = 20  # minimun length.
+        self.length = 20  # minimum length.
         self.flag_cwr = None
         self.flag_ece = None
         self.flag_urg = None
