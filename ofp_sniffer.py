@@ -5,7 +5,7 @@
 
     Current version: 0.4
 
-    Author: Jeronimo Bezerra <jab@amlight.net>
+    Author: AmLight Dev Team <dev@amlight.net>
 """
 import time
 import sys
@@ -75,7 +75,7 @@ class RunSniffer(object):
         exit_code = 0
 
         # Debug:
-        #self.cap.loop(-1, self.process_packet)
+        # self.cap.loop(-1, self.process_packet)
         try:
             self.cap.loop(-1, self.process_packet)
 
