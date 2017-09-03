@@ -6,8 +6,8 @@
 
 import json
 import time
-from _thread import start_new_thread as new_thread
 from datetime import datetime
+from _thread import start_new_thread as new_thread
 from apps.rest import CreateRest
 from libs.core.singleton import Singleton
 
@@ -74,14 +74,14 @@ class OFStats(metaclass=Singleton):
     # REST Methods
     def get_start_time(self):
         """
-
+            Just return when the ofp_sniffer started
         """
         msg = {'start_time': self.start_time}
         return self.to_json(msg)
 
     def get_counter(self):
         """
-
+            Get counters via REST
         """
         msg = dict()
         msg['current_time'] = self.get_time()
@@ -91,7 +91,7 @@ class OFStats(metaclass=Singleton):
 
     def get_last_msgs(self):
         """
-
+            Get the last messages seen
         """
         return self.to_json(self.last_msgs.items)
 
@@ -139,7 +139,8 @@ class CircularList(object):
         """
 
         if self._num_items < self.LIMIT - 1:
-            self._queue[self._num_items] = {'time': str(datetime.now()), 'type': msg.header.message_type}
+            self._queue[self._num_items] = {'time': str(datetime.now()),
+                                            'type': msg.header.message_type}
             self._num_items += 1
         elif self._num_items == self.LIMIT - 1:
             self._queue[self._num_items] = msg
