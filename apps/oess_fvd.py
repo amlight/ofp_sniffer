@@ -30,7 +30,7 @@ class OessFvdTracer:
     def starting():
         print('OESS Forwarding Verification Monitoring')
 
-    def process_fv_packet(self, pkt):
+    def process_packet(self, pkt):
         """
             Method called by ofp_sniffer to process the IP+OF packet
             We are only interested in Packet_Ins because these are

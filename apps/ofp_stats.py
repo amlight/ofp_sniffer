@@ -97,7 +97,7 @@ class OFStats(metaclass=Singleton):
 
     # Main Methods
 
-    def compute_packet(self, pkt):
+    def process_packet(self, pkt):
         """
             Method called by ofp_sniffer.py to process the OF message
         """
