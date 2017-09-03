@@ -2,7 +2,6 @@
     Class Packet: used to process EACH IP packet. Each IP packet
         might have multiple OpenFlow messages (class OFMessage)
 """
-import libs.gen.proxies
 import libs.tcpiplib.packet
 import libs.tcpiplib.prints
 from libs.core.debugging import debugclass
@@ -21,7 +20,8 @@ class Packet:
             Instantiate this class
             Args:
                 packet: the whole captured packet from NIC or pcap file
-                ctr: position of this packet in the packet capture
+                packet_number: position of this packet in the packet capture
+                header: packet header
         """
         # Raw packet
         self.packet = packet
@@ -107,10 +107,9 @@ class Packet:
             Process the content, using cur_msg position of the array of msgs
         """
         try:
-            if isinstance(ofmsg, libs.gen.ofmessage.OFMessage):
+            if isinstance(ofmsg, OFMessage):
                 if not isinstance(ofmsg.ofp, int):
                     self.ofmsgs.insert(self.cur_msg, ofmsg)
-                    self.proxy_support(self.ofmsgs[self.cur_msg].ofp)
 
             else:
                 raise TypeError
@@ -141,20 +140,3 @@ class Packet:
         """
         of_h = get_openflow_header(self.packet, self.offset)
         return of_h['length']
-
-    def proxy_support(self, msg):
-        """
-            Support for proxies
-            PacketOut will be used to collect DPID, but at this moment
-            just save DEST IP and DEST TCP port
-        """
-        # TODO: fix it
-        if int(msg.header.message_type) is 6:
-            ip, port = self.l3.s_addr, self.l4.source_port
-            dpid = msg.datapath_id
-
-        # elif int(msg.header.message_type) is 13:
-        #     ip, port = self.l3.d_addr, self.l4.dest_port
-        #     dpid =
-        #
-        # OFProxy().insert_ip_port(ip, port, dpid)

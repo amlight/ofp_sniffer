@@ -6,7 +6,6 @@
 
 from pyof.v0x01.common.utils import unpack_message
 import libs.core.filters
-import libs.gen.proxies
 import libs.tcpiplib.packet
 import libs.tcpiplib.prints
 from libs.core.debugging import debugclass
@@ -31,7 +30,7 @@ class OFMessage(object):
             self.ofp = unpack_message(this_packet)
         except:
             # if there is a problem with the python-openflow
-            # just set the self.ofp to 0. It will be ignore
+            # just set the self.ofp to 0. It will be ignored
             # by the Packet().add_of_msg_to_list
             self.ofp = 0
 
