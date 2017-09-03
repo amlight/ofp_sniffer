@@ -331,6 +331,7 @@ def print_ofpt_flow_mod(msg):
     print_ofp_match(msg.match)
     print_ofp_body(msg)
     print_actions(msg.actions)
+    # Print OVS is deactivated for now
     # print_ofp_ovs(msg)
 
 
@@ -1034,13 +1035,3 @@ def _parse_phy_curr(values):
 #     else:
 #         ovs_msg_del = 'ovs-ofctl %s tcp:%s:%s %s '
 #         print(ovs_msg_del % (ovs_command, switch_ip, switch_port, matches))
-
-
-# def print_packetInOut_layer2(of_xid, eth):
-#     print('%s' % of_xid, end='')
-#     libs.tcpiplib.prints.print_layer2(eth)
-#
-#
-# def print_packetInOut_vlan(of_xid, vlan):
-#     print('%s Ethernet:' % of_xid, end='')
-#     libs.tcpiplib.prints.print_vlan(vlan)
