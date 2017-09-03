@@ -7,6 +7,7 @@
 
     Author: Jeronimo Bezerra <jab@amlight.net>
 """
+import time
 import sys
 from libs.core.printing import PrintingOptions
 import libs.core.cli
@@ -16,7 +17,6 @@ from libs.core.sanitizer import Sanitizer
 from libs.gen.packet import Packet
 from libs.gen.proxies import OFProxy
 from libs.core.topo_reader import TopoReader
-from pyof.foundation.exceptions import UnpackException
 
 
 class RunSniffer(object):
@@ -71,9 +71,12 @@ class RunSniffer(object):
         try:
             self.cap.loop(-1, self.process_packet)
 
-            # Temporary while testing
-            import time
-            time.sleep(200)
+            if 'statistics' in self.load_apps:
+                # If OFP_Stats is running, set a timer
+                # before closing the app. Useful in cases
+                # where the ofp_sniffer is reading from a
+                # pcap file instead of real time.
+                time.sleep(200)
 
         except KeyboardInterrupt:
             exit_code = 1
@@ -108,12 +111,13 @@ class RunSniffer(object):
                     # Apps go here:
                     if isinstance(self.oft, OessFvdTracer):
                         # FVD_Tracer does not print the packets
-                        self.oft.process_packet(pkt)
-                    else:
-                        if isinstance(self.stats, OFStats):
-                            # OFStats print the packets
-                            self.stats.compute_packet(pkt)
+                        self.oft.process_fv_packet(pkt)
 
+                    if isinstance(self.stats, OFStats):
+                        # OFStats print the packets
+                        self.stats.compute_packet(pkt)
+
+                    if not isinstance(self.oft, OessFvdTracer):
                         # Print Packets
                         pkt.print_packet()
 
