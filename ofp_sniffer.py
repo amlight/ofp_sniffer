@@ -1,177 +1,171 @@
 #!/usr/bin/env python
 
-'''
-    This code acts as an OpenFlow troubleshoot toolkit: it acts as a sniffer,
-    a topology validator and as an OpenFlow message checker, to make sure the
-    ONF standards are being followed.
+"""
+    This code is the AmLight OpenFlow Sniffer
 
-    Despite of ONF standards, this code also supports OpenVSwitch/NICIRA
-    OpenFlow type.
+    Current version: 0.4
 
-    More info on how to use it: www.sdn.amlight.net
-
-    Current version: 0.2
-
-    Author: Jeronimo Bezerra <jab@amlight.net>
-
-'''
-
-import datetime
-import pcapy
+    Author: AmLight Dev Team <dev@amlight.net>
+"""
+import time
 import sys
-from ofp_prints_v10 import print_headers, print_openflow_header
-from ofp_parser_v10 import process_ofp_type
-from ofp_tcpip_parser import get_ethernet_frame, get_ip_packet, \
-    get_tcp_stream, get_openflow_header
-import ofp_cli
-import ofp_dissector_v10
-import ofp_fsfw_v10
+from libs.core.printing import PrintingOptions
+from libs.core.sanitizer import Sanitizer
+from libs.core.topo_reader import TopoReader
+from libs.core.cli import get_params
+from libs.gen.packet import Packet
+from apps.oess_fvd import OessFvdTracer
+from apps.ofp_stats import OFStats
+from apps.ofp_proxies import OFProxy
 
 
-def main(argv):
-    '''
-        This is the main function
-    '''
-    print_options, infilter, sanitizer, dev, capfile = ofp_cli.get_params(argv)
-    try:
-        if len(capfile) > 0:
-            print "Using file %s " % capfile
-            cap = pcapy.open_offline(capfile)
-        else:
-            print "Sniffing device %s" % dev
-            cap = pcapy.open_live(dev, 65536, 1, 0)
+class RunSniffer(object):
+    """
+        The RunSniffer class is the main class for the OpenFlow Sniffer.
+        This class instantiate all auxiliary classes, captures the packets,
+        instantiate new OpenFlow messages and triggers all applications.
+    """
+    def __init__(self):
+        self.printing_options = PrintingOptions()
+        self.sanitizer = Sanitizer()
+        self.oft = None
+        self.stats = None
+        self.cap = None
+        self.packet_number = None
+        self.load_apps = []
+        self.packet_count = 1
+        self.topo_reader = TopoReader()
+        self.ofp_proxy = None
+        self.load_config()
 
-        main_filter = " port 6633 "
-        cap.setfilter(main_filter + infilter)
+    def load_config(self):
+        """
+            Parses the parameters received and instantiates the
+            apps requested.
+        """
+        # Get CLI params and call the pcapy loop
+        self.cap, self.packet_number, \
+            self.load_apps, sanitizer, topo_file = get_params(sys.argv)
+        self.sanitizer.process_filters(sanitizer)
 
-        # start sniffing packets
-        while(1):
-            (header, packet) = cap.next()
-            parse_packet(packet, datetime.datetime.now(),
-                         header.getlen(), header.getcaplen(),
-                         print_options, sanitizer)
-    except KeyboardInterrupt:
-        print ofp_fsfw_v10.close()
-        print 'Exiting...'
-        sys.exit(0)
-    except Exception as exception:
-        print exception
-        return
+        # Load TopologyReader
+        self.topo_reader.readfile(topo_file)
+
+        # Start Apps
+        if 'oess_fvd' in self.load_apps:
+            self.oft = OessFvdTracer()
+
+        if 'statistics' in self.load_apps:
+            self.stats = OFStats()
+
+        # Load Proxy
+        self.ofp_proxy = OFProxy()
+
+    def run(self):
+        """
+            cap.loop continuously capture packets w/ pcapy. For every
+            captured packet, self.process_packet method is called.
+
+            Exits:
+                0 - Normal, reached end of file
+                1 - Normal, user requested with CRTL + C
+                2 - Error
+                3 - Interface or file not found
+        """
+        exit_code = 0
+
+        # Debug:
+        # self.cap.loop(-1, self.process_packet)
+        try:
+            self.cap.loop(-1, self.process_packet)
+
+            if 'statistics' in self.load_apps:
+                # If OFP_Stats is running, set a timer
+                # before closing the app. Useful in cases
+                # where the ofp_sniffer is reading from a
+                # pcap file instead of real time.
+                time.sleep(200)
+
+        except KeyboardInterrupt:
+            exit_code = 1
+
+        except Exception as exception:
+            print('Error on packet %s: %s ' % (self.packet_count, exception))
+            exit_code = 2
+
+        finally:
+            print('Exiting...')
+            sys.exit(exit_code)
+
+    def process_packet(self, header, packet):
+        """
+            Every packet captured by cap.loop is then processed here.
+            If packets are bigger than 62 Bytes, we process them.
+            If it is 0, means there are no more packets. If it is
+            something in between, it is a fragment, we ignore for now.
+
+            Args:
+                header: header of the captured packet
+                packet: packet captured from file or interface
+        """
+        if len(packet) >= 62 and self.packet_number_defined():
+
+            # DEBUG:
+            # print("Packet Number: %s" % self.packet_count)
+            pkt = Packet(packet, self.packet_count, header)
+
+            if pkt.is_openflow_packet:
+                valid_result = pkt.process_openflow_messages()
+                if valid_result:
+
+                    # Apps go here:
+                    if isinstance(self.oft, OessFvdTracer):
+                        # FVD_Tracer does not print the packets
+                        self.oft.process_packet(pkt)
+
+                    if isinstance(self.ofp_proxy, OFProxy):
+                        # OFP_PROXY associates IP:PORT to DPID
+                        self.ofp_proxy.process_packet(pkt)
+
+                    if isinstance(self.stats, OFStats):
+                        # OFStats print the packets
+                        self.stats.process_packet(pkt)
+
+                    if not isinstance(self.oft, OessFvdTracer):
+                        # Print Packets
+                        pkt.print_packet()
+
+            del pkt
+
+        elif len(packet) is 0:
+            sys.exit(0)
+
+        self.packet_count += 1
+
+    def packet_number_defined(self):
+        """
+            In case user wants to see a specific packet inside a
+            specific pcap file, provide file name with the specific
+            packet number
+                -r file.pcap:packet_number
+            Returns:
+                True if packet_count matches
+                False: if packet_count does not match
+        """
+        if self.packet_number > 0:
+            return True if self.packet_count == self.packet_number else False
+
+        return True
 
 
-def sanitizer_filters(of_header, date, getlen, caplen, header_size,
-                      eth, ip, tcp, sanitizer):
-    '''
-        If -F was provided, use filters specified
-    '''
-    if (of_header['version'] == -1):
-        print ('h_size : %s - caplen: %s ' % (header_size, caplen))
-        print_headers(1, date, getlen, caplen, eth, ip, tcp)
-        print 'OpenFlow header not complete. Ignoring packet.'
-        return 0
+def main():
+    """
+        Main function.
+        Instantiates RunSniffer and run it
+    """
+    sniffer = RunSniffer()
+    sniffer.run()
 
-    # OF Versions supported through json file (-F)
-    name_version = ofp_dissector_v10.get_ofp_version(of_header['version'])
-    supported_versions = []
-    for version in sanitizer['allowed_of_versions']:
-        supported_versions.append(version)
-    if name_version not in supported_versions:
-        return 0
-
-    # OF Types to be ignored through json file (-F)
-    rejected_types = sanitizer['allowed_of_versions'][name_version]
-    if of_header['type'] in rejected_types['rejected_of_types']:
-        return 0
-
-    return 1
-
-
-def parse_packet(packet, date, getlen, caplen, print_options, sanitizer):
-    '''
-        This functions gets the raw packet and dissassembly it.
-        Only TCP + OpenFlow are analysed. Others are discarted
-    '''
-    eth = get_ethernet_frame(packet)
-
-    # If protocol is no IP(8) returns
-    if (eth['protocol'] != 8):
-        return
-
-    ip = get_ip_packet(packet, eth['length'])
-
-    # If protocol is not TCP, returns
-    if (ip['protocol'] != 6):
-        return
-
-    header_size = ip['length'] + eth['length']
-    tcp = get_tcp_stream(packet, header_size)
-
-    # If TCP flag is not PUSH, return
-    if (tcp['flag_psh'] != 8):
-        return
-
-    # Now let's process all OpenFlow packets in the payload
-    header_size = header_size + tcp['length']
-    remaining_bytes = caplen - header_size
-
-    print_header_once = 0
-    start = header_size
-
-    # If there is less than 8 bytes, it is because it is fragment.
-    # There is no support for fragmented packet at this time
-    while (remaining_bytes >= 8):
-        of_header = get_openflow_header(packet, start)
-
-        # If -F was passed...
-        if len(sanitizer['allowed_of_versions']) != 0:
-            result = sanitizer_filters(of_header, date, getlen, caplen,
-                                       header_size, eth, ip, tcp, sanitizer)
-            if result == 0:
-                return
-
-        # In case there are multiple flow_mods
-        remaining_bytes = remaining_bytes - of_header['length']
-
-        # Starts printing
-        if print_header_once == 0:
-            print_headers(print_options, date, getlen, caplen, eth, ip, tcp)
-            print_header_once = 1
-
-        # Prints the OpenFlow header, it doesn't matter the OF version
-        print_openflow_header(of_header)
-
-        print_options['device_ip'] = ip['d_addr']
-        print_options['device_port'] = tcp['dest_port']
-
-        # If OpenFlow version is 1.0
-        if of_header['version'] == int('1', 16):
-            # Process and Print OF body
-            # OF_Header lenght = 8
-            start = start + 8
-            this_packet = packet[start:start+of_header['length'] - 8]
-            if not process_ofp_type(of_header['type'], this_packet, 0,
-                                    of_header['xid'], print_options, sanitizer):
-                print ('%s OpenFlow OFP_Type %s not dissected \n' %
-                       (of_header['xid'], of_header['type']))
-                return
-            else:
-                # Get next packet
-                start = start + (of_header['length'] - 8)
-        # If OpenFlow version is 1.3
-        elif of_header['version'] == int('4', 16):
-            print 'Coming soon...'
-            return
-        else:
-            print 'OpenFlow version %s not supported \n' % of_header['version']
-            return
-
-        # Do not process extra data from Hello and Error.
-        # Maybe in the future.
-        if (of_header['type'] == 0 or of_header['type'] == 1):
-            print
-            return
-
-        print
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

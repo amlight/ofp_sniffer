@@ -1,0 +1,48 @@
+{
+  "switches": {
+      "sw1": {
+          "aliases": ["sw1", "switch01"],
+          "dpids": ["1", "0000000000000001"],
+          "ports": {
+              "eth1": {"alias": "eth1", "ofport_no": 1, "snmp_no:": 1, "type": "link", "speed": "10G"},
+              "eth2": {"alias": "eth2", "ofport_no": 2, "snmp_no:": 2, "type": "link", "speed": "10G"},
+              "eth3": {"alias": "eth3", "ofport_no": 3, "snmp_no:": 3, "type": "link", "speed": "10G"}
+          }
+      },
+      "sw2": {
+          "aliases": ["sw2", "switch02"],
+          "dpids": ["2", "0000000000000002"],
+          "ports": {
+              "eth1": {"alias": "eth1", "ofport_no": 1, "snmp_no:": 1, "type": "link", "speed": "10G"},
+              "eth2": {"alias": "eth2", "ofport_no": 2, "snmp_no:": 2, "type": "link", "speed": "10G"},
+              "eth3": {"alias": "eth3", "ofport_no": 3, "snmp_no:": 3, "type": "link", "speed": "10G"}
+          }
+      },
+      "sw3": {
+          "aliases": ["sw3", "switch03"],
+          "dpids": ["3", "0000000000000003"],
+          "ports": {
+              "eth1": {"alias": "eth1", "ofport_no": 1, "snmp_no:": 1, "type": "link", "speed": "10G"},
+              "eth2": {"alias": "eth2", "ofport_no": 2, "snmp_no:": 2, "type": "link", "speed": "10G"},
+              "eth3": {"alias": "eth3", "ofport_no": 3, "snmp_no:": 3, "type": "link", "speed": "10G"}
+          }
+      }
+  },
+
+  "links": {
+      "link1": {
+          "aliases": ["link1"],
+          "datapath_a": "sw1",
+          "port_a": "eth1",
+          "datapath_z": "sw2",
+          "port_z": "eth1"
+      },
+      "link2": {
+          "aliases": ["link2"],
+          "datapath_a": "sw2",
+          "port_a": "eth2",
+          "datapath_z": "sw3",
+          "port_z": "eth1"
+      }
+  }
+}
