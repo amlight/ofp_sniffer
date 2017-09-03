@@ -11,9 +11,9 @@ import time
 import sys
 from libs.core.printing import PrintingOptions
 from libs.core.sanitizer import Sanitizer
-from libs.gen.packet import Packet
 from libs.core.topo_reader import TopoReader
 from libs.core.cli import get_params
+from libs.gen.packet import Packet
 from apps.oess_fvd import OessFvdTracer
 from apps.ofp_stats import OFStats
 from apps.ofp_proxies import OFProxy
@@ -65,6 +65,7 @@ class RunSniffer(object):
         """
             cap.loop continuously capture packets w/ pcapy. For every
             captured packet, self.process_packet method is called.
+
             Exits:
                 0 - Normal, reached end of file
                 1 - Normal, user requested with CRTL + C
@@ -73,9 +74,10 @@ class RunSniffer(object):
         """
         exit_code = 0
 
-        self.cap.loop(-1, self.process_packet)
+        # Debug:
+        #self.cap.loop(-1, self.process_packet)
         try:
-            # self.cap.loop(-1, self.process_packet)
+            self.cap.loop(-1, self.process_packet)
 
             if 'statistics' in self.load_apps:
                 # If OFP_Stats is running, set a timer
@@ -101,6 +103,7 @@ class RunSniffer(object):
             If packets are bigger than 62 Bytes, we process them.
             If it is 0, means there are no more packets. If it is
             something in between, it is a fragment, we ignore for now.
+
             Args:
                 header: header of the captured packet
                 packet: packet captured from file or interface
@@ -155,6 +158,14 @@ class RunSniffer(object):
         return True
 
 
-if __name__ == "__main__":
+def main():
+    """
+        Main function.
+        Instantiates RunSniffer and run it
+    """
     sniffer = RunSniffer()
     sniffer.run()
+
+
+if __name__ == "__main__":
+    main()
