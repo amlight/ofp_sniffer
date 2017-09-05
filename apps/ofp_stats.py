@@ -10,6 +10,7 @@ from datetime import datetime
 from _thread import start_new_thread as new_thread
 from apps.rest import CreateRest
 from libs.core.singleton import Singleton
+from pyof.foundation.basic_types import BinaryData
 
 
 class OFStats(metaclass=Singleton):
@@ -95,8 +96,7 @@ class OFStats(metaclass=Singleton):
         """
         return self.to_json(self.last_msgs.items)
 
-    # Main Methods
-
+    # Main Method
     def process_packet(self, pkt):
         """
             Method called by ofp_sniffer.py to process the OF message
@@ -112,7 +112,7 @@ class OFStats(metaclass=Singleton):
             except KeyError:
                 self.type_packets[version][message_type] = 1
 
-            self.last_msgs.add(of_msg.ofp)
+            self.last_msgs.add(pkt.l1.time, of_msg.ofp)
 
 
 class CircularList(object):
@@ -123,8 +123,7 @@ class CircularList(object):
     LIMIT = 500
 
     def __init__(self):
-        self._queue = dict()
-        self._num_items = 0
+        self._queue = list()
 
     @property
     def items(self):
@@ -133,15 +132,44 @@ class CircularList(object):
         """
         return self._queue
 
-    def add(self, msg):
+    def add(self, timestamp, msg):
         """
             Add an OF message to the CircularList
         """
+        if len(self._queue) == self.LIMIT:
+            self._queue.pop(0)
 
-        if self._num_items < self.LIMIT - 1:
-            self._queue[self._num_items] = {'time': str(datetime.now()),
-                                            'type': msg.header.message_type}
-            self._num_items += 1
-        elif self._num_items == self.LIMIT - 1:
-            self._queue[self._num_items] = msg
-            self._num_items = 0
+        self._queue.append({'time': str(timestamp), 'msg': convert_class(msg)})
+
+    def __len__(self):
+        """
+            Return number of elements on the queue
+        """
+        return len(self._queue)
+
+
+def convert_class(cls):
+    """
+
+    :param cls:
+    :return:
+    """
+    my_dict = dict()
+    if hasattr(cls, 'value'):
+        if isinstance(cls, BinaryData):
+            return "BinaryData"
+        return cls.value
+
+    elif hasattr(cls, '__class__') or isinstance(cls, list):
+
+        if isinstance(cls, list) and len(cls) > 0:
+            cls = cls[0]  # TODO: consider more than one action
+                          # Packet 25 of ../pcaps/of10-2.pcap (FlowMod with multiple actions)
+
+        cvars = vars(cls)
+        for var in cvars:
+            if not var.startswith('_'):
+                subcls = getattr(cls, var)
+                my_dict[var] = convert_class(subcls)
+
+    return my_dict
