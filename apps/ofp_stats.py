@@ -8,9 +8,11 @@ import json
 import time
 from datetime import datetime
 from _thread import start_new_thread as new_thread
+from pyof.foundation.basic_types import BinaryData
+from pyof.v0x01.common.header import Type as Type10
+from pyof.v0x04.common.header import Type as Type13
 from apps.rest import CreateRest
 from libs.core.singleton import Singleton
-from pyof.foundation.basic_types import BinaryData
 
 
 class OFStats(metaclass=Singleton):
@@ -32,7 +34,12 @@ class OFStats(metaclass=Singleton):
         """
         types = dict()
         types['1'] = dict()
+        for of_type in Type10:
+            types['1'][of_type.name] = 0
         types['4'] = dict()
+        for of_type in Type13:
+            types['4'][of_type.name] = 0
+
         return types
 
     @staticmethod
