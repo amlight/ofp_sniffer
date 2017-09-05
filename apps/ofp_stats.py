@@ -150,9 +150,29 @@ class CircularList(object):
 
 def convert_class(cls):
     """
+        This function is used to convert a python-openflow message
+        to a dictionary that can be serialized later. This is used
+        to send data via REST.
 
-    :param cls:
-    :return:
+        This funcion works in a recursive way. So far, each
+        python-openflow message can have three main types:
+
+        value: it is a class that has an attribute "value" meaning
+            it is 'terminal'
+        list: it is a list of classes
+        class: it is another class but it does not have a value
+
+        For value, it returns the attribute
+        For list, it circulates the list, going through each class,
+            returning a list of classes
+        For class, it uses vars to identify all attributes and calls
+            the convert_class in a recursive way, until reaching
+            its value
+
+        Args:
+            cls: class to be converted to dict
+        Returns:
+            value, a list or a dict
     """
     my_dict = dict()
     if hasattr(cls, 'value'):
@@ -163,13 +183,24 @@ def convert_class(cls):
     elif hasattr(cls, '__class__') or isinstance(cls, list):
 
         if isinstance(cls, list) and len(cls) > 0:
-            cls = cls[0]  # TODO: consider more than one action
-                          # Packet 25 of ../pcaps/of10-2.pcap (FlowMod with multiple actions)
+            new_list = list()
+            for cl in cls:
+                my_dict2 = dict()
+                cvars = vars(cl)
+                for var in cvars:
+                    if not var.startswith('_'):
+                        subcls = getattr(cl, var)
+                        my_dict2[var] = convert_class(subcls)
+                new_list.append(my_dict2)
+                del my_dict2
 
-        cvars = vars(cls)
-        for var in cvars:
-            if not var.startswith('_'):
-                subcls = getattr(cls, var)
-                my_dict[var] = convert_class(subcls)
+            return new_list
+
+        else:
+            cvars = vars(cls)
+            for var in cvars:
+                if not var.startswith('_'):
+                    subcls = getattr(cls, var)
+                    my_dict[var] = convert_class(subcls)
 
     return my_dict
