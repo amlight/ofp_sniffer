@@ -178,6 +178,8 @@ def convert_class(cls):
     if hasattr(cls, 'value'):
         if isinstance(cls, BinaryData):
             return "BinaryData"
+        elif cls.value is None:
+            return '0' * cls._length
         return cls.value
 
     elif hasattr(cls, '__class__') or isinstance(cls, list):
