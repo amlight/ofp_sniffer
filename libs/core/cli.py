@@ -34,7 +34,7 @@ def usage(filename, msg=None):
            '\t -F filters_file.json or --filters-file=filters.json\n'
            '\t -i interface or --interface=interface. Default: eth0\n'
            '\t -r captured.pcap or --src-file=captured.pcap\n'
-           '\t -P topology.json or --topology-file=topology.json\n'
+           '\t -T topology.json or --topology-file=topology.json\n'
            '\t -o or --print-ovs : print using ovs-ofctl format\n'
            '\t -h or --help : prints this guidance\n'
            '\t -c or --no-colors: removes colors\n'
