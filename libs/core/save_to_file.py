@@ -80,8 +80,15 @@ class RotateFile(metaclass=Singleton):
         """
         time = self.get_current_time()
         filename = "%s-%s" % (self.filename, time)
-        log = open(filename, "a")
-        return log
+
+        try:
+            log = open(filename, "a")
+            return log
+        except FileNotFoundError as err:
+            print('Error to create log file: '
+                  'Non-Existing Folder or Access Denied')
+            print(err)
+            sys.exit(1)
 
     def rotate_file(self):
         """
