@@ -33,7 +33,7 @@ class RunSniffer(object):
         self.stats = None
         self.cap = None
         self.packet_number = None
-        self.load_apps = []
+        self.load_apps = dict()
         self.packet_count = 1
         self.topo_reader = TopoReader()
         self.save_to_file = None
@@ -61,7 +61,7 @@ class RunSniffer(object):
         self.ofp_proxy = OFProxy()
 
         if 'oess_fvd' in self.load_apps:
-            self.oft = OessFvdTracer()
+            self.oft = OessFvdTracer(self.load_apps['oess_fvd'])
 
         if 'statistics' in self.load_apps:
             self.stats = OFStats()

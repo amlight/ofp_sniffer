@@ -7,26 +7,30 @@
 """
 
 from datetime import datetime, timedelta
+from libs.core.debugging import debugclass
 from libs.core.topo_reader import TopoReader
-from libs.tcpiplib.process_data import is_protocol
+from libs.tcpiplib.process_data import get_protocol
 
 
 OFP_PACKET_IN = 10
 OFP_PACKET_OUT = 13
-WARN = 8
-CRITICAL = 30
 
 
+@debugclass
 class OessFvdTracer:
     """
         OessFvdTracer is an app to evaluate the OESS FVD app.
     """
 
-    def __init__(self):
+    WARN = 10
+    CRITICAL = 30
+
+    def __init__(self, options):
         self.links = dict()
         self.layout = '%-20s %-14s %-30s %-30s %s'
         self.starting()
         self.last_printed = None
+        self.get_params(options)
 
     @staticmethod
     def starting():
@@ -34,6 +38,13 @@ class OessFvdTracer:
             Just print the app name
         """
         print('OESS Forwarding Verification Monitoring')
+
+    def get_params(self, options):
+        """
+            Process params provided via CLI
+        """
+        self.WARN = int(options.split(":")[0])
+        self.CRITICAL = int(options.split(":")[1])
 
     def process_packet(self, pkt):
         """
@@ -48,7 +59,7 @@ class OessFvdTracer:
         """
         for msg in pkt.ofmsgs:
             if msg.ofp.header.message_type in [OFP_PACKET_IN]:
-                fvd = is_protocol(msg.ofp.data, oess=True)
+                fvd = get_protocol(msg.ofp.data, oess=True)
                 if fvd is not False:
                     self.add_link(fvd, pkt.l1.time)
 
@@ -111,11 +122,14 @@ class OessFvdTracer:
                                                   link['port'], option="Full")
         source_dpid = TopoReader().get_datapath_name(dpid)
 
-        if timedelta(seconds=CRITICAL) > link['diff'] > timedelta(seconds=WARN):
+        if link['diff'] < timedelta(seconds=0):
+            print("Time Difference is < 0. Adjust NTP of the OF controller")
+
+        elif timedelta(seconds=self.CRITICAL) > link['diff'] >= timedelta(seconds=self.WARN):
             link['diff'] = str(link['diff']) + '  <-- Warning!'
             alert = True
 
-        elif link['diff'] > timedelta(seconds=CRITICAL):
+        elif link['diff'] >= timedelta(seconds=self.CRITICAL):
             link['diff'] = str(link['diff']) + '  <-- Critical!'
             alert = True
 

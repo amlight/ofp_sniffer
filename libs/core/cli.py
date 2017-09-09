@@ -39,7 +39,7 @@ def usage(filename, msg=None):
            '\t -h or --help : prints this help\n'
            '\t -c or --no-colors: removes colors\n'
            '\t -v or --version : prints version\n'
-           '\t -O or --oess-fvd: monitor OESS FVD status\n'
+           '\t -O WARN:CRIT or --oess-fvd=WARN:CRIT: monitor OESS FVD status\n'
            '\t -S or --enable-statistics: creates statistics') % filename)
 
     sys.exit(0)
@@ -101,10 +101,10 @@ def read_params(argv):
         Return:
             opts: getopt object
     """
-    letters = 'f:F:i:r:T:w:pohvcOSq'
+    letters = 'f:F:i:r:T:w:O:pohvcSq'
     keywords = ['pcap-filter=', 'filters-file=', 'interface=',
                 'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'topology-file=', 'oess-fvd', 'enable-statistics',
+                'topology-file=', 'oess-fvd=', 'enable-statistics',
                 'no-output', 'save-to-file']
 
     try:
@@ -130,7 +130,7 @@ def get_params(argv):
     input_filter, filters_file, dev, captured_file = '', '', 'eth0', ''
     save_file = ''
     topology_file = "./docs/topology.json"
-    load_apps = []
+    load_apps = dict()
 
     opts = read_params(argv)
 
@@ -154,9 +154,9 @@ def get_params(argv):
         elif option in ['-q', '--no-output']:
             PrintingOptions().set_no_print()
         elif option in ['-O', '--oess-fvd']:
-            load_apps.append('oess_fvd')
+            load_apps['oess_fvd'] = param
         elif option in ['-S', '--enable-statistics']:
-            load_apps.append('statistics')
+            load_apps['statistics'] = 0
         elif option in ['-w', '--save-to-file']:
             save_file = param
         elif option in ['-v', '--version']:
