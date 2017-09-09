@@ -75,15 +75,15 @@ class RunSniffer(object):
         exit_code = 0
 
         # Debug:
-        # self.cap.loop(-1, self.process_packet)
+        #self.cap.loop(-1, self.process_packet)
         try:
             self.cap.loop(-1, self.process_packet)
 
             if 'statistics' in self.load_apps:
-                # If OFP_Stats is running, set a timer
-                # before closing the app. Useful in cases
-                # where the ofp_sniffer is reading from a
-                # pcap file instead of real time.
+                #  If OFP_Stats is running, set a timer
+                #  before closing the app. Useful in cases
+                #  where the ofp_sniffer is reading from a
+                #  pcap file instead of real time.
                 time.sleep(200)
 
         except KeyboardInterrupt:
