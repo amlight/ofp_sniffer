@@ -5,14 +5,14 @@
 
 
 import json
-import time
 from datetime import datetime
 from _thread import start_new_thread as new_thread
 from pyof.foundation.basic_types import BinaryData
 from pyof.v0x01.common.header import Type as Type10
 from pyof.v0x04.common.header import Type as Type13
-from apps.rest import CreateRest
 from libs.core.singleton import Singleton
+from apps.rest import CreateRest
+from apps.ofp_proxies import OFProxy
 
 
 class OFStats(metaclass=Singleton):
@@ -24,21 +24,27 @@ class OFStats(metaclass=Singleton):
         self.start_time = str(datetime.now())
         self.last_msgs = CircularList()
         self.num_packets = 0
-        self.type_packets = self.init_type_packets()
+        self.packet_types = self.init_type_packets()
+        self.per_dev_packet_types = dict()
         new_thread(self._run_rest, tuple())
 
     @staticmethod
-    def init_type_packets():
+    def init_type_packets(version=None):
         """
             Initialize all dictionaries
         """
+        definitions = {'1': Type10, '4': Type13}
         types = dict()
-        types['1'] = dict()
-        for of_type in Type10:
-            types['1'][of_type.name] = 0
-        types['4'] = dict()
-        for of_type in Type13:
-            types['4'][of_type.name] = 0
+
+        if version is None:
+            for version in definitions:
+                types[version] = dict()
+        else:
+            types[version] = dict()
+
+        for version in types:
+            for of_type in definitions[version]:
+                types[version][of_type.name] = 0
 
         return types
 
@@ -64,21 +70,6 @@ class OFStats(metaclass=Singleton):
         result['result'] = msg
         return json.dumps(result)
 
-    @staticmethod
-    def get_unix_time():
-        """
-            Returns datetime.now() in unixstamp format.
-        """
-        date = datetime.now()
-        return time.mktime(date.timetuple())
-
-    @staticmethod
-    def get_time():
-        """
-            Returns datetime.now() in string format.
-        """
-        return str(datetime.now())
-
     # REST Methods
     def get_start_time(self):
         """
@@ -92,9 +83,8 @@ class OFStats(metaclass=Singleton):
             Get counters via REST
         """
         msg = dict()
-        msg['current_time'] = self.get_time()
-        msg['total_packets'] = self.num_packets
-        msg['per_types'] = self.type_packets
+        msg['total'] = self.num_packets
+        msg['per_types'] = self.packet_types
         return self.to_json(msg)
 
     def get_last_msgs(self):
@@ -102,6 +92,45 @@ class OFStats(metaclass=Singleton):
             Get the last messages seen
         """
         return self.to_json(self.last_msgs.items)
+
+    def get_packet_types_dpid(self, dpid):
+        """
+            Get counters per dpid
+
+            Args:
+                dpid to be searched
+        """
+        if dpid in self.per_dev_packet_types:
+            return self.to_json(self.per_dev_packet_types[dpid])
+        else:
+            return self.to_json({"error": "dpid %s not found" % dpid})
+
+    def process_per_dev_packet_types(self, pkt, ofp):
+        """
+            Creates counter per dpid
+
+            Args:
+                pkt: Packet class
+                ofp: OFMessage.ofp attribute (OpenFlow message)
+        """
+        dpid = OFProxy().get_dpid(pkt.l3.s_addr, pkt.l4.source_port)
+        if isinstance(dpid, bool):
+            dpid = OFProxy().get_dpid(pkt.l3.d_addr, pkt.l4.dest_port)
+            if isinstance(dpid, bool):
+                return
+
+        version = str(ofp.header.version.value)
+        if dpid not in self.per_dev_packet_types:
+            self.per_dev_packet_types[dpid] = self.init_type_packets(version)
+            self.per_dev_packet_types[dpid]['total'] = 0
+
+        message_type = str(ofp.header.message_type)
+        message_type = message_type.split('.')[1]
+        try:
+            self.per_dev_packet_types[dpid][version][message_type] += 1
+        except KeyError:
+            self.per_dev_packet_types[dpid][version][message_type] = 1
+        self.per_dev_packet_types[dpid]['total'] += 1
 
     # Main Method
     def process_packet(self, pkt):
@@ -111,15 +140,20 @@ class OFStats(metaclass=Singleton):
         self.num_packets += 1
 
         for of_msg in pkt.ofmsgs:
+            # Supporting /ofp_stats/packet_totals
             version = str(of_msg.ofp.header.version.value)
             message_type = str(of_msg.ofp.header.message_type)
             message_type = message_type.split('.')[1]
             try:
-                self.type_packets[version][message_type] += 1
+                self.packet_types[version][message_type] += 1
             except KeyError:
-                self.type_packets[version][message_type] = 1
+                self.packet_types[version][message_type] = 1
 
+            # Supporting /ofp_stats/last_msgs
             self.last_msgs.add(pkt.l1.time, of_msg.ofp)
+
+            # Support /ofp_stats/packet_totals/<string:dpid>
+            self.process_per_dev_packet_types(pkt, of_msg.ofp)
 
 
 class CircularList(object):

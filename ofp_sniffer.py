@@ -52,14 +52,14 @@ class RunSniffer(object):
         self.topo_reader.readfile(topo_file)
 
         # Start Apps
+        self.ofp_proxy = OFProxy()
+
         if 'oess_fvd' in self.load_apps:
             self.oft = OessFvdTracer()
 
         if 'statistics' in self.load_apps:
             self.stats = OFStats()
 
-        # Load Proxy
-        self.ofp_proxy = OFProxy()
 
     def run(self):
         """
