@@ -26,6 +26,7 @@ class OFStats(metaclass=Singleton):
         self.num_packets = 0
         self.packet_types = self.init_type_packets()
         self.per_dev_packet_types = dict()
+        self.num_reconnects = 0
         new_thread(self._run_rest, tuple())
 
     @staticmethod
@@ -89,6 +90,7 @@ class OFStats(metaclass=Singleton):
         msg = dict()
         msg['total'] = self.num_packets
         msg['per_types'] = self.packet_types
+        msg['tcp_reconnects'] = self.num_reconnects
         return self.to_json(msg)
 
     def get_last_msgs(self):
@@ -161,6 +163,10 @@ class OFStats(metaclass=Singleton):
         """
             Method called by ofp_sniffer.py to process the OF message
         """
+        if pkt.reconnect_error:
+            self.num_reconnects += 1
+            return
+
         self.num_packets += 1
 
         for of_msg in pkt.ofmsgs:
