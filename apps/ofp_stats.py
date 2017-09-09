@@ -57,15 +57,19 @@ class OFStats(metaclass=Singleton):
         CreateRest()
 
     @staticmethod
-    def to_json(msg):
+    def to_json(msg, integer=False):
         """
             Convert dictionaries to JSON to export
             via REST
             Args:
                 msg: message to be converted
+                integer: if int result is desired
             Returns:
                 json.dumps
         """
+        if integer:
+            return json.dumps(msg)
+
         result = dict()
         result['result'] = msg
         return json.dumps(result)
@@ -105,6 +109,26 @@ class OFStats(metaclass=Singleton):
         else:
             return self.to_json({"error": "dpid %s not found" % dpid})
 
+    def get_counter_per_type(self, dpid, mtype):
+        """
+            Get counters per dpid per type
+
+            Args:
+                dpid to be searched
+                mtype to be searched
+            Returns:
+                the number of packets accounted
+        """
+        if dpid in self.per_dev_packet_types:
+            for version in self.per_dev_packet_types[dpid]:
+                return self.to_json(
+                    self.per_dev_packet_types[dpid][version][mtype],
+                    integer=True
+                )
+        else:
+            return self.to_json({"error": "dpid %s not found" % dpid})
+
+    # Processing methods
     def process_per_dev_packet_types(self, pkt, ofp):
         """
             Creates counter per dpid
