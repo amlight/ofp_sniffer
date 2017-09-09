@@ -4,6 +4,7 @@
 """
 from flask import Flask
 import apps.ofp_stats
+from libs.core.topo_reader import TopoReader
 
 
 app = Flask(__name__)
@@ -38,6 +39,11 @@ class CreateRest(object):
     @app.route("/ofp_sniffer/ofp_stats/last_msgs")
     def last_msgs():
         return apps.ofp_stats.OFStats().get_last_msgs()
+
+    @staticmethod
+    @app.route("/ofp_sniffer/topology")
+    def get_topology():
+        return TopoReader().get_json_topology()
 
     @staticmethod
     def run():

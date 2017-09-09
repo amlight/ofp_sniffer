@@ -151,6 +151,15 @@ class TopoReader(metaclass=Singleton):
         """
         return self._topology
 
+    def get_json_topology(self):
+        """
+            Used by REST API
+        :return:
+        """
+        result = dict()
+        result['result'] = self._topology
+        return json.dumps(result)
+
     def readfile(self, topo_file):
         """
 
