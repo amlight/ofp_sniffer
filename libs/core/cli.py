@@ -9,7 +9,7 @@ import pcapy
 from libs.core.printing import PrintingOptions
 
 
-VERSION = '0.4'
+VERSION = '1.1'
 # Change variable below to activate debugging
 DEBUGGING = False
 
@@ -27,16 +27,16 @@ def usage(filename, msg=None):
 
     print(('Usage: \n %s [-p min|full] [-f pcap_filter] [-F filter_file]'
            ' [-i dev] [-r pcap_file]\n'
-           '\t -p : print full headers'
-           ' packet headers. Default: min\n'
+           '\t -p : print all TCP/IP headers. Default: min\n'
            '\t -f pcap_filter or --pcap-filter=pcap_filter: add a libpcap'
            ' filter\n'
            '\t -F filters_file.json or --filters-file=filters.json\n'
            '\t -i interface or --interface=interface. Default: eth0\n'
            '\t -r captured.pcap or --src-file=captured.pcap\n'
            '\t -T topology.json or --topology-file=topology.json\n'
+           '\t -w file or --save-to-file=file: save output to file provided'
            '\t -o or --print-ovs : print using ovs-ofctl format\n'
-           '\t -h or --help : prints this guidance\n'
+           '\t -h or --help : prints this help\n'
            '\t -c or --no-colors: removes colors\n'
            '\t -v or --version : prints version\n'
            '\t -O or --oess-fvd: monitor OESS FVD status\n'
@@ -101,10 +101,11 @@ def read_params(argv):
         Return:
             opts: getopt object
     """
-    letters = 'f:F:i:r:T:pohvcOSq'
+    letters = 'f:F:i:r:T:w:pohvcOSq'
     keywords = ['pcap-filter=', 'filters-file=', 'interface=',
                 'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'topology-file=', 'oess-fvd', 'enable-statistics', 'no-output']
+                'topology-file=', 'oess-fvd', 'enable-statistics',
+                'no-output', 'save-to-file']
 
     try:
         opts, _ = getopt.getopt(argv[1:], letters, keywords)
@@ -127,6 +128,7 @@ def get_params(argv):
     """
     # Default Values
     input_filter, filters_file, dev, captured_file = '', '', 'eth0', ''
+    save_file = ''
     topology_file = "./docs/topology.json"
     load_apps = []
 
@@ -134,7 +136,7 @@ def get_params(argv):
 
     for option, param in opts:
         if option in ['-p']:
-            PrintingOptions().min = False
+            PrintingOptions().set_full_headers()
         elif option in ['-f', '--pcap-filter']:
             input_filter = param
         elif option in ['-F', '--filters-file']:
@@ -144,17 +146,19 @@ def get_params(argv):
         elif option in ['-r', '--captured-file']:
             captured_file = param
         elif option in ['-o', '--print-ovs']:
-            PrintingOptions().print_ovs = True
+            PrintingOptions().set_print_ovs()
         elif option in ['-T', '--topology-file']:
             topology_file = param
         elif option in ['-c', '--no-colors']:
-            PrintingOptions().colors = False
+            PrintingOptions().set_no_color()
         elif option in ['-q', '--no-output']:
             PrintingOptions().set_no_print()
         elif option in ['-O', '--oess-fvd']:
             load_apps.append('oess_fvd')
         elif option in ['-S', '--enable-statistics']:
             load_apps.append('statistics')
+        elif option in ['-w', '--save-to-file']:
+            save_file = param
         elif option in ['-v', '--version']:
             print('OpenFlow Sniffer version %s' % VERSION)
             sys.exit(0)
@@ -163,4 +167,4 @@ def get_params(argv):
 
     cap, position = start_capture(captured_file, input_filter, dev)
 
-    return cap, position, load_apps, filters_file, topology_file
+    return cap, position, load_apps, filters_file, topology_file, save_file

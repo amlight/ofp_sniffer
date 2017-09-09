@@ -23,11 +23,11 @@ def filter_msg(msg):
         True: Filter it (don't print)
     """
 
-    if PrintingOptions().quiet:
+    if PrintingOptions().is_quiet():
         # Don't print anything. Used in conjunction with some apps.
         return True
 
-    if PrintingOptions().filters is 0:
+    if not PrintingOptions().has_filters():
         # User hasn't selected CLI option -F
         return False
 

@@ -58,6 +58,6 @@ class Sanitizer(metaclass=Singleton):
             return
         configs = self.read_file(filters_file)
         if len(configs) != 0:
-            PrintingOptions().filters = 1
+            PrintingOptions().set_filtering()
             self.allowed_of_versions = configs['allowed_of_versions']
             self.filters = configs['filters']

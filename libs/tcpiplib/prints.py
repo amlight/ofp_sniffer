@@ -63,7 +63,7 @@ def print_headers(pkt, overwrite_min=0):
         pkt: OFMessage class
         overwrite_min: in case of problems, overwrite user definition
     """
-    if PrintingOptions().min == 1 and overwrite_min == 0:
+    if PrintingOptions().is_minimal_headers() and overwrite_min == 0:
         print_minimal(pkt.position, pkt.l1.time, pkt.l1.caplen, pkt.l3,
                       pkt.l4)
     else:

@@ -13,6 +13,7 @@ from libs.core.printing import PrintingOptions
 from libs.core.sanitizer import Sanitizer
 from libs.core.topo_reader import TopoReader
 from libs.core.cli import get_params
+from libs.core.save_to_file import save_to_file
 from libs.gen.packet import Packet
 from apps.oess_fvd import OessFvdTracer
 from apps.ofp_stats import OFStats
@@ -35,6 +36,7 @@ class RunSniffer(object):
         self.load_apps = []
         self.packet_count = 1
         self.topo_reader = TopoReader()
+        self.save_to_file = None
         self.ofp_proxy = None
         self.load_config()
 
@@ -45,11 +47,15 @@ class RunSniffer(object):
         """
         # Get CLI params and call the pcapy loop
         self.cap, self.packet_number, \
-            self.load_apps, sanitizer, topo_file = get_params(sys.argv)
+            self.load_apps, sanitizer, \
+            topo_file, is_to_save = get_params(sys.argv)
         self.sanitizer.process_filters(sanitizer)
 
         # Load TopologyReader
         self.topo_reader.readfile(topo_file)
+
+        # Save to File
+        self.save_to_file = save_to_file(is_to_save)
 
         # Start Apps
         self.ofp_proxy = OFProxy()
