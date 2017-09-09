@@ -25,6 +25,16 @@ class CreateRest(object):
         return apps.ofp_stats.OFStats().get_counter()
 
     @staticmethod
+    @app.route("/ofp_sniffer/ofp_stats/packet_totals/<string:dpid>")
+    def per_dev_packet_types(dpid):
+        return apps.ofp_stats.OFStats().get_packet_types_dpid(dpid)
+
+    @staticmethod
+    @app.route("/ofp_sniffer/ofp_stats/counter_type/<string:dpid>/<string:mtype>")
+    def per_dev_per_type_counter(dpid, mtype):
+        return apps.ofp_stats.OFStats().get_counter_per_type(dpid, mtype)
+
+    @staticmethod
     @app.route("/ofp_sniffer/ofp_stats/last_msgs")
     def last_msgs():
         return apps.ofp_stats.OFStats().get_last_msgs()

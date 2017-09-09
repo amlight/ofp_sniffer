@@ -23,6 +23,7 @@ class OFProxy(metaclass=Singleton):
     """
     def __init__(self):
         self.dpid_dict = dict()  # dpid to alias dict
+        self.reverse_dpid_dict = dict()  # alias to dict
         self.proxy_db = dict()  # [ip, port] to alias dict
         self.active = False
         self.load_topology_dpids()
@@ -42,7 +43,6 @@ class OFProxy(metaclass=Singleton):
         except KeyError:
             pass
 
-
     def add_dpid(self, dpid, name):
         """
             Add dpid found in the topology to a dict
@@ -52,6 +52,7 @@ class OFProxy(metaclass=Singleton):
                 name: datapath name
         """
         self.dpid_dict[dpid] = name
+        self.reverse_dpid_dict[name] = dpid
 
     def get_datapath_name(self, dpid):
         """
@@ -112,7 +113,6 @@ class OFProxy(metaclass=Singleton):
             Args:
                 ip_addr: IP address
                 port: TCP port
-                dpid: switch datapath id
         """
         if not self.active:
             return ip_addr
@@ -121,3 +121,21 @@ class OFProxy(metaclass=Singleton):
             if ip_port == (ip_addr, port):
                 return '%s(%s)' % (ip_addr, name)
         return ip_addr
+
+    def get_dpid(self, ip_addr, port):
+        """
+            Method used by OFP_Stats to get dpid from
+            ip and port
+
+            Args:
+                ip_addr: IP address
+                port: TCP port
+        """
+        if not self.active:
+            return False
+
+        for ip_port, name in self.proxy_db.items():
+            if ip_port == (ip_addr, port):
+                return self.reverse_dpid_dict[name]
+
+        return False

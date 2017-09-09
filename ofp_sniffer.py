@@ -52,14 +52,13 @@ class RunSniffer(object):
         self.topo_reader.readfile(topo_file)
 
         # Start Apps
+        self.ofp_proxy = OFProxy()
+
         if 'oess_fvd' in self.load_apps:
             self.oft = OessFvdTracer()
 
         if 'statistics' in self.load_apps:
             self.stats = OFStats()
-
-        # Load Proxy
-        self.ofp_proxy = OFProxy()
 
     def run(self):
         """
@@ -74,16 +73,16 @@ class RunSniffer(object):
         """
         exit_code = 0
 
-        # Debug:
-        # self.cap.loop(-1, self.process_packet)
+        #  Debug:
+        #  self.cap.loop(-1, self.process_packet)
         try:
             self.cap.loop(-1, self.process_packet)
 
             if 'statistics' in self.load_apps:
-                # If OFP_Stats is running, set a timer
-                # before closing the app. Useful in cases
-                # where the ofp_sniffer is reading from a
-                # pcap file instead of real time.
+                #  If OFP_Stats is running, set a timer
+                #  before closing the app. Useful in cases
+                #  where the ofp_sniffer is reading from a
+                #  pcap file instead of a NIC.
                 time.sleep(200)
 
         except KeyboardInterrupt:
