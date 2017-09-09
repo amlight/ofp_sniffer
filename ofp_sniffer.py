@@ -60,7 +60,6 @@ class RunSniffer(object):
         if 'statistics' in self.load_apps:
             self.stats = OFStats()
 
-
     def run(self):
         """
             cap.loop continuously capture packets w/ pcapy. For every
@@ -74,8 +73,8 @@ class RunSniffer(object):
         """
         exit_code = 0
 
-        # Debug:
-        #self.cap.loop(-1, self.process_packet)
+        #  Debug:
+        #  self.cap.loop(-1, self.process_packet)
         try:
             self.cap.loop(-1, self.process_packet)
 
@@ -83,7 +82,7 @@ class RunSniffer(object):
                 #  If OFP_Stats is running, set a timer
                 #  before closing the app. Useful in cases
                 #  where the ofp_sniffer is reading from a
-                #  pcap file instead of real time.
+                #  pcap file instead of a NIC.
                 time.sleep(200)
 
         except KeyboardInterrupt:
