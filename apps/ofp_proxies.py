@@ -65,8 +65,8 @@ class OFProxy(metaclass=Singleton):
         """
         try:
             return self.dpid_dict[dpid]
-        except:
-            return 'DPID_' + str(dpid)
+        except KeyError:
+            return dpid
 
     def add_dpid_to_proxy_db(self, ip_addr, port, dpid):
         """
@@ -136,6 +136,9 @@ class OFProxy(metaclass=Singleton):
 
         for ip_port, name in self.proxy_db.items():
             if ip_port == (ip_addr, port):
-                return self.reverse_dpid_dict[name]
+                try:
+                    return self.reverse_dpid_dict[name]
+                except KeyError:
+                    return False
 
         return False

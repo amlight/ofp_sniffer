@@ -140,6 +140,7 @@ class OFStats(metaclass=Singleton):
                 ofp: OFMessage.ofp attribute (OpenFlow message)
         """
         dpid = OFProxy().get_dpid(pkt.l3.s_addr, pkt.l4.source_port)
+
         if isinstance(dpid, bool):
             dpid = OFProxy().get_dpid(pkt.l3.d_addr, pkt.l4.dest_port)
             if isinstance(dpid, bool):
