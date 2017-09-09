@@ -34,14 +34,14 @@ class OFProxy(metaclass=Singleton):
             topology.
         """
         topo = TopoReader().get_topology()
-
-        try:
-            for switch in topo['switches']:
-                for dpid in topo['switches'][switch]['dpids']:
-                    self.add_dpid(dpid, TopoReader().get_datapath_name(dpid))
-            self.active = True
-        except KeyError:
-            pass
+        if topo:
+            try:
+                for switch in topo['switches']:
+                    for dpid in topo['switches'][switch]['dpids']:
+                        self.add_dpid(dpid, TopoReader().get_datapath_name(dpid))
+                self.active = True
+            except KeyError:
+                pass
 
     def add_dpid(self, dpid, name):
         """
