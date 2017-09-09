@@ -113,7 +113,12 @@ class RunSniffer(object):
             # print("Packet Number: %s" % self.packet_count)
             pkt = Packet(packet, self.packet_count, header)
 
-            if pkt.is_openflow_packet:
+            if pkt.reconnect_error:
+                if isinstance(self.stats, OFStats):
+                    # OFStats counts reconnects
+                    self.stats.process_packet(pkt)
+
+            elif pkt.is_openflow_packet:
                 valid_result = pkt.process_openflow_messages()
                 if valid_result:
 

@@ -33,6 +33,7 @@ class Packet:
         self.printed_header = False
         self.this_packet = None
         self.remaining_bytes = None
+        self.reconnect_error = False
 
         # Instantiate TCP/IP headers
         self.l1 = libs.tcpiplib.packet.L1()
@@ -66,6 +67,7 @@ class Packet:
                 if self.l4.flag_psh == TCP_FLAG_PUSH:
                     self.is_openflow_packet = True
                 elif self.l4.flag_fyn and self.l4.flag_ack:
+                    self.reconnect_error = True
                     libs.tcpiplib.prints.print_connection_restablished(self)
 
     def process_openflow_messages(self):
