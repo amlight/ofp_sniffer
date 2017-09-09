@@ -10,7 +10,7 @@ from libs.core.singleton import Singleton
 from libs.core.debugging import debugclass
 from libs.core.topo_reader import TopoReader
 from libs.tcpiplib.packet import LLDP
-from libs.tcpiplib.process_data import is_protocol
+from libs.tcpiplib.process_data import get_protocol
 from libs.gen.dpid_handling import clear_dpid
 
 
@@ -100,7 +100,7 @@ class OFProxy(metaclass=Singleton):
             elif msg.ofp.header.message_type.value == 13:
                 ip_addr = pkt.l3.d_addr
                 port = pkt.l4.dest_port
-                lldp = is_protocol(msg.ofp.data, lldp=True)
+                lldp = get_protocol(msg.ofp.data, lldp=True)
                 if isinstance(lldp, LLDP):
                     self.add_dpid_to_proxy_db(ip_addr, port, lldp.c_id)
 
