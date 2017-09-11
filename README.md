@@ -2,43 +2,38 @@
 OFP_Sniffer is an OpenFlow sniffer to be used for troubleshooting and 
 learning purposes.
 
-Currently on version 1.0, it dissects all OpenFlow 1.0 messages. 
-OpenFlow version 1.3 will be available on version 1.1 (to be released soon).
+Currently on version 1.1, it dissects all OpenFlow 1.0 messages. 
+OpenFlow version 1.3 will be available on version 1.2 (to be released soon).
 
 It works directly on Linux shell and dissects all OpenFlow messages on the 
-wire. Using OFP_Sniffer, you can easily track OpenFlow messages and errors 
-associated (if any), without opening X11 or Wireshark. OFP_Sniffer was 
+wire or from libpcap files. Using OFP_Sniffer, you can easily track OpenFlow messages 
+and errors associated (if any) without opening X11 or Wireshark. OFP_Sniffer was 
 written in Python 3.6 to support the AmLight SDN deployment (www.sdn.amlight.net).
 AmLight SDN uses Internet2 FlowSpace Firewall, OESS and On.Lab ONOS, and these 
 apps were tested and are fully supported.
-
-This tool started to be developed after a conversation with Andrew Ragusa
-(a.k.a. A.J) from Indiana University along the NITRD - Roadmap to Operating 
-SDN-based Networks Workshop hosted by ESNET and Internet2. Thanks A.J. for your
-constant support! (Link to NITRD workshop: 
-https://www.nitrd.gov/nitrdgroups/index.php?title=SDN_Operational_Issues_WS)
 
 As a command line interface tool, it has a few input parameters:
 ```
 # ./ofp_sniffer.py -h
 Usage:
  ./ofp_sniffer.py [-p min|full] [-f pcap_filter] [-F filter_file] [-i dev] [-r pcap_file]
-	 -p : print full headers packet headers. Default: min
+	 -p : print all TCP/IP headers. Default: min
 	 -f pcap_filter or --pcap-filter=pcap_filter: add a libpcap filter
 	 -F filters_file.json or --filters-file=filters.json
 	 -i interface or --interface=interface. Default: eth0
 	 -r captured.pcap or --src-file=captured.pcap
-	 -P topology.json or --topology-file=topology.json
-	 -h or --help : prints this guidance
+	 -T topology.json or --topology-file=topology.json
+	 -w file or --save-to-file=file: save output to file provided
+	 -o or --print-ovs : print using ovs-ofctl format
+	 -h or --help : prints this help
 	 -c or --no-colors: removes colors
 	 -v or --version : prints version
-	 -O or --oess-fvd: monitor OESS FVD status
+	 -O WARN:CRIT or --oess-fvd=WARN:CRIT: monitor OESS FVD status
 	 -S or --enable-statistics: creates statistics
 ```
 
 Starting on version 1.0, apps are supported to handle specific needs, such as track OESS FVD
-messages, or to creates statistics via REST and be integrated to NMSes (f.i., Zabbix). New apps
-are coming soon to discover the network topology and verify link integrity.
+messages or to creates statistics via REST and be integrated to NMSes (f.i., Zabbix). 
 
 More info: https://amlight.net/wp-content/uploads/2015/03/wpeif-2016-ofpsniffer.pdf
 

@@ -41,6 +41,11 @@ class CreateRest(object):
         return apps.ofp_stats.OFStats().get_last_msgs()
 
     @staticmethod
+    @app.route("/ofp_sniffer/ofp_stats/last_msgs/<string:dpid>")
+    def last_msgs_per_dev(dpid):
+        return apps.ofp_stats.OFStats().get_per_dev_last_msgs(dpid)
+
+    @staticmethod
     @app.route("/ofp_sniffer/topology")
     def get_topology():
         return TopoReader().get_json_topology()

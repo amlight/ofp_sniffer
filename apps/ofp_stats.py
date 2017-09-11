@@ -23,6 +23,7 @@ class OFStats(metaclass=Singleton):
     def __init__(self):
         self.start_time = str(datetime.now())
         self.last_msgs = CircularList()
+        self.per_dev_last_msgs = dict()
         self.num_packets = 0
         self.packet_types = self.init_type_packets()
         self.per_dev_packet_types = dict()
@@ -99,6 +100,18 @@ class OFStats(metaclass=Singleton):
         """
         return self.to_json(self.last_msgs.items)
 
+    def get_per_dev_last_msgs(self, dpid):
+        """
+            Get the last messages seen for dpid
+
+            Args:
+                dpid to be searched
+        """
+        if dpid in self.per_dev_last_msgs:
+            return self.to_json(self.per_dev_last_msgs[dpid].items)
+        else:
+            return self.to_json({"error": "dpid %s not found" % dpid})
+
     def get_packet_types_dpid(self, dpid):
         """
             Get counters per dpid
@@ -131,6 +144,26 @@ class OFStats(metaclass=Singleton):
             return self.to_json({"error": "dpid %s not found" % dpid})
 
     # Processing methods
+    def save_last_msgs_per_dev(self, pkt, ofp):
+        """
+            Creates per last messages queue per datapath
+
+            Args:
+                pkt: Packet class
+                ofp: OFMessage.ofp attribute (OpenFlow message)
+        """
+        dpid = OFProxy().get_dpid(pkt.l3.s_addr, pkt.l4.source_port)
+
+        if isinstance(dpid, bool):
+            dpid = OFProxy().get_dpid(pkt.l3.d_addr, pkt.l4.dest_port)
+            if isinstance(dpid, bool):
+                return
+
+        if dpid not in self.per_dev_last_msgs:
+            self.per_dev_last_msgs[dpid] = CircularList()
+
+        self.per_dev_last_msgs[dpid].add(pkt.l1.time, ofp)
+
     def process_per_dev_packet_types(self, pkt, ofp):
         """
             Creates counter per dpid
@@ -183,6 +216,9 @@ class OFStats(metaclass=Singleton):
             # Supporting /ofp_stats/last_msgs
             self.last_msgs.add(pkt.l1.time, of_msg.ofp)
 
+            # Supporting /ofp_stats/last_msgs/<DPID>
+            self.save_last_msgs_per_dev(pkt, of_msg.ofp)
+
             # Support /ofp_stats/packet_totals/<string:dpid>
             self.process_per_dev_packet_types(pkt, of_msg.ofp)
 
@@ -192,7 +228,7 @@ class CircularList(object):
         This class only creates a new type: a CircularList.
         The idea is to export the last LIMIT messages via REST.
     """
-    LIMIT = 500
+    LIMIT = 1000
 
     def __init__(self):
         self._queue = list()
