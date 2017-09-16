@@ -42,7 +42,12 @@ class L1:
         """
         date = date[0] + date[1] / 100000
         date = datetime.fromtimestamp(date)
+        # TODO: move to printing
+        # Old method is 3x faster than stftime
         date = date.strftime('%Y-%m-%d %H:%M:%S.%f')
+        # date = ("%02d-%02d-%02d %02d:%02d:%02d.%06d" %
+        #         (date.year, date.month, date.day, date.hour,
+        #          date.minute, date.second, date.microsecond))
         return date
 
 
