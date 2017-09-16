@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
     This code handles the CLI parameters
 """
@@ -38,9 +41,11 @@ def usage(filename, msg=None):
            '\t -o or --print-ovs : print using ovs-ofctl format\n'
            '\t -h or --help : prints this help\n'
            '\t -c or --no-colors: removes colors\n'
+           '\t -q or --no-output: disables output to std_out\n'
            '\t -v or --version : prints version\n'
            '\t -O WARN:CRIT or --oess-fvd=WARN:CRIT: monitor OESS FVD status\n'
-           '\t -S or --enable-statistics: creates statistics') % filename)
+           '\t -S or --enable-statistics: creates statistics\n'
+           '\t -I or --enable-influx: enables influxdb. Only works if -S is enabled') % filename)
 
     sys.exit(0)
 
@@ -101,10 +106,10 @@ def read_params(argv):
         Return:
             opts: getopt object
     """
-    letters = 'f:F:i:r:T:w:O:pohvcSq'
+    letters = 'f:F:i:r:T:w:O:pohvcSqI'
     keywords = ['pcap-filter=', 'filters-file=', 'interface=',
                 'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
-                'topology-file=', 'oess-fvd=', 'enable-statistics',
+                'topology-file=', 'oess-fvd=', 'enable-statistics', 'enable-influx',
                 'no-output', 'save-to-file']
 
     try:
@@ -157,6 +162,8 @@ def get_params(argv):
             load_apps['oess_fvd'] = param
         elif option in ['-S', '--enable-statistics']:
             load_apps['statistics'] = 0
+        elif option in ['-I', '--enable-influx']:
+            load_apps['influx'] = 0
         elif option in ['-w', '--save-to-file']:
             save_file = param
         elif option in ['-v', '--version']:

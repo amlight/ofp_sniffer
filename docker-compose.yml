@@ -1,0 +1,56 @@
+version: '2'
+services:
+  ofp_sniffer:
+    image: ofp_sniffer:dev
+    command: /bin/bash -c 'python3.6 /opt/ofp_sniffer/ofp_sniffer.py -i lo -S -I'
+    privileged: true
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: ./Dockerfile.ofp_sniffer
+    network_mode: host
+    volumes:
+      - .:/opt/ofp_sniffer
+    environment:
+      PYTHON: /usr/bin/python3.6
+    depends_on:
+      - "influxdb"
+  influxdb:
+    command: influxd -config /etc/influxdb/influxdb.conf
+    network_mode: host
+    image: influxdb:1.3
+    volumes:
+      - ./influxdb.conf:/etc/influxdb/influxdb.conf
+      - /var/lib/influxdb
+      # - /storage/influxdb:/var/lib/influxdb
+    ports:
+      - "8086:8086"
+  grafana:
+    image: grafana/grafana:4.3.0
+    network_mode: host
+    volumes:
+      - /var/lib/grafana
+      # - /storage/grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - "influxdb"
+  kytos:
+    # entrypoint: /usr/bin/python3.6 /usr/local/bin/kytosd -f -w /tmp
+    command: /bin/bash
+    image: kytos/tryfirst:latest
+    privileged: true
+    tty: true
+    stdin_open: true
+    network_mode: host
+    ports:
+      - "6633:6633"
+  mininet:
+    image: amlight/mininet:dev
+    # command: /bin/bash -c 'mn --clean; mn --controller=remote,ip=127.0.0.1,port=6633 --topo=linear,4 --switch=ovsk,protocols=OpenFlow10 --mac'
+    command: /bin/bash
+    privileged: true
+    tty: true
+    stdin_open: true
+    network_mode: host
