@@ -7,9 +7,9 @@
 
 
 import json
-import sys
 from libs.core.singleton import Singleton
 from libs.core.printing import PrintingOptions
+from libs.core.custom_exceptions import *
 
 
 class Sanitizer(metaclass=Singleton):
@@ -37,14 +37,15 @@ class Sanitizer(metaclass=Singleton):
             with open(filters_file) as jfile:
                 json_content = json.loads(jfile.read())
 
-        except Exception as error:
-            msg = 'Error Opening the sanitizer file\n'
-            msg += 'Please check your JSON file. Maybe the permission is wrong'
-            msg += ' or the JSON syntax is incorrect. Try the following:\n'
-            msg += 'cat %s | python -m json.tool'
-            print(msg % filters_file)
-            print("Error seen: %s" % error)
-            sys.exit(0)
+        except JSONDecodeError:
+            msg = 'Error opening the sanitizer file. '
+            msg += 'Please check your JSON filter file.\n'
+            msg += 'Maybe the permission is wrong '
+            msg += 'or the JSON syntax is incorrect. \n'
+            msg += 'Try the following: '
+            msg += 'cat %s | python -m json.tool' % filters_file
+            raise ErrorFilterFile(msg)
+
         return json_content
 
     def process_filters(self, filters_file):
@@ -56,6 +57,7 @@ class Sanitizer(metaclass=Singleton):
         """
         if len(filters_file) == 0:
             return
+
         configs = self.read_file(filters_file)
         if len(configs) != 0:
             PrintingOptions().set_filtering()

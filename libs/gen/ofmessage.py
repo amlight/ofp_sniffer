@@ -8,11 +8,9 @@ from pyof.v0x01.common.utils import unpack_message
 import libs.core.filters
 import libs.tcpiplib.packet
 import libs.tcpiplib.prints
-from libs.core.debugging import debugclass
 from libs.openflow.of10.prints import prints_ofp
 
 
-@debugclass
 class OFMessage(object):
     """
         Used to process all data regarding this OpenFlow message. With
@@ -28,6 +26,7 @@ class OFMessage(object):
         """
         try:
             self.ofp = unpack_message(this_packet)
+
         except:
             # if there is a problem with the python-openflow
             # just set the self.ofp to 0. It will be ignored

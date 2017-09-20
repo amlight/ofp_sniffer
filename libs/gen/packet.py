@@ -4,13 +4,11 @@
 """
 import libs.tcpiplib.packet
 import libs.tcpiplib.prints
-from libs.core.debugging import debugclass
 from libs.gen.ofmessage import OFMessage
 from libs.tcpiplib.packet import IP_PROTOCOL, TCP_PROTOCOL, TCP_FLAG_PUSH
 from libs.tcpiplib.tcpip import get_openflow_header
 
 
-@debugclass
 class Packet:
     """
         Used to save all data about the TCP/IP packet

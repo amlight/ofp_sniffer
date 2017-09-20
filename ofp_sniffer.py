@@ -1,13 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.6
 
 """
     This code is the AmLight OpenFlow Sniffer
 
-    Current version: 0.4
-
     Author: AmLight Dev Team <dev@amlight.net>
 """
-import time
 import sys
 import yaml
 import logging.config
@@ -17,6 +14,7 @@ from libs.core.sanitizer import Sanitizer
 from libs.core.topo_reader import TopoReader
 from libs.core.cli import get_params
 from libs.core.save_to_file import save_to_file
+from libs.core.custom_exceptions import *
 from libs.gen.packet import Packet
 from apps.oess_fvd import OessFvdTracer
 from apps.ofp_stats import OFStats
@@ -30,6 +28,7 @@ class RunSniffer(object):
         This class instantiate all auxiliary classes, captures the packets,
         instantiate new OpenFlow messages and triggers all applications.
     """
+
     def __init__(self):
         self.printing_options = PrintingOptions()
         self.sanitizer = Sanitizer()
@@ -97,7 +96,11 @@ class RunSniffer(object):
                 #  before closing the app. Useful in cases
                 #  where the ofp_sniffer is reading from a
                 #  pcap file instead of a NIC.
-                time.sleep(200)
+                # time.sleep(200)
+                pass
+
+        except EndOfPcapFile:
+            exit_code = 3
 
         except KeyboardInterrupt:
             exit_code = 1
@@ -107,7 +110,7 @@ class RunSniffer(object):
             exit_code = 2
 
         finally:
-            print('Exiting...')
+            print('Exiting with code: %s' % exit_code)
             # gracefully shut down
             if 'influx' in self.load_apps:
                 self.influx.stop_event.set()
@@ -124,7 +127,8 @@ class RunSniffer(object):
                 header: header of the captured packet
                 packet: packet captured from file or interface
         """
-        if len(packet) >= 62 and self.packet_number_defined():
+
+        if len(packet) >= 62:
 
             # DEBUG:
             # print("Packet Number: %s" % self.packet_count)
@@ -160,12 +164,16 @@ class RunSniffer(object):
 
             del pkt
 
+            if self.is_packet_number_defined():
+                # If a specific packet was selected, end here.
+                raise EndOfPcapFile
+
         elif len(packet) is 0:
-            sys.exit(0)
+            return 3
 
         self.packet_count += 1
 
-    def packet_number_defined(self):
+    def is_packet_number_defined(self):
         """
             In case user wants to see a specific packet inside a
             specific pcap file, provide file name with the specific
@@ -175,10 +183,8 @@ class RunSniffer(object):
                 True if packet_count matches
                 False: if packet_count does not match
         """
-        if self.packet_number > 0:
-            return True if self.packet_count == self.packet_number else False
 
-        return True
+        return True if self.packet_count == self.packet_number else False
 
 
 def main():
@@ -188,12 +194,18 @@ def main():
     """
     try:
         logging.config.dictConfig(yaml.load(open('logging.yml', 'r')))
-    except IOError as e:
-        raise e
-    logger = logging.getLogger(__name__)
-    sniffer = RunSniffer()
-    logger.info("OFP_Sniffer started.")
-    sniffer.run()
+        logger = logging.getLogger(__name__)
+        sniffer = RunSniffer()
+        logger.info("OFP_Sniffer started.")
+        sniffer.run()
+
+    except ErrorFilterFile as msg:
+        print(msg)
+        sys.exit(4)
+
+    except FileNotFoundError as msg:
+        print(msg)
+        sys.exit(5)
 
 
 if __name__ == "__main__":
