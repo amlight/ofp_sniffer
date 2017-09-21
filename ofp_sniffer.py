@@ -3,12 +3,12 @@
 """
     This code is the AmLight OpenFlow Sniffer
 
-    Current version: 0.4
-
     Author: AmLight Dev Team <dev@amlight.net>
 """
-import time
 import sys
+import yaml
+import logging.config
+import threading
 from libs.core.printing import PrintingOptions
 from libs.core.sanitizer import Sanitizer
 from libs.core.topo_reader import TopoReader
@@ -19,6 +19,7 @@ from libs.gen.packet import Packet
 from apps.oess_fvd import OessFvdTracer
 from apps.ofp_stats import OFStats
 from apps.ofp_proxies import OFProxy
+from apps.influx_client import InfluxClient
 
 
 class RunSniffer(object):
@@ -33,6 +34,8 @@ class RunSniffer(object):
         self.sanitizer = Sanitizer()
         self.oft = None
         self.stats = None
+        self.influx = None
+        self.trigger_event = threading.Event()
         self.cap = None
         self.packet_number = None
         self.load_apps = dict()
@@ -67,6 +70,8 @@ class RunSniffer(object):
 
         if 'statistics' in self.load_apps:
             self.stats = OFStats()
+            if 'influx' in self.load_apps:
+                self.influx = InfluxClient(trigger_event=self.trigger_event)
 
     def run(self):
         """
@@ -107,6 +112,10 @@ class RunSniffer(object):
                 #pass
 
             print('Exiting with code: %s' % exit_code)
+            # gracefully shut down
+            if 'influx' in self.load_apps:
+                self.influx.stop_event.set()
+            sys.exit(exit_code)
 
     def process_packet(self, header, packet):
         """
@@ -136,7 +145,6 @@ class RunSniffer(object):
                 if isinstance(self.stats, OFStats):
                     # OFStats counts reconnects
                     self.stats.process_packet(pkt)
-
             elif pkt.is_openflow_packet:
                 valid_result = pkt.process_openflow_messages()
                 if valid_result:
@@ -157,6 +165,9 @@ class RunSniffer(object):
                     if not isinstance(self.oft, OessFvdTracer):
                         # Print Packets
                         pkt.print_packet()
+            if self.influx:
+                # tell influx to wake up and update immediately
+                self.trigger_event.set()
 
             del pkt
 
@@ -202,18 +213,19 @@ def main():
         Instantiates RunSniffer and run it
     """
     try:
+        logging.config.dictConfig(yaml.load(open('logging.yml', 'r')))
+        logger = logging.getLogger(__name__)
         sniffer = RunSniffer()
+        logger.info("OFP_Sniffer started.")
+        sniffer.run()
 
     except ErrorFilterFile as msg:
-        print('ErrorFilterFile:', end='')
         print(msg)
         sys.exit(4)
 
     except FileNotFoundError as msg:
         print(msg)
         sys.exit(5)
-
-    sniffer.run()
 
 
 if __name__ == "__main__":
