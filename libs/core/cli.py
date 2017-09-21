@@ -39,6 +39,7 @@ def usage(filename, msg=None):
            '\t -h or --help : prints this help\n'
            '\t -c or --no-colors: removes colors\n'
            '\t -v or --version : prints version\n'
+           '\t -q or --no-output : do not print anything\n'
            '\t -O WARN:CRIT or --oess-fvd=WARN:CRIT: monitor OESS FVD status\n'
            '\t -S or --enable-statistics: creates statistics') % filename)
 
@@ -86,7 +87,10 @@ def start_capture(capfile, infilter, dev):
         sys.exit(3)
 
     if len(infilter) is 0:
-        infilter = " port 6633 "
+        # Super specific filter to overcome the python-pcapy performance issue
+        # reported on https://github.com/CoreSecurity/pcapy/issues/12
+        infilter = "tcp and port 6633 and (tcp[13] & 8!=0 or (tcp[13] & 1!=0 and tcp[13] & 16!=0))"
+
     cap.setfilter(infilter)
 
     return cap, position
