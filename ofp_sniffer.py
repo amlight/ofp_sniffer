@@ -6,9 +6,10 @@
     Author: AmLight Dev Team <dev@amlight.net>
 """
 import sys
-import yaml
 import logging.config
+import time
 import threading
+import yaml
 from libs.core.printing import PrintingOptions
 from libs.core.sanitizer import Sanitizer
 from libs.core.topo_reader import TopoReader
@@ -91,14 +92,6 @@ class RunSniffer(object):
         try:
             self.cap.loop(-1, self.process_packet)
 
-            if 'statistics' in self.load_apps:
-                #  If OFP_Stats is running, set a timer
-                #  before closing the app. Useful in cases
-                #  where the ofp_sniffer is reading from a
-                #  pcap file instead of a NIC.
-                # time.sleep(200)
-                pass
-
         except EndOfPcapFile:
             exit_code = 3
 
@@ -110,6 +103,15 @@ class RunSniffer(object):
             exit_code = 2
 
         finally:
+
+            if 'statistics' in self.load_apps:
+                #  If OFP_Stats is running, set a timer
+                #  before closing the app. Useful in cases
+                #  where the ofp_sniffer is reading from a
+                #  pcap file instead of a NIC.
+                time.sleep(200)
+                # pass
+
             print('Exiting with code: %s' % exit_code)
             # gracefully shut down
             if 'influx' in self.load_apps:
@@ -129,6 +131,12 @@ class RunSniffer(object):
         """
 
         if len(packet) >= 62:
+
+            # Verify if user asked for just one specific packet
+            if self.was_packet_number_defined():
+                if not self.is_the_packet_number_specified():
+                    self.packet_count += 1
+                    return
 
             # DEBUG:
             # print("Packet Number: %s" % self.packet_count)
@@ -164,7 +172,7 @@ class RunSniffer(object):
 
             del pkt
 
-            if self.is_packet_number_defined():
+            if self.is_the_packet_number_specified():
                 # If a specific packet was selected, end here.
                 raise EndOfPcapFile
 
@@ -173,17 +181,30 @@ class RunSniffer(object):
 
         self.packet_count += 1
 
-    def is_packet_number_defined(self):
+    def was_packet_number_defined(self):
         """
             In case user wants to see a specific packet inside a
             specific pcap file, provide file name with the specific
-            packet number
+            packet number after ":"
                 -r file.pcap:packet_number
+            Returns:
+                True if a packet number was specified
+                False: if a packet number was not specified
+        """
+        if self.packet_number != 0:
+            return True
+        return False
+
+    def is_the_packet_number_specified(self):
+        """
+            If user wants to see a specific packet inside a
+            specific pcap file and the packet_count is that
+            number, return True. Otherwise, return false
+
             Returns:
                 True if packet_count matches
                 False: if packet_count does not match
         """
-
         return True if self.packet_count == self.packet_number else False
 
 
