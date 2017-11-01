@@ -2,8 +2,8 @@
 OFP_Sniffer is an OpenFlow sniffer to be used for troubleshooting and 
 learning purposes.
 
-Currently on version 1.1, it dissects all OpenFlow 1.0 messages. 
-OpenFlow version 1.3 will be available on version 1.2 (to be released soon).
+Currently on version 1.2, it dissects all OpenFlow 1.0 messages. 
+OpenFlow version 1.3 will be available on version 1.3 (to be released soon).
 
 It works directly on Linux shell and dissects all OpenFlow messages on the 
 wire or from libpcap files. Using OFP_Sniffer, you can easily track OpenFlow messages 
