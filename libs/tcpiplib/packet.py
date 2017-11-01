@@ -239,7 +239,13 @@ class LLDP:
         chassis_raw = packet[3:3 + length]
         string = '!%ss' % length
         chassis = unpack(string, chassis_raw)
-        self.c_id = chassis[0].decode("utf-8")
+
+        try:
+            # Some OF applications (OESS and ONOS) send the DPID as strings...
+            self.c_id = chassis[0].decode("utf-8")
+        except UnicodeDecodeError:
+            # and some as Hex (Kytos)
+            self.c_id = chassis[0].hex()
 
         start = 3 + length
 
