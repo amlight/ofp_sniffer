@@ -3,7 +3,7 @@
 """
 from hexdump import hexdump
 from pyof.foundation.basic_types import BinaryData
-from pyof.v0x01.common.phy_port import ListOfPhyPorts
+from pyof.foundation.basic_types import FixedTypeList
 from libs.gen.prints import red, green, yellow
 import libs.tcpiplib.tcpip
 import libs.openflow.of10.dissector as dissector
@@ -900,8 +900,7 @@ def print_ofp_phy_port(port):
 
 
 def print_of_ports(ports):
-
-    if type(ports) is not ListOfPhyPorts:
+    if not isinstance(ports, FixedTypeList):
         print_ofp_phy_port(ports)
     else:
         for port in ports:
