@@ -282,13 +282,13 @@ def print_ofpt_flow_removed(msg):
     print_ofp_match(msg.match)
 
     string = ('Body - Cookie: %s Priority: %s Reason: %s Pad: %s\nBody - '
-              'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2/Pad3: %s/%s'
+              'Duration Secs/NSecs: %s/%s Idle Timeout: %s Pad2: %s'
               ' Packet Count: %s Byte Count: %s')
 
     print(string % (msg.cookie, msg.priority, red(msg.reason),
                     msg.pad, msg.duration_sec, msg.duration_nsec,
                     msg.idle_timeout, msg.pad2,
-                    msg.pad3, msg.packet_count, msg.byte_count))
+                    msg.packet_count, msg.byte_count))
 
 
 # ************************* OFPT_PORT_STATUS ********************************
