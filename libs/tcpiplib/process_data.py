@@ -19,7 +19,12 @@ def dissect_data(data, start=0):
     Returns:
         payload: array with all classes
     """
+    if len(data.value) == 0:
+        # No Data
+        return 0
+
     packet = data.value
+
     payload = []
     # Ethernet
     eth = Ethernet()
@@ -163,6 +168,9 @@ def get_protocol(data, lldp=False, oess=False, arp=False):
 
     if isinstance(data, BinaryData):
         data = dissect_data(data)
+
+    if isinstance(data, int):
+        return False
 
     try:
         eth = data.pop(0)

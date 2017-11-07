@@ -237,6 +237,10 @@ def print_data(data):
     if isinstance(data, BinaryData):
         data = dissect_data(data)
 
+    if isinstance(data, int):
+        print("OpenFlow message has no data")
+        return
+
     try:
         eth = data.pop(0)
         libs.tcpiplib.prints.print_layer2(eth)
