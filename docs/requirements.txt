@@ -6,3 +6,4 @@ python-openflow
 flask
 influxdb
 pyaml
+requests

@@ -45,6 +45,7 @@ def usage(filename, msg=None):
            '\t -q or --no-output : do not print anything\n'
            '\t -O WARN:CRIT or --oess-fvd=WARN:CRIT: monitor OESS FVD status\n'
            '\t -S or --enable-statistics: creates statistics\n'
+           '\t -N or --notify-via-slack: send notifications via Slack. Param is channel name\n'
            '\t -I or --enable-influx: enables influxdb. Only works if -S is enabled') % filename)
 
     sys.exit(0)
@@ -109,11 +110,11 @@ def read_params(argv):
         Return:
             opts: getopt object
     """
-    letters = 'f:F:i:r:T:w:O:pohvcSqI'
+    letters = 'f:F:i:r:T:w:O:N:pohvcSqI'
     keywords = ['pcap-filter=', 'filters-file=', 'interface=',
                 'src-file=', 'print-ovs', 'help', 'version', 'no-colors',
                 'topology-file=', 'oess-fvd=', 'enable-statistics', 'enable-influx',
-                'no-output', 'save-to-file']
+                'no-output', 'save-to-file', 'notify-via-slack=']
 
     try:
         opts, _ = getopt.getopt(argv[1:], letters, keywords)
@@ -172,6 +173,8 @@ def get_params(argv):
         elif option in ['-v', '--version']:
             print('OpenFlow Sniffer version %s' % VERSION)
             sys.exit(0)
+        elif option in ['-N', '--notify-via-slack']:
+            load_apps['notifications'] = param
         else:
             usage(argv[0])
 

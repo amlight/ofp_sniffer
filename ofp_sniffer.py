@@ -21,6 +21,7 @@ from apps.oess_fvd import OessFvdTracer
 from apps.ofp_stats import OFStats
 from apps.ofp_proxies import OFProxy
 from apps.influx_client import InfluxClient
+from apps.notifications import Notifications
 
 
 class RunSniffer(object):
@@ -36,6 +37,7 @@ class RunSniffer(object):
         self.oft = None
         self.stats = None
         self.influx = None
+        self.notifications = None
         self.trigger_event = threading.Event()
         self.cap = None
         self.packet_number = None
@@ -74,6 +76,9 @@ class RunSniffer(object):
             if 'influx' in self.load_apps:
                 self.influx = InfluxClient(trigger_event=self.trigger_event)
 
+        if 'notifications' in self.load_apps:
+            self.notifications = Notifications(self.load_apps['notifications'])
+
     def run(self):
         """
             cap.loop continuously capture packets w/ pcapy. For every
@@ -87,8 +92,8 @@ class RunSniffer(object):
         """
         exit_code = 0
 
-        #  Debug:
-        #  self.cap.loop(-1, self.process_packet)
+        # DEBUG:
+        # self.cap.loop(-1, self.process_packet)
         try:
             self.cap.loop(-1, self.process_packet)
 
@@ -129,9 +134,7 @@ class RunSniffer(object):
                 header: header of the captured packet
                 packet: packet captured from file or interface
         """
-
         if len(packet) >= 62:
-
             # Verify if user asked for just one specific packet
             if self.was_packet_number_defined():
                 if not self.is_the_packet_number_specified():
@@ -163,9 +166,14 @@ class RunSniffer(object):
                         # OFStats print the packets
                         self.stats.process_packet(pkt)
 
+                    if isinstance(self.notifications, Notifications):
+                        # Send notifications via Slack
+                        self.notifications.send_msg(pkt)
+
                     if not isinstance(self.oft, OessFvdTracer):
                         # Print Packets
                         pkt.print_packet()
+
             if self.influx:
                 # tell influx to wake up and update immediately
                 self.trigger_event.set()
