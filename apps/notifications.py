@@ -6,7 +6,7 @@
 
 import os
 import requests
-from libs.openflow.of10.dissector import get_port_status_reason, get_ofp_error
+from libs.openflow.of10.dissector import get_ofp_error
 from apps.ofp_proxies import OFProxy
 
 
@@ -20,27 +20,48 @@ class Notifications(object):
 
         Args:
             channel: Slack channel name
-            webhook: URL
         """
         self.channel = channel
         self.webhook = os.environ["SLACK_API_TOKEN"]
         self.req = requests
 
+    @staticmethod
+    def get_port_status(phy):
+        """ Get the ports status (down or up)"
+
+        Args:
+            phy: Phy Class
+        Returns:
+            "up"
+            "down"
+        """
+        if phy.state == 1 and phy.config == 1:
+            return "Down"
+        return "Up"
+
     def get_content(self, pkt):
         """ Extract the content from the OpenFlow message received
 
         Args:
-            msg: OpenFlow message
+            pkt: Packet class
         Return:
             string using format '{"text":CONTENT}'
+            False if not an Port_Status or Error msg
         """
 
         for msg in pkt.ofmsgs:
             if msg.ofp.header.message_type.value == 12:
                 source = OFProxy().get_name(pkt.l3.s_addr, pkt.l4.source_port)
-                reason = get_port_status_reason(msg.ofp.reason.value)
-                txt = "Switch: %s Interface %s Changed. Reason: %s"
-                return txt % (source, msg.ofp.desc.name, reason)
+                if msg.ofp.reason.value == 0:
+                    txt = "Switch: %s Interface %s was Added"
+                    return txt % (source, msg.ofp.desc.name)
+                elif msg.ofp.reason.value == 1:
+                    txt = "Switch: %s Interface %s was Removed"
+                    return txt % (source, msg.ofp.desc.name)
+                elif msg.ofp.reason.value == 2:
+                    status = self.get_port_status(msg.ofp.desc)
+                    txt = "Switch: %s Interface %s is %s"
+                    return txt % (source, msg.ofp.desc.name, status)
 
             elif msg.ofp.header.message_type.value == 1:
                 source = OFProxy().get_name(pkt.l3.s_addr, pkt.l4.source_port)
@@ -48,6 +69,11 @@ class Notifications(object):
                                              msg.ofp.code.value)
                 txt = "Switch: %s Error - Type: %s Code: %s"
                 return txt % (source, etype, ecode)
+
+        if pkt.reconnect_error:
+            source = OFProxy().get_name(pkt.l3.s_addr, pkt.l4.source_port)
+            txt = "TCP reconnection for switch: %s"
+            return txt % source
 
         return False
 
