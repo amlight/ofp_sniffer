@@ -1,9 +1,8 @@
 
-OFP_Sniffer is an OpenFlow sniffer to be used for troubleshooting and 
-learning purposes.
+OFP_Sniffer is an OpenFlow sniffer to be used for troubleshooting and learning purposes.
 
-Currently on version 1.2, it dissects all OpenFlow 1.0 messages. 
-OpenFlow version 1.3 will be available on version 1.3 (to be released soon).
+Currently on version 1.2, it dissects all OpenFlow 1.0 messages, works with InfluxDB, Grafana, and Slack.
+OpenFlow  1.3 will be available on OFP_Sniffer version 1.3 (to be released soon).
 
 It works directly on Linux shell and dissects all OpenFlow messages on the 
 wire or from libpcap files. Using OFP_Sniffer, you can easily track OpenFlow messages 
@@ -29,6 +28,7 @@ Usage:
 	 -c or --no-colors: removes colors
 	 -v or --version : prints version
 	 -O WARN:CRIT or --oess-fvd=WARN:CRIT: monitor OESS FVD status
+	 -N or --notify-via-slack: send notifications via Slack. Param is the Slack channel
 	 -S or --enable-statistics: creates statistics
 ```
 
@@ -42,7 +42,7 @@ More info: https://amlight.net/wp-content/uploads/2015/03/wpeif-2016-ofpsniffer.
 Requires Python 3.6
 git clone https://github.com/amlight/ofp_sniffer.git
 cd ofp_sniffer
-pip3.6 install docs/requirements.txt
+pip3.6 install -r docs/requirements.txt
 sudo ./ofp_sniffer.py
 ```
 ##################### Examples #########################
@@ -197,7 +197,7 @@ The name (andes1) represents a switch called "andes1" with DPID cc4e249126000000
   example is not the same, because a PacketIn message is being used as an example. PacketIn shows the DPID of the 
   neighbors of "andes1". 
 
-I hope this code helps you. This is the first stable version, a few changes are already planned for 1.1. Coming soon!
+I hope this code helps you.
 
 Questions/Suggestions: AmLight Dev Team <dev@amlight.net>
 

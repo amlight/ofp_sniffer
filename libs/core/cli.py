@@ -12,7 +12,7 @@ import pcapy
 from libs.core.printing import PrintingOptions
 
 
-VERSION = '1.1'
+VERSION = '1.2'
 # Change variable below to activate debugging
 DEBUGGING = False
 

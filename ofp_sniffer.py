@@ -149,6 +149,11 @@ class RunSniffer(object):
                 if isinstance(self.stats, OFStats):
                     # OFStats counts reconnects
                     self.stats.process_packet(pkt)
+
+                if isinstance(self.notifications, Notifications):
+                    # Send notifications via Slack
+                    self.notifications.send_msg(pkt)
+
             elif pkt.is_openflow_packet:
                 valid_result = pkt.process_openflow_messages()
                 if valid_result:
