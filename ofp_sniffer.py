@@ -93,7 +93,7 @@ class RunSniffer(object):
         exit_code = 0
 
         # DEBUG:
-        self.cap.loop(-1, self.process_packet)
+        # self.cap.loop(-1, self.process_packet)
         try:
             self.cap.loop(-1, self.process_packet)
 
