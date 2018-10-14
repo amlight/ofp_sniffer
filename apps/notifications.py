@@ -35,7 +35,7 @@ class Notifications(object):
             "up"
             "down"
         """
-        if phy.state == 1 and phy.config == 1:
+        if (phy.state == 1 and phy.config == 1) or (phy.state == 1 and phy.config == 0):
             return "Down"
         return "Up"
 

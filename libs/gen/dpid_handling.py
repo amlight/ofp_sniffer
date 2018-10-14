@@ -22,6 +22,10 @@ def clear_dpid(dpid):
         Returns:
             dpid fixed
 
+        >>> clear_dpid(b'of:11:11:11:11:11:11')
+        '111111111111'
+        >>> clear_dpid("of:11:11:11:11:11:11")
+        '111111111111'
         >>> clear_dpid("dpid:11:11:11:11:11:11")
         '111111111111'
         >>> clear_dpid("dp:11:11:11:11:11:11")
@@ -31,7 +35,10 @@ def clear_dpid(dpid):
         >>> clear_dpid("111111111111")
         '111111111111'
     """
-    dpid_names = ["dpid:", "dp:"]
+    dpid_names = ["dpid:", "dp:", "of"]
+
+    if isinstance(dpid, bytes):
+        dpid = dpid.decode("utf-8")
 
     for dpid_name in dpid_names:
         pos = dpid.find(dpid_name)

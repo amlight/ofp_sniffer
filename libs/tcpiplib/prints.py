@@ -207,6 +207,8 @@ def print_lldp(lldp):
         return
 
     if lldp.c_type is 1:
+        if isinstance(lldp.c_id, bytes):
+            lldp.c_id = lldp.c_id.decode("utf-8")
         print('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' %
               (lldp.c_type, lldp.c_length, lldp.c_subtype, green(lldp.c_id)))
     if lldp.p_type is 2:
