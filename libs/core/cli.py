@@ -94,7 +94,8 @@ def start_capture(capfile, infilter, dev):
     if len(infilter) is 0:
         # Super specific filter to overcome the python-pcapy performance issue
         # reported on https://github.com/CoreSecurity/pcapy/issues/12
-        infilter = "tcp and port 6633 and (tcp[13] & 8!=0 or (tcp[13] & 1!=0 and tcp[13] & 16!=0))"
+        # infilter = "tcp and port 6633 and (tcp[13] & 8!=0 or (tcp[13] & 1!=0 and tcp[13] & 16!=0))"
+        infilter = "port 6633 or port 6634 or port 6653"
 
     cap.setfilter(infilter)
 
