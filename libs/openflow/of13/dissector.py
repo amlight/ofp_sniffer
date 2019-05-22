@@ -41,6 +41,15 @@ def get_ofp_type(of_type):
         return 'UnknownType(%s)' % of_type
 
 
+def get_ofp_hello_elem_type(version):
+    elem_types = {1: 'OFPHET_VERSIONBITMAP(1)'}
+    try:
+        return elem_types[version]
+
+    except KeyError:
+        return 'UnknownType(%s)' % version
+
+
 def get_ofp_error(error_type, code):
     errors_types = dict()
     codes = dict()
@@ -238,6 +247,15 @@ def get_feature_res_capabilities(cap):
         return 'UnknownCapability(%s)' % cap
 
 
+def ofp_table_config(table_config):
+    table_types = {3: 'OFPTC_DEPRECATED_MASK(3)'}
+    try:
+        return table_types[table_config]
+
+    except KeyError:
+        return 'UnknownTableType(%s)' % table_config
+
+
 def get_config_flags(flag):
     flags = {0: 'FRAG_NORMAL(0)',
              1: 'FRAG_DROP(1)',
@@ -252,7 +270,7 @@ def get_config_flags(flag):
 def get_packet_in_reason(reason):
     reasons = {0: 'OFPR_NO_MATCH(0)',
                1: 'OFPR_ACTION(1)',
-               2: 'OFPR_INVALID_TTL'}
+               2: 'OFPR_INVALID_TTL(2)'}
     try:
         return reasons[reason]
     except KeyError:
@@ -280,7 +298,7 @@ def get_port_status_reason(reason):
         return 'UnknownReason(%s)' % reason
 
 
-def get_phy_port_id(p_id):
+def get_phy_port_no(p_no):
     ids = {4294967040: 'OFPP_MAX(OxFFFFFF00)',
            4294967288: 'OFPP_IN_PORT(0xFFFFFFF8)',
            4294967289: 'OFPP_TABLE(0xFFFFFFF9)',
@@ -291,9 +309,32 @@ def get_phy_port_id(p_id):
            4294967294: 'OFPP_LOCAL(0xFFFFFFFE)',
            4294967295: 'OFPP_ANY(0xFFFFFFFF)'}
     try:
-        return ids[p_id]
+        return ids[p_no]
     except KeyError:
-        return '%s' % p_id
+        return '%s' % p_no
+
+
+def get_match_type(match_type):
+    types = {0: 'OFPMT_STANDARD(0)',
+             1: 'OFPMT_OXM(1)'
+             }
+    try:
+        return types[match_type]
+    except KeyError:
+        return 'UnknownReason(%s)' % match_type
+
+
+def get_ofp_oxm_class(oxm_class):
+    classes = {0: 'OFPXMC_NXM_0(0)',
+               1: 'OFPXMC_NXM_1(1)',
+               32768: 'OFPXMC_OPENFLOW_BASIC(0x8000)',
+               65535: 'OFPXMC_EXPERIMENTER(0xFFFF)'
+               }
+
+    try:
+        return classes[oxm_class]
+    except KeyError:
+        return 'UnknownReason(%s)' % oxm_class
 
 
 def get_flow_match_fields(value):
@@ -339,6 +380,7 @@ def get_flow_match_fields(value):
               39: 'IPv6_EXTHDR'}
 
     try:
+        value = int(value)
         return '%s(%s)' % (values[value], value)
     except KeyError:
         return 'UnknownMatchField(%s)' % value
