@@ -234,11 +234,21 @@ def print_oessfvd(fvd):
            blue(timestamp)))
 
 
-def print_connection_restablished(pkt):
+def print_connection_terminated(pkt):
     """
-        Just prints that the TCP connection was restablished.
+        Just prints that the TCP connection was terminated (FIN or RST flag).
         Args:
             pkt: Packet class
     """
     print_headers(pkt, overwrite_min=0)
-    print(red("!!!! Attention: Connection Re-Established!!\n"))
+    print(red("!!!! Attention: TCP/OpenFlow Connection Terminated!!\n"))
+
+
+def print_connection_being_established(pkt):
+    """
+        Just prints that a new TCP connection is being established.
+        Args:
+            pkt: Packet class
+    """
+    print_headers(pkt, overwrite_min=0)
+    print(green("!!!! New TCP/OpenFlow Connection being established!!\n"))

@@ -156,8 +156,10 @@ def print_ofpt_error(msg):
 
 
 def print_ofpt_echo_request(msg):
-    if len(msg.data) > 0:
+    if not isinstance(msg.data, BinaryData) and len(msg.data) > 0:
         print("Echo Request - Data: %s" % hexdump(msg.data))
+    elif isinstance(msg.data, BinaryData):
+        print("Echo Reply - Data: \"%s\"" % msg.data.value.decode("utf-8"))
     return 0
 
 
@@ -165,8 +167,10 @@ def print_ofpt_echo_request(msg):
 
 
 def print_ofpt_echo_reply(msg):
-    if len(msg.data) > 0:
+    if not isinstance(msg.data, BinaryData) and len(msg.data) > 0:
         print("Echo Reply - Data: %s" % hexdump(msg.data))
+    elif isinstance(msg.data, BinaryData):
+        print("Echo Reply - Data: \"%s\"" % msg.data.value.decode("utf-8"))
     return 0
 
 
