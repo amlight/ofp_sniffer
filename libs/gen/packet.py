@@ -64,9 +64,11 @@ class Packet:
                 self.offset = self.l4.parse(self.packet, self.offset)
                 if self.l4.flag_psh == TCP_FLAG_PUSH:
                     self.is_openflow_packet = True
-                elif self.l4.flag_fyn and self.l4.flag_ack:
+                elif (self.l4.flag_fyn or self.l4.flag_rst) and self.l4.flag_ack:
                     self.reconnect_error = True
-                    libs.tcpiplib.prints.print_connection_restablished(self)
+                    libs.tcpiplib.prints.print_connection_terminated(self)
+                elif self.l4.flag_syn:
+                    libs.tcpiplib.prints.print_connection_being_established(self)
 
     def process_openflow_messages(self):
         """
