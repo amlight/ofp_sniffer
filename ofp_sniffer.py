@@ -134,7 +134,7 @@ class RunSniffer(object):
                 header: header of the captured packet
                 packet: packet captured from file or interface
         """
-        if len(packet) >= 62:
+        if len(packet) >= 54:
             # Verify if user asked for just one specific packet
             if self.was_packet_number_defined():
                 if not self.is_the_packet_number_specified():
