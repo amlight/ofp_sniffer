@@ -307,7 +307,10 @@ def convert_class(cls):
             return new_list
 
         else:
-            cvars = vars(cls)
+            try:
+                cvars = vars(cls)
+            except:
+                return "BinaryData"
             for var in cvars:
                 if not var.startswith('_'):
                     subcls = getattr(cls, var)
