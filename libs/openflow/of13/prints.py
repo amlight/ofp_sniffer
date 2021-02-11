@@ -437,14 +437,21 @@ def print_instruction(instructions):
             # PUSH_VLAN
             elif action.action_type == 17:
                 print(" Ethertype: %s" % green(hex(action.ethertype.value)))
+            # POP_VLAN
+            elif action.action_type == 18:
+                pass
             # SET_FIELD
             elif action.action_type == 25:
                 if action.field.oxm_field == 6:  # VLAN
                     vlan = unpack('!H', action.field.oxm_value)[0] & 4095
                     print(" VLAN_VID: %s" % green(vlan))
+                else:
+                    print("ATTENTION!!!!!")
+                    print(action.field.oxm_field)
 
             # to be continued...
             else:
+                print("ATTENTION!!!!!")
                 print()
 
 # ################## OFPT_GROUP_MOD ############################
