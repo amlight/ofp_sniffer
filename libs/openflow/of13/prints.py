@@ -1,6 +1,7 @@
 """
     OpenFlow 1.3 prints
 """
+from struct import unpack
 from hexdump import hexdump
 from pyof.foundation.basic_types import BinaryData
 import libs.tcpiplib.prints
@@ -426,18 +427,25 @@ def print_instruction(instructions):
     print('Flow Instructions:')
     for instruction in instructions:
         print(' Instruction: Type %s Length: %s' %
-              (instruction.instruction_type, instruction.length))
+              (instruction.instruction_type.value, instruction.length))
         for action in instruction.actions:
-            print('  Action - Type %s Length %s' % (action.action_type, action.length), end='')
+            print('  Action - Type %s Length %s' % (green(action.action_type), action.length), end='')
             if action.action_type == 0:
+                port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
                 print(" Port %s Max_Len %s Pad %s" %
-                      (action.port, action.max_length, print_pad(action.pad)))
-            if action.action_type == 1:
-                print(" VLAN_VID %s Pad %s" %
-                      (action.vlan_vid, print_pad(action.pad)))
-            # to be continued...
-            print()
+                      (green(port_name), action.max_length, print_pad(action.pad)))
+            # PUSH_VLAN
+            elif action.action_type == 17:
+                print(" Ethertype: %s" % green(hex(action.ethertype.value)))
+            # SET_FIELD
+            elif action.action_type == 25:
+                if action.field.oxm_field == 6:  # VLAN
+                    vlan = unpack('!H', action.field.oxm_value)[0] & 4095
+                    print(" VLAN_VID: %s" % green(vlan))
 
+            # to be continued...
+            else:
+                print()
 
 # ################## OFPT_GROUP_MOD ############################
 
