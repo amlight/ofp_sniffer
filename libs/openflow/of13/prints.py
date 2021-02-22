@@ -32,12 +32,12 @@ def prints_ofp(msg):
                      8: print_ofpt_get_config_reply,  # ok
                      9: print_ofpt_set_config,  # ok
                      10: print_ofpt_packet_in,  # ok
-                     11: print_ofpt_flow_removed,
-                     12: print_ofpt_port_status,
-                     13: print_ofpt_packet_out,
-                     14: print_ofpt_flow_mod,
+                     11: print_ofpt_flow_removed,  # ok
+                     12: print_ofpt_port_status,  # ok
+                     13: print_ofpt_packet_out,  # pending
+                     14: print_ofpt_flow_mod,  # ok?
                      15: print_ofpt_group_mod,
-                     16: print_ofpt_port_mod,
+                     16: print_ofpt_port_mod,  # pending
                      17: print_ofpt_table_mod,
                      18: print_ofpt_multipart_request,
                      19: print_ofpt_multipart_reply,
@@ -313,17 +313,36 @@ def print_data(data):
 
 
 def print_ofpt_flow_removed(msg):
-    return 0
+    """
+        Args:
+            msg: OpenFlow message unpacked by python-openflow
+    """
+
+    # Print main flow_removed options
+    string = ('Body - Cookie: %s Priority: %s Reason: %s table_id: %s\nBody - '
+              'Duration Secs/NSecs: %s/%s Idle Timeout: %s Hard Timeout: %s'
+              ' Packet Count: %s Byte Count: %s')
+
+    print(string % (msg.cookie, msg.priority, red(msg.reason),
+                    msg.table_id, msg.duration_sec, msg.duration_nsec,
+                    msg.idle_timeout, msg.hard_timeout,
+                    msg.packet_count, msg.byte_count))
+
+    print_match_type(msg.match)
 
 
 # ################## OFPT_PORT_STATUS ############################
 
 
 def print_ofpt_port_status(msg):
-    string = ('PortStatus - Reason: %s Desc: %s Pad: %s' %
-              (msg.reason, msg.desc, msg.pad))
+    """
+        Args:
+            msg: OpenFlow message unpacked by python-openflow | page 113
+    """
+    print('OpenFlow PortStatus - Reason: %s Pad: %s' %
+          (msg.reason, msg.pad))
+    print_of_ports(msg.desc) # TODO: print_of_ports in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
 
-    print(string)
     return 0
 
 
@@ -331,6 +350,17 @@ def print_ofpt_port_status(msg):
 
 
 def print_ofpt_packet_out(msg):
+    """
+        Args:
+            msg: OpenFlow message unpacked by python-openflow  ; PAGE 107 MANUAL
+    """
+    print('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
+          (hex(msg.buffer_id.value),
+           green(dissector.get_phy_port_id(msg.in_port.value)),
+           msg.actions_len.value))
+    if msg.actions_len is not 0:
+        print_actions(msg.actions) #TODO: print_actions in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
+        print_data(msg.data)
     return 0
 
 
@@ -448,8 +478,12 @@ def print_instruction(instructions):
                 else:
                     print("ATTENTION!!!!!")
                     print(action.field.oxm_field)
-
-            # to be continued...
+            # SET_QUEUE
+            elif action.action_type == 21:
+                print(('Action - Type: %s Length: %s Queue ID: %s'
+                       ) %
+                      (action.length, green(action.queue_id.value)))
+            # TODO: do I continue creating print msgs for all the actions in the instructions or just the ones we use?
             else:
                 print("ATTENTION!!!!!")
                 print()
@@ -458,6 +492,7 @@ def print_instruction(instructions):
 
 
 def print_ofpt_group_mod(msg):
+    """Page 82"""
     return 0
 
 
@@ -465,6 +500,12 @@ def print_ofpt_group_mod(msg):
 
 
 def print_ofpt_port_mod(msg):
+    """
+        Args:
+            msg: OpenFlow message unpacked by python-openflow | PAGE 84
+    """
+    print('PortMod Port_no: %s HW_Addr: %s Pad: %s' %
+          (yellow(msg.port_no.value), yellow(msg.hw_addr.value), msg.pad))
     return 0
 
 

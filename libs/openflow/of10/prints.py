@@ -470,6 +470,8 @@ def print_ofpt_port_mod(msg):
     """
 
     def _print_port_mod_config_mask(variable, name):
+        """The mask field is used to select bits in the config field to change.
+        The advertise field has no mask; all port features change together."""
 
         print('PortMod %s: ' % name, end='')
         printed = False
