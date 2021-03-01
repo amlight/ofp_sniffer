@@ -598,3 +598,198 @@ def print_ofpt_set_async(msg):
 
 def print_ofpt_meter_mod(msg):
     return 0
+
+
+# ******************** Multipurpose port functions *******************************
+
+
+def _dont_print_0(printed):
+    if printed is False:
+        print('0', end='')
+    return False
+
+
+def print_port_field(port_id, variable, name):
+    port_id = '%s' % green(port_id)
+    printed = False
+
+    print('Port_id: %s - %s: ' % (port_id, name), end='')
+    variable = _parse_phy_curr(variable)
+    for i in variable:
+        print(dissector.get_phy_feature(i) + ' ', end='')
+        printed = True
+    else:
+        _dont_print_0(printed)
+    print()
+
+
+def print_ofp_phy_port(port):
+    port_id = '%s' % green(port.port_no)
+
+    print('Port_id: %s - hw_addr: %s name: %s' % (
+          port_id, green(port.hw_addr), green(port.name)))
+
+    print('Port_id: %s - config: ' % port_id, end='')
+    printed = False
+    config = _parse_phy_config(port.config.value)
+    for i in config:
+        print(dissector.get_phy_config(i), end='')
+        printed = True
+    else:
+        printed = _dont_print_0(printed)
+    print()
+
+    print('Port_id: %s - state: ' % port_id, end='')
+    state = _parse_phy_state(port.state.value)
+    for i in state:
+        print(dissector.get_phy_state(i), end='')
+        printed = True
+    else:
+        _dont_print_0(printed)
+    print()
+
+    print_port_field(port_id, port.curr, 'curr')
+    print_port_field(port_id, port.advertised, 'advertised')
+    print_port_field(port_id, port.supported, 'supported')
+    print_port_field(port_id, port.peer, 'peer')
+
+
+def print_of_ports(ports):
+    if not isinstance(ports, FixedTypeList):
+        print_ofp_phy_port(ports)
+    else:
+        for port in ports:
+            print_ofp_phy_port(port)
+
+
+def _parse_bitmask(bitmask, array):
+    size = len(array)
+    for i in range(0, size):
+        mask = 2**i
+        aux = bitmask & mask
+        if aux == 0:
+            array.remove(mask)
+    return array
+
+
+def _parse_capabilities(capabilities):
+    caps = [1, 2, 4, 8, 16, 32, 64, 128]
+    return _parse_bitmask(capabilities, caps)
+
+
+def _parse_actions(actions):
+    acts = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+    return _parse_bitmask(actions, acts)
+
+
+def _parse_phy_config(config):
+    confs = [1, 2, 4, 8, 16, 32, 64]
+    return _parse_bitmask(config, confs)
+
+
+def _parse_phy_state(state):
+    states = [1, 2, 4, 8, 16]
+    return _parse_bitmask(state, states)
+
+
+def _parse_phy_curr(values):
+    confs = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+    return _parse_bitmask(values, confs)
+
+
+# def print_ofp_ovs(msg):
+#     """
+#         If -o or --print-ovs is provided by user, print a ovs-ofctl add-dump
+#     """
+#
+#     def get_command(command):
+#         commands = {0: 'add-flow', 1: 'mod-flows', 3: 'del-flows'}
+#         try:
+#             return commands[command]
+#         except KeyError:
+#             return 0
+#
+#     def get_flag(flag):
+#         flags = {0: '', 1: 'send_flow_rem', 2: 'check_overlap', 3: 'Emerg'}
+#         try:
+#             return flags[flag]
+#         except KeyError:
+#             return 0
+#
+#     def get_actions(action_type, action_length, payload):
+#         if action_type == 0:
+#             port, max_len = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'output:%s' % (port if port != 65533 else 'CONTROLLER')
+#         elif action_type == 1:
+#             vlan, pad = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_vlan_vid:' + str(vlan)
+#         elif action_type == 2:
+#             vlan_pc, pad = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_vlan_pcp:' + str(vlan_pc)
+#         elif action_type == 3:
+#             return 'strip_vlan'
+#         elif action_type == 4:
+#             setDLSrc, pad = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_dl_src:' + str(eth_addr(setDLSrc))
+#         elif action_type == 5:
+#             setDLDst, pad = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_dl_dst:' + str(eth_addr(setDLDst))
+#         elif action_type == 6:
+#             nw_addr = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_nw_src:' + str(nw_addr)
+#         elif action_type == 7:
+#             nw_addr = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_nw_src:' + str(nw_addr)
+#         elif action_type == 8:
+#             nw_tos, pad = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_nw_tos:' + str(nw_tos)
+#         elif action_type == 9:
+#             port, pad = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_tp_src:' + str(port)
+#         elif action_type == int('a', 16):
+#             port, pad = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'mod_tp_dst:' + str(port)
+#         elif action_type == int('b', 16):
+#             port, pad, queue_id = libs.openflow.of10.parser.get_action(action_type, payload)
+#             return 'set_queue:' + str(queue_id)
+#
+#     if PrintingOptions().print_ovs is not True:
+#         return
+#
+#     switch_ip = 'SWITCH_IP'
+#     switch_port = '6634'
+#
+#     ofm = []
+#     ofactions = []
+#
+#     ovs_command = get_command(msg.command)
+#
+#     for K in msg.match.__dict__:
+#         if K != 'wildcards':
+#             if msg.match.__dict__[K] is not None:
+#                 value = "%s=%s," % (K, msg.match.__dict__[K])
+#                 ofm.append(value)
+#
+#     matches = ''.join(ofm)
+#
+#     if msg.command is not 3:
+#         for action in msg.actions:
+#                 value = get_actions(action.type, action.length, action.payload)
+#                 value = "%s," % value
+#                 ofactions.append(value)
+#
+#         flag = get_flag(msg.flags)
+#         print('ovs-ofctl %s tcp:%s:%s \"' % (ovs_command, switch_ip, switch_port), end='')
+#         if msg.flags != 0:
+#             print('%s,' % flag, end='')
+#         if msg.priority != 32678:
+#             print('priority=%s,' % msg.priority, end='')
+#         if msg.idle_timeout != 0:
+#             print('idle_timeout=%s,' % msg.idle_timeout, end='')
+#         if msg.hard_timeout != 0:
+#             print('hard_timeout=%s,' % msg.hard_timeout, end='')
+#         print('%s ' % matches, end='')
+#         print('action=%s\"' % ''.join(ofactions))
+#     else:
+#         ovs_msg_del = 'ovs-ofctl %s tcp:%s:%s %s '
+#         print(ovs_msg_del % (ovs_command, switch_ip, switch_port, matches))

@@ -227,7 +227,7 @@ def main():
         Instantiates RunSniffer and run it
     """
     try:
-        logging.config.dictConfig(yaml.load(open('logging.yml', 'r')))
+        logging.config.dictConfig(yaml.safe_load(open('logging.yml', 'r')))
         logger = logging.getLogger(__name__)
         sniffer = RunSniffer()
         logger.info("OFP_Sniffer started.")
