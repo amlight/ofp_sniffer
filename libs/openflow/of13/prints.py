@@ -464,12 +464,27 @@ def print_instruction(instructions):
                 port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
                 print(" Port %s Max_Len %s Pad %s" %
                       (green(port_name), action.max_length, print_pad(action.pad)))
+            # SetMPLSTTL
+            elif action.action_type == 15:
+                print("ATTENTION!!!!!")
             # PUSH_VLAN
             elif action.action_type == 17:
                 print(" Ethertype: %s" % green(hex(action.ethertype.value)))
-            # POP_VLAN
-            elif action.action_type == 18:
+            # CopyTTLOut, CopyTTLIn, DecMPLSTTL, POP_VLAN, PopMPLS, DecNWTTL, PopPBB
+            elif action.action_type in [11,12,16,18,20,24,27]:
                 pass
+            # PushMPLS
+            elif action.action_type == 19:
+                print("ATTENTION!!!!!")
+            # SET_QUEUE
+            elif action.action_type == 21:
+                print('SET_QUEUE - Queue ID: %s' % green(action.queue_id.value))
+            # Group
+            elif action.action_type == 22:
+                print("ATTENTION!!!!!")
+            # SetNWTTL
+            elif action.action_type == 23:
+                print("ATTENTION!!!!!")
             # SET_FIELD
             elif action.action_type == 25:
                 if action.field.oxm_field == 6:  # VLAN
@@ -478,15 +493,13 @@ def print_instruction(instructions):
                 else:
                     print("ATTENTION!!!!!")
                     print(action.field.oxm_field)
-            # SET_QUEUE
-            elif action.action_type == 21:
-                print(('Action - Type: %s Length: %s Queue ID: %s'
-                       ) %
-                      (action.length, green(action.queue_id.value)))
-            # TODO: do I continue creating print msgs for all the actions in the instructions or just the ones we use?
-            else:
+            # PushPBB
+            elif action.action_type == 26:
                 print("ATTENTION!!!!!")
-                print()
+            # ExperimentER
+            elif action.action_type == 65535:
+                print("ATTENTION!!!!!")
+
 
 # ################## OFPT_GROUP_MOD ############################
 
