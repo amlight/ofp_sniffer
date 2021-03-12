@@ -457,10 +457,10 @@ def print_instruction(instructions):
     print('Flow Instructions:')
     for instruction in instructions:
         print(' Instruction: Type %s Length: %s' %
-              (instruction.instruction_type.value, instruction.length))
+              (dissector.get_instructions(instruction.instruction_type.value), instruction.length))
         # GotoTable
         if instruction.instruction_type.value == 1:
-            print(" Table_ID: %s" % green(hex(instruction.table_id.value)))
+            print(" Goto Table_ID: %s" % green(hex(instruction.table_id.value)))
         # WriteMetadata
         if instruction.instruction_type.value == 2:
             print(" MetaData: %s MetaData_Mask: %s" %
@@ -487,7 +487,7 @@ def print_instruction(instructions):
                     print("ATTENTION!!!!!")
                 # SET_QUEUE
                 elif action.action_type == 21:
-                    print('SET_QUEUE - Queue ID: %s' % green(action.queue_id.value))
+                    print(' Queue ID: %s' % green(action.queue_id.value))
                 # Group
                 elif action.action_type == 22:
                     print("ATTENTION!!!!!")
