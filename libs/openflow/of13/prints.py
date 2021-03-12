@@ -458,47 +458,63 @@ def print_instruction(instructions):
     for instruction in instructions:
         print(' Instruction: Type %s Length: %s' %
               (instruction.instruction_type.value, instruction.length))
-        for action in instruction.actions:
-            print('  Action - Type %s Length %s' % (green(action.action_type), action.length), end='')
-            if action.action_type == 0:
-                port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
-                print(" Port %s Max_Len %s Pad %s" %
-                      (green(port_name), action.max_length, print_pad(action.pad)))
-            # SetMPLSTTL
-            elif action.action_type == 15:
-                print("ATTENTION!!!!!")
-            # PUSH_VLAN
-            elif action.action_type == 17:
-                print(" Ethertype: %s" % green(hex(action.ethertype.value)))
-            # CopyTTLOut, CopyTTLIn, DecMPLSTTL, POP_VLAN, PopMPLS, DecNWTTL, PopPBB
-            elif action.action_type in [11,12,16,18,20,24,27]:
-                pass
-            # PushMPLS
-            elif action.action_type == 19:
-                print("ATTENTION!!!!!")
-            # SET_QUEUE
-            elif action.action_type == 21:
-                print('SET_QUEUE - Queue ID: %s' % green(action.queue_id.value))
-            # Group
-            elif action.action_type == 22:
-                print("ATTENTION!!!!!")
-            # SetNWTTL
-            elif action.action_type == 23:
-                print("ATTENTION!!!!!")
-            # SET_FIELD
-            elif action.action_type == 25:
-                if action.field.oxm_field == 6:  # VLAN
-                    vlan = unpack('!H', action.field.oxm_value)[0] & 4095
-                    print(" VLAN_VID: %s" % green(vlan))
-                else:
+        # GotoTable
+        if instruction.instruction_type.value == 1:
+            print(" Table_ID: %s" % green(hex(instruction.table_id.value)))
+        # WriteMetadata
+        if instruction.instruction_type.value == 2:
+            print(" MetaData: %s MetaData_Mask: %s" %
+                  (green(hex(instruction.metadata.value)), green(hex(instruction.metadata_mask.value))))
+        # WriteActions, ApplyActions, ClearActions
+        if instruction.instruction_type.value in [3,4,5]:
+            for action in instruction.actions:
+                print('  Action - Type %s Length %s' % (green(action.action_type), action.length), end='')
+                if action.action_type == 0:
+                    port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
+                    print(" Port %s Max_Len %s Pad %s" %
+                          (green(port_name), action.max_length, print_pad(action.pad)))
+                # SetMPLSTTL
+                elif action.action_type == 15:
                     print("ATTENTION!!!!!")
-                    print(action.field.oxm_field)
-            # PushPBB
-            elif action.action_type == 26:
-                print("ATTENTION!!!!!")
-            # ExperimentER
-            elif action.action_type == 65535:
-                print("ATTENTION!!!!!")
+                # PUSH_VLAN
+                elif action.action_type == 17:
+                    print(" Ethertype: %s" % green(hex(action.ethertype.value)))
+                # CopyTTLOut, CopyTTLIn, DecMPLSTTL, POP_VLAN, PopMPLS, DecNWTTL, PopPBB
+                elif action.action_type in [11,12,16,18,20,24,27]:
+                    pass
+                # PushMPLS
+                elif action.action_type == 19:
+                    print("ATTENTION!!!!!")
+                # SET_QUEUE
+                elif action.action_type == 21:
+                    print('SET_QUEUE - Queue ID: %s' % green(action.queue_id.value))
+                # Group
+                elif action.action_type == 22:
+                    print("ATTENTION!!!!!")
+                # SetNWTTL
+                elif action.action_type == 23:
+                    print("ATTENTION!!!!!")
+                # SET_FIELD
+                elif action.action_type == 25:
+                    if action.field.oxm_field == 6:  # VLAN
+                        vlan = unpack('!H', action.field.oxm_value)[0] & 4095
+                        print(" VLAN_VID: %s" % green(vlan))
+                    else:
+                        print("ATTENTION!!!!!")
+                        print(action.field.oxm_field)
+                # PushPBB
+                elif action.action_type == 26:
+                    print("ATTENTION!!!!!")
+                # Experimenter
+                elif action.action_type == 65535:
+                    print("ATTENTION!!!!!")
+        # Meter
+        if instruction.instruction_type.value == 6:
+            print("Meter_ID: %s" % green(hex(instruction.meter_id.value)))
+        # Experimenter
+        if instruction.instruction_type.value == 65535:
+            print("Experimenter")
+
 
 
 # ################## OFPT_GROUP_MOD ############################
