@@ -5,7 +5,7 @@ from struct import unpack
 from hexdump import hexdump
 from pyof.foundation.basic_types import BinaryData
 import libs.tcpiplib.prints
-from libs.gen.prints import red, green
+from libs.gen.prints import red, green, yellow
 from libs.openflow import of13
 import libs.openflow.of13.dissector as dissector
 from libs.tcpiplib.process_data import dissect_data
@@ -34,23 +34,23 @@ def prints_ofp(msg):
                      10: print_ofpt_packet_in,  # ok
                      11: print_ofpt_flow_removed,  # ok
                      12: print_ofpt_port_status,  # ok
-                     13: print_ofpt_packet_out,  # pending
-                     14: print_ofpt_flow_mod,  # ok?
-                     15: print_ofpt_group_mod,
-                     16: print_ofpt_port_mod,  # pending
-                     17: print_ofpt_table_mod,
-                     18: print_ofpt_multipart_request,
-                     19: print_ofpt_multipart_reply,
-                     20: print_ofpt_barrier_request,
-                     21: print_ofpt_barrier_reply,
-                     22: print_ofpt_queue_get_config_request,
-                     23: print_ofpt_queue_get_config_reply,
-                     24: print_ofpt_role_request,
-                     25: print_ofpt_role_reply,
-                     26: print_ofpt_get_async_request,
-                     27: print_ofpt_get_async_reply,
-                     28: print_ofpt_set_async,
-                     29: print_ofpt_meter_mod
+                     13: print_ofpt_packet_out,  # ok, but print_actions in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
+                     14: print_ofpt_flow_mod,  # ok
+                     15: print_ofpt_group_mod, # ok, but bucket[]?
+                     16: print_ofpt_port_mod,  # ok, but advertise?
+                     17: print_ofpt_table_mod, # ok
+                     18: print_ofpt_multipart_request, # pending payload, function for every attribute, and then add to array
+                     19: print_ofpt_multipart_reply, # ON HOLD
+                     20: print_ofpt_barrier_request, #ok
+                     21: print_ofpt_barrier_reply, #ok
+                     22: print_ofpt_queue_get_config_request, #ok
+                     23: print_ofpt_queue_get_config_reply, # In progress
+                     24: print_ofpt_role_request, # ON HOLD
+                     25: print_ofpt_role_reply, # ON HOLD
+                     26: print_ofpt_get_async_request, # ON HOLD
+                     27: print_ofpt_get_async_reply, # ON HOLD
+                     28: print_ofpt_set_async, # ON HOLD
+                     29: print_ofpt_meter_mod # ON HOLD ; pending error msg
                      }
 
         return msg_types[msg.header.message_type.value](msg)
@@ -354,7 +354,8 @@ def print_ofpt_packet_out(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow  ; PAGE 107 MANUAL
     """
-    print('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
+    print('PacketOut: buffer_id: %s in_port: %s actions_len: %s Padding: %s'
+          'Action: %s Data: %s' %
           (hex(msg.buffer_id.value),
            green(dissector.get_phy_port_id(msg.in_port.value)),
            msg.actions_len.value))
@@ -521,8 +522,16 @@ def print_instruction(instructions):
 
 
 def print_ofpt_group_mod(msg):
-    """Page 82"""
-    return 0
+     """
+        Args:
+            msg: OpenFlow message unpacked by python-openflow | PAGE 82
+     """
+     command = green(dissector.get_group_mod_command(msg.command.value))
+     type = green(dissector.get_group_type_command(msg.command.value))
+
+     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s' %
+          (command, type, msg.pad, green(msg.group_id.value)))
+     return 0
 
 
 # ################## OFPT_PORT_MOD ############################
@@ -533,8 +542,11 @@ def print_ofpt_port_mod(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow | PAGE 84
     """
-    print('PortMod Port_no: %s HW_Addr: %s Pad: %s' %
-          (yellow(msg.port_no.value), yellow(msg.hw_addr.value), msg.pad))
+    print('PortMod Port: %s Padding %s HW_Addr: %s Padding: %s Config: %s Mask: %s'
+          'Advertise: %s Padding: %s' %
+          (yellow(msg.port_no.value), yellow(msg.hw_addr.value), msg.pad,
+           msg.config.value, msg.mask, msg.advertise, msg.pad))
+    print(msg.__dict__)
     return 0
 
 
@@ -542,6 +554,12 @@ def print_ofpt_port_mod(msg):
 
 
 def print_ofpt_table_mod(msg):
+    """
+            Args:
+                msg: OpenFlow message unpacked by python-openflow
+        """
+    print('TableMod Table_ID: %s Pad: %s Config: %s' %
+          (green(msg.table_id.value), msg.pad, msg.config.value))
     return 0
 
 
@@ -549,6 +567,15 @@ def print_ofpt_table_mod(msg):
 
 
 def print_ofpt_multipart_request(msg):
+    # Print main multipart_request options
+    string = 'Body - Type: %s Flags: %s Pad: %s'
+
+    flags = green(dissector.get_multipart_request_flags(msg.flags.value))
+
+    # TODO: LOOK AT PAYLOAD
+
+    print(string % (msg.type, flags, msg.pad))
+
     return 0
 
 
@@ -556,6 +583,15 @@ def print_ofpt_multipart_request(msg):
 
 
 def print_ofpt_multipart_reply(msg):
+    # Print main multipart_reply options
+    string = 'Body - Type: %s Flags: %s Pad: %s'
+
+    flags = green(dissector.get_multipart_rePLY_flags(msg.flags.value))
+
+    # TODO: LOOK AT PAYLOAD
+
+    print(string % (msg.type, flags, msg.pad))
+
     return 0
 
 
@@ -563,20 +599,64 @@ def print_ofpt_multipart_reply(msg):
 
 
 def print_ofpt_barrier_request(msg):
-    return 0
+    """
+
+        Args:
+            msg: OpenFlow message unpacked by python-openflow
+        """
+    pass
 
 
 # ############ OFPT_BARRIER_REPLY ####################
 
 
 def print_ofpt_barrier_reply(msg):
-    return 0
+    """
+
+            Args:
+                msg: OpenFlow message unpacked by python-openflow
+            """
+    pass
 
 
 # ############ OFPT_QUEUE_GET_CONFIG_REQUEST ####################
 
 
 def print_ofpt_queue_get_config_request(msg):
+    # Print main flow_removed options
+    string = 'Body - Port: %s Pad: %s'
+
+    print(string % (msg.port, msg.pad))
+
+    #TODO: CHECK DISSECTOR FOR THESE, AND LOOK UP HOW TO TO ARRAYS.
+
+    # def print_ofpt_queue_reply_prop_payload(payload):
+    #     print('Payload: Rate %s Pad: %s' % (payload.rate, payload.pad))
+    #
+    # def print_ofpt_queue_reply_properties(qproperty):
+    #     print('Property: %s Length: %s Pad: %s' %
+    #           (qproperty.property, qproperty.length, qproperty.pad))
+    #     print_ofpt_queue_reply_prop_payload(qproperty.payload)
+    #
+    # def print_ofpt_queue_reply_queue(queue):
+    #     print('Queue_ID: %s Length: %s Pad: %s' %
+    #           (queue.queue_id, queue.length, queue.pad))
+    #     if len(queue.properties) == 0:
+    #         print('QueueGetConfigRes: No Properties')
+    #         return
+    #     for property in queue.properties:
+    #         print_ofpt_queue_reply_properties(property)
+    #
+    # print('QueueGetConfigRes Port: %s Pad: %s' %
+    #       (msg.port, msg.pad))
+    #
+    # if len(msg.queues) == 0:
+    #     print('QueueGetConfigRes: No Queues')
+    #     return
+    #
+    # for queue in msg.queues:
+    #     print_ofpt_queue_reply_queue(queue)
+
     return 0
 
 
@@ -584,6 +664,11 @@ def print_ofpt_queue_get_config_request(msg):
 
 
 def print_ofpt_queue_get_config_reply(msg):
+    # Print main flow_removed options
+    string = 'Body - Port: %s Pad: %s'
+
+    print(string % (msg.port, msg.queue))
+
     return 0
 
 
@@ -626,7 +711,18 @@ def print_ofpt_set_async(msg):
 
 
 def print_ofpt_meter_mod(msg):
-    return 0
+    """
+           These  commands  manage  the  meter  table  in  an  OpenFlow  switch.  In each case, meter
+       specifies a meter entry in the format described in Meter Syntax.
+    """
+    # Print main meter_mod options
+    string = 'Body - Command: %s Flags: %s Meter_OD: %s'
+
+    flags = green(dissector.get_meter_mod_flags(msg.flags.value))
+    command = green(dissector.get_meter_mod_command(msg.command.value))
+
+    print(string % (command, flags, msg.meter_id,))
+
 
 
 # ******************** Multipurpose port functions *******************************
