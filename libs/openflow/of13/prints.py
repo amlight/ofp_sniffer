@@ -542,10 +542,9 @@ def print_ofpt_port_mod(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow | PAGE 84
     """
-    print('PortMod Port: %s Padding %s HW_Addr: %s Padding: %s Config: %s Mask: %s'
-          'Advertise: %s Padding: %s' %
-          (yellow(msg.port_no.value), yellow(msg.hw_addr.value), msg.pad,
-           msg.config.value, msg.mask, msg.advertise, msg.pad))
+    print('PortMod Port: %s HW_Addr: %s Config: %s Mask: %s Advertise: %s' %
+          (yellow(msg.port_no.value), yellow(msg.hw_addr.value),
+           msg.config.value, msg.mask, msg.advertise))
     print(msg.__dict__)
     return 0
 
