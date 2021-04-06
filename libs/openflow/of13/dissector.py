@@ -232,6 +232,47 @@ def get_ofp_error(error_type, code):
 
     return errors_types[error_type], codes[code]
 
+def get_phy_config(p_cfg): #page 54
+    cfg = {1: 'PortDown(0x01)',
+           2: 'NoRecv(0x02)',
+           4: 'NoFwd(0x04)',
+           8: 'NoPacketIn(0x08)'}
+    try:
+        return cfg[p_cfg]
+    except KeyError:
+        return 'UnknownConfig(%s)' % p_cfg
+
+def get_phy_state(p_state):
+    state = {0: 'LinkDown(0x1)',
+             2: 'STPBlock(0x2)',
+             4: 'Live(0x4)'}
+    try:
+        return state[p_state]
+    except KeyError:
+        return 'UnknownState(%s)' % p_state
+
+def get_phy_feature(p_feature):
+    ftr = {1: '10MB_HD(0x1)',
+           2: '10MB_FD(0x2)',
+           4: '100MB_HD(0x4)',
+           8: '100MB_FD(0x8)',
+           16: '1GB_HD(0x10)',
+           32: '1GB_FD(0x20)',
+           64: '10GB_FD(0x40)',
+           128: '40GB_FD(0x80)',
+           256: '100GB_FD(0x100)',
+           512: '1TB_FD(0x200)',
+           1024: 'Other(0x400)',
+           2048: 'Copper(0x800)',
+           4096: 'Fiber(0x1600)',
+           8192: 'AutoNeg(0x3200)',
+           16382: 'Pause(0x6400)',
+           32768: 'PauseAsym(0x12800)'}
+    try:
+        return ftr[p_feature]
+    except KeyError:
+        return 'UnknownFeature(%s)' % p_feature
+
 
 def get_feature_res_capabilities(cap):
     caps = {1: 'FLOW_STATS(0x1)',
