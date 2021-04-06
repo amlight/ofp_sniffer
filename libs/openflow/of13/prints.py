@@ -542,8 +542,6 @@ def print_ofpt_port_mod(msg):
             msg: OpenFlow message unpacked by python-openflow | PAGE 84
     """
 
-   # print(msg.__dict__)
-
     def _print_port_mod_config_mask(variable, name):
         """The mask field is used to select bits in the config field to change.
         The advertise field has no mask; all port features change together."""
@@ -564,6 +562,7 @@ def print_ofpt_port_mod(msg):
     _print_port_mod_config_mask(msg.config.value, 'config')
     _print_port_mod_config_mask(msg.mask.value, 'mask')
     _print_port_mod_config_mask(msg.advertise.value, 'advertise')
+
     return 0
 
 
