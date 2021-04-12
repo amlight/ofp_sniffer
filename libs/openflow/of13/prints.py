@@ -5,7 +5,7 @@ from struct import unpack
 from hexdump import hexdump
 from pyof.foundation.basic_types import BinaryData
 import libs.tcpiplib.prints
-from libs.gen.prints import red, green
+from libs.gen.prints import red, green, yellow
 from libs.openflow import of13
 import libs.openflow.of13.dissector as dissector
 from libs.tcpiplib.process_data import dissect_data
@@ -34,23 +34,23 @@ def prints_ofp(msg):
                      10: print_ofpt_packet_in,  # ok
                      11: print_ofpt_flow_removed,  # ok
                      12: print_ofpt_port_status,  # ok
-                     13: print_ofpt_packet_out,  # pending
-                     14: print_ofpt_flow_mod,  # ok?
-                     15: print_ofpt_group_mod,
+                     13: print_ofpt_packet_out,  # ok, but print_actions in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
+                     14: print_ofpt_flow_mod,  # ok
+                     15: print_ofpt_group_mod, # pending
                      16: print_ofpt_port_mod,  # pending
-                     17: print_ofpt_table_mod,
-                     18: print_ofpt_multipart_request,
-                     19: print_ofpt_multipart_reply,
-                     20: print_ofpt_barrier_request,
-                     21: print_ofpt_barrier_reply,
-                     22: print_ofpt_queue_get_config_request,
-                     23: print_ofpt_queue_get_config_reply,
-                     24: print_ofpt_role_request,
-                     25: print_ofpt_role_reply,
-                     26: print_ofpt_get_async_request,
-                     27: print_ofpt_get_async_reply,
-                     28: print_ofpt_set_async,
-                     29: print_ofpt_meter_mod
+                     17: print_ofpt_table_mod, # ok
+                     18: print_ofpt_multipart_request, # pending
+                     19: print_ofpt_multipart_reply, # ON HOLD
+                     20: print_ofpt_barrier_request, #ok
+                     21: print_ofpt_barrier_reply, #ok
+                     22: print_ofpt_queue_get_config_request, #ok
+                     23: print_ofpt_queue_get_config_reply, # pending
+                     24: print_ofpt_role_request, # ON HOLD
+                     25: print_ofpt_role_reply, # ON HOLD
+                     26: print_ofpt_get_async_request, # ON HOLD
+                     27: print_ofpt_get_async_reply, # ON HOLD
+                     28: print_ofpt_set_async, # ON HOLD
+                     29: print_ofpt_meter_mod # ON HOLD ; pending error msg
                      }
 
         return msg_types[msg.header.message_type.value](msg)
@@ -341,8 +341,7 @@ def print_ofpt_port_status(msg):
     """
     print('OpenFlow PortStatus - Reason: %s Pad: %s' %
           (msg.reason, msg.pad))
-    print_of_ports(msg.desc) # TODO: print_of_ports in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
-
+    print_of_ports(msg.desc)
     return 0
 
 
@@ -354,12 +353,13 @@ def print_ofpt_packet_out(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow  ; PAGE 107 MANUAL
     """
-    print('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
+    print('PacketOut: buffer_id: %s in_port: %s actions_len: %s Padding: %s'
+          'Action: %s Data: %s' %
           (hex(msg.buffer_id.value),
            green(dissector.get_phy_port_id(msg.in_port.value)),
            msg.actions_len.value))
     if msg.actions_len is not 0:
-        print_actions(msg.actions) #TODO: print_actions in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
+        print_actions(msg.actions)
         print_data(msg.data)
     return 0
 
@@ -457,43 +457,80 @@ def print_instruction(instructions):
     print('Flow Instructions:')
     for instruction in instructions:
         print(' Instruction: Type %s Length: %s' %
-              (instruction.instruction_type.value, instruction.length))
-        for action in instruction.actions:
-            print('  Action - Type %s Length %s' % (green(action.action_type), action.length), end='')
-            if action.action_type == 0:
-                port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
-                print(" Port %s Max_Len %s Pad %s" %
-                      (green(port_name), action.max_length, print_pad(action.pad)))
-            # PUSH_VLAN
-            elif action.action_type == 17:
-                print(" Ethertype: %s" % green(hex(action.ethertype.value)))
-            # POP_VLAN
-            elif action.action_type == 18:
-                pass
-            # SET_FIELD
-            elif action.action_type == 25:
-                if action.field.oxm_field == 6:  # VLAN
-                    vlan = unpack('!H', action.field.oxm_value)[0] & 4095
-                    print(" VLAN_VID: %s" % green(vlan))
-                else:
+              (dissector.get_instructions(instruction.instruction_type.value), instruction.length))
+        # GotoTable
+        if instruction.instruction_type.value == 1:
+            print(" Goto Table_ID: %s" % green(hex(instruction.table_id.value)))
+        # WriteMetadata
+        if instruction.instruction_type.value == 2:
+            print(" MetaData: %s MetaData_Mask: %s" %
+                  (green(hex(instruction.metadata.value)), green(hex(instruction.metadata_mask.value))))
+        # WriteActions, ApplyActions, ClearActions
+        if instruction.instruction_type.value in [3,4,5]:
+            for action in instruction.actions:
+                print('  Action - Type %s Length %s' % (green(action.action_type), action.length), end='')
+                if action.action_type == 0:
+                    port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
+                    print(" Port %s Max_Len %s Pad %s" %
+                          (green(port_name), action.max_length, print_pad(action.pad)))
+                # SetMPLSTTL
+                elif action.action_type == 15:
                     print("ATTENTION!!!!!")
-                    print(action.field.oxm_field)
-            # SET_QUEUE
-            elif action.action_type == 21:
-                print(('Action - Type: %s Length: %s Queue ID: %s'
-                       ) %
-                      (action.length, green(action.queue_id.value)))
-            # TODO: do I continue creating print msgs for all the actions in the instructions or just the ones we use?
-            else:
-                print("ATTENTION!!!!!")
-                print()
+                # PUSH_VLAN
+                elif action.action_type == 17:
+                    print(" Ethertype: %s" % green(hex(action.ethertype.value)))
+                # CopyTTLOut, CopyTTLIn, DecMPLSTTL, POP_VLAN, PopMPLS, DecNWTTL, PopPBB
+                elif action.action_type in [11,12,16,18,20,24,27]:
+                    pass
+                # PushMPLS
+                elif action.action_type == 19:
+                    print("ATTENTION!!!!!")
+                # SET_QUEUE
+                elif action.action_type == 21:
+                    print(' Queue ID: %s' % green(action.queue_id.value))
+                # Group
+                elif action.action_type == 22:
+                    print("ATTENTION!!!!!")
+                # SetNWTTL
+                elif action.action_type == 23:
+                    print("ATTENTION!!!!!")
+                # SET_FIELD
+                elif action.action_type == 25:
+                    if action.field.oxm_field == 6:  # VLAN
+                        vlan = unpack('!H', action.field.oxm_value)[0] & 4095
+                        print(" VLAN_VID: %s" % green(vlan))
+                    else:
+                        print("ATTENTION!!!!!")
+                        print(action.field.oxm_field)
+                # PushPBB
+                elif action.action_type == 26:
+                    print("ATTENTION!!!!!")
+                # Experimenter
+                elif action.action_type == 65535:
+                    print("ATTENTION!!!!!")
+        # Meter
+        if instruction.instruction_type.value == 6:
+            print("Meter_ID: %s" % green(hex(instruction.meter_id.value)))
+        # Experimenter
+        if instruction.instruction_type.value == 65535:
+            print("Experimenter")
+
+
 
 # ################## OFPT_GROUP_MOD ############################
 
 
 def print_ofpt_group_mod(msg):
-    """Page 82"""
-    return 0
+     """
+        Args:
+            msg: OpenFlow message unpacked by python-openflow | PAGE 82
+     """
+     command = green(dissector.get_group_mod_command(msg.command.value))
+     type = green(dissector.get_group_type_command(msg.command.value))
+
+     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s' %
+          (command, type, msg.pad, green(msg.group_id.value)))
+     return 0
 
 
 # ################## OFPT_PORT_MOD ############################
@@ -504,8 +541,28 @@ def print_ofpt_port_mod(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow | PAGE 84
     """
-    print('PortMod Port_no: %s HW_Addr: %s Pad: %s' %
-          (yellow(msg.port_no.value), yellow(msg.hw_addr.value), msg.pad))
+
+    def _print_port_mod_config_mask(variable, name):
+        """The mask field is used to select bits in the config field to change.
+        The advertise field has no mask; all port features change together."""
+
+        print('PortMod %s: ' % name, end='')
+        printed = False
+        variable = _parse_phy_curr(variable)
+        for i in variable:
+            print(red(dissector.get_phy_config(i)), end='')
+            printed = True
+        else:
+            _dont_print_0(printed)
+        print()
+
+    print('PortMod Port: %s HW_Addr: %s Config: %s Mask: %s Advertise: %s' %
+          (yellow(msg.port_no.value), yellow(msg.hw_addr.value),
+           msg.config.value, msg.mask, msg.advertise))
+    _print_port_mod_config_mask(msg.config.value, 'config')
+    _print_port_mod_config_mask(msg.mask.value, 'mask')
+    _print_port_mod_config_mask(msg.advertise.value, 'advertise')
+
     return 0
 
 
@@ -513,6 +570,12 @@ def print_ofpt_port_mod(msg):
 
 
 def print_ofpt_table_mod(msg):
+    """
+            Args:
+                msg: OpenFlow message unpacked by python-openflow
+        """
+    print('TableMod Table_ID: %s Pad: %s Config: %s' %
+          (green(msg.table_id.value), msg.pad, msg.config.value))
     return 0
 
 
@@ -520,6 +583,15 @@ def print_ofpt_table_mod(msg):
 
 
 def print_ofpt_multipart_request(msg):
+    # Print main multipart_request options
+    string = 'Body - Type: %s Flags: %s Pad: %s'
+
+    flags = green(dissector.get_multipart_request_flags(msg.flags.value))
+
+    # TODO: LOOK AT PAYLOAD
+
+    print(string % (msg.type, flags, msg.pad))
+
     return 0
 
 
@@ -527,6 +599,15 @@ def print_ofpt_multipart_request(msg):
 
 
 def print_ofpt_multipart_reply(msg):
+    # Print main multipart_reply options
+    string = 'Body - Type: %s Flags: %s Pad: %s'
+
+    flags = green(dissector.get_multipart_rePLY_flags(msg.flags.value))
+
+    # TODO: LOOK AT PAYLOAD
+
+    print(string % (msg.type, flags, msg.pad))
+
     return 0
 
 
@@ -534,20 +615,35 @@ def print_ofpt_multipart_reply(msg):
 
 
 def print_ofpt_barrier_request(msg):
-    return 0
+    """
+
+        Args:
+            msg: OpenFlow message unpacked by python-openflow
+        """
+    pass
 
 
 # ############ OFPT_BARRIER_REPLY ####################
 
 
 def print_ofpt_barrier_reply(msg):
-    return 0
+    """
+
+            Args:
+                msg: OpenFlow message unpacked by python-openflow
+            """
+    pass
 
 
 # ############ OFPT_QUEUE_GET_CONFIG_REQUEST ####################
 
 
 def print_ofpt_queue_get_config_request(msg):
+    # Print main flow_removed options
+    string = 'Body - Port: %s Pad: %s'
+
+    print(string % (msg.port, msg.pad))
+
     return 0
 
 
@@ -555,6 +651,11 @@ def print_ofpt_queue_get_config_request(msg):
 
 
 def print_ofpt_queue_get_config_reply(msg):
+    # Print main flow_removed options
+    string = 'Body - Port: %s Pad: %s'
+
+    print(string % (msg.port, msg.queue))
+
     return 0
 
 
@@ -597,7 +698,18 @@ def print_ofpt_set_async(msg):
 
 
 def print_ofpt_meter_mod(msg):
-    return 0
+    """
+           These  commands  manage  the  meter  table  in  an  OpenFlow  switch.  In each case, meter
+       specifies a meter entry in the format described in Meter Syntax.
+    """
+    # Print main meter_mod options
+    string = 'Body - Command: %s Flags: %s Meter_OD: %s'
+
+    flags = green(dissector.get_meter_mod_flags(msg.flags.value))
+    command = green(dissector.get_meter_mod_command(msg.command.value))
+
+    print(string % (command, flags, msg.meter_id,))
+
 
 
 # ******************** Multipurpose port functions *******************************
@@ -683,7 +795,7 @@ def _parse_actions(actions):
 
 
 def _parse_phy_config(config):
-    confs = [1, 2, 4, 8, 16, 32, 64]
+    confs = [1, 2, 4, 8]
     return _parse_bitmask(config, confs)
 
 
@@ -693,103 +805,6 @@ def _parse_phy_state(state):
 
 
 def _parse_phy_curr(values):
-    confs = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+    confs = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048,
+             4096, 8192, 16384, 32768]
     return _parse_bitmask(values, confs)
-
-
-# def print_ofp_ovs(msg):
-#     """
-#         If -o or --print-ovs is provided by user, print a ovs-ofctl add-dump
-#     """
-#
-#     def get_command(command):
-#         commands = {0: 'add-flow', 1: 'mod-flows', 3: 'del-flows'}
-#         try:
-#             return commands[command]
-#         except KeyError:
-#             return 0
-#
-#     def get_flag(flag):
-#         flags = {0: '', 1: 'send_flow_rem', 2: 'check_overlap', 3: 'Emerg'}
-#         try:
-#             return flags[flag]
-#         except KeyError:
-#             return 0
-#
-#     def get_actions(action_type, action_length, payload):
-#         if action_type == 0:
-#             port, max_len = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'output:%s' % (port if port != 65533 else 'CONTROLLER')
-#         elif action_type == 1:
-#             vlan, pad = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_vlan_vid:' + str(vlan)
-#         elif action_type == 2:
-#             vlan_pc, pad = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_vlan_pcp:' + str(vlan_pc)
-#         elif action_type == 3:
-#             return 'strip_vlan'
-#         elif action_type == 4:
-#             setDLSrc, pad = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_dl_src:' + str(eth_addr(setDLSrc))
-#         elif action_type == 5:
-#             setDLDst, pad = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_dl_dst:' + str(eth_addr(setDLDst))
-#         elif action_type == 6:
-#             nw_addr = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_nw_src:' + str(nw_addr)
-#         elif action_type == 7:
-#             nw_addr = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_nw_src:' + str(nw_addr)
-#         elif action_type == 8:
-#             nw_tos, pad = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_nw_tos:' + str(nw_tos)
-#         elif action_type == 9:
-#             port, pad = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_tp_src:' + str(port)
-#         elif action_type == int('a', 16):
-#             port, pad = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'mod_tp_dst:' + str(port)
-#         elif action_type == int('b', 16):
-#             port, pad, queue_id = libs.openflow.of10.parser.get_action(action_type, payload)
-#             return 'set_queue:' + str(queue_id)
-#
-#     if PrintingOptions().print_ovs is not True:
-#         return
-#
-#     switch_ip = 'SWITCH_IP'
-#     switch_port = '6634'
-#
-#     ofm = []
-#     ofactions = []
-#
-#     ovs_command = get_command(msg.command)
-#
-#     for K in msg.match.__dict__:
-#         if K != 'wildcards':
-#             if msg.match.__dict__[K] is not None:
-#                 value = "%s=%s," % (K, msg.match.__dict__[K])
-#                 ofm.append(value)
-#
-#     matches = ''.join(ofm)
-#
-#     if msg.command is not 3:
-#         for action in msg.actions:
-#                 value = get_actions(action.type, action.length, action.payload)
-#                 value = "%s," % value
-#                 ofactions.append(value)
-#
-#         flag = get_flag(msg.flags)
-#         print('ovs-ofctl %s tcp:%s:%s \"' % (ovs_command, switch_ip, switch_port), end='')
-#         if msg.flags != 0:
-#             print('%s,' % flag, end='')
-#         if msg.priority != 32678:
-#             print('priority=%s,' % msg.priority, end='')
-#         if msg.idle_timeout != 0:
-#             print('idle_timeout=%s,' % msg.idle_timeout, end='')
-#         if msg.hard_timeout != 0:
-#             print('hard_timeout=%s,' % msg.hard_timeout, end='')
-#         print('%s ' % matches, end='')
-#         print('action=%s\"' % ''.join(ofactions))
-#     else:
-#         ovs_msg_del = 'ovs-ofctl %s tcp:%s:%s %s '
-#         print(ovs_msg_del % (ovs_command, switch_ip, switch_port, matches))
