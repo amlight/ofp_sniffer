@@ -609,7 +609,7 @@ def print_ofpt_multipart_request(msg):
 
     # TODO: LOOK AT PAYLOAD
 
-    print(string % (msg.type, flags, msg.pad))
+    print(string % (msg.multipart_type, flags, msg.pad))
 
     return 0
 
@@ -621,11 +621,11 @@ def print_ofpt_multipart_reply(msg):
     # Print main multipart_reply options
     string = 'Body - Type: %s Flags: %s Pad: %s'
 
-    flags = green(dissector.get_multipart_rePLY_flags(msg.flags.value))
+    flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
 
     # TODO: LOOK AT PAYLOAD
 
-    print(string % (msg.type, flags, msg.pad))
+    print(string % (msg.multipart_type, flags, msg.pad))
 
     return 0
 
