@@ -533,7 +533,7 @@ def print_ofpt_group_mod(msg):
           (command, type, msg.pad, green(msg.group_id.value)))
 
     #TODO: MISSING PARSING OF BUCKET[] & ACTIONS
-     print(msg.bucket.__dict__)
+     print(msg.__dict__)
 
      return 0
 
