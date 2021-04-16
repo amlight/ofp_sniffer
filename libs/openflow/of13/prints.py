@@ -529,11 +529,12 @@ def print_ofpt_group_mod(msg):
      command = green(dissector.get_group_mod_command(msg.command.value))
      type = green(dissector.get_group_mod_type(msg.command.value))
 
-     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s' %
-          (command, type, msg.pad, green(msg.group_id.value)))
+     d = msg.buckets._pyof_class.__dict__
 
-    #TODO: MISSING PARSING OF BUCKET[] & ACTIONS
-     print(msg.__dict__)
+     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s\n '
+           'Bucket[lenght]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s Bucket[actions]: %s' %
+          (command, type, msg.pad, green(msg.group_id.value),
+           d['length'], d['weight'], d['watch_port'], d['watch_group'], d['actions'] ))
 
      return 0
 
