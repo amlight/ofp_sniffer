@@ -242,6 +242,16 @@ def get_phy_config(p_cfg): #page 54
     except KeyError:
         return 'UnknownConfig(%s)' % p_cfg
 
+def get_table_mod_config(p_cfg):
+    cfg = {0: 'MissController(0x00)',
+           1: 'MissContinue(0x01)',
+           2: 'MissDrop(0x02)',
+           3: 'MissMask(0x03)'}
+    try:
+        return cfg[p_cfg]
+    except KeyError:
+        return 'UnknownConfig(%s)' % p_cfg
+
 def get_phy_state(p_state):
     state = {0: 'LinkDown(0x1)',
              2: 'STPBlock(0x2)',

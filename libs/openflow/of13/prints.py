@@ -36,15 +36,15 @@ def prints_ofp(msg):
                      12: print_ofpt_port_status,  # ok
                      13: print_ofpt_packet_out,  # ok, but print_actions in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
                      14: print_ofpt_flow_mod,  # ok
-                     15: print_ofpt_group_mod, # pending
-                     16: print_ofpt_port_mod,  # pending
+                     15: print_ofpt_group_mod, # ok, pending bucket[]?
+                     16: print_ofpt_port_mod,  # ok,
                      17: print_ofpt_table_mod, # ok
-                     18: print_ofpt_multipart_request, # pending
+                     18: print_ofpt_multipart_request, # pending payload, function for every attribute, and then add to array
                      19: print_ofpt_multipart_reply, # ON HOLD
                      20: print_ofpt_barrier_request, #ok
                      21: print_ofpt_barrier_reply, #ok
                      22: print_ofpt_queue_get_config_request, #ok
-                     23: print_ofpt_queue_get_config_reply, # pending
+                     23: print_ofpt_queue_get_config_reply, # In progress
                      24: print_ofpt_role_request, # ON HOLD
                      25: print_ofpt_role_reply, # ON HOLD
                      26: print_ofpt_get_async_request, # ON HOLD
@@ -341,7 +341,8 @@ def print_ofpt_port_status(msg):
     """
     print('OpenFlow PortStatus - Reason: %s Pad: %s' %
           (msg.reason, msg.pad))
-    print_of_ports(msg.desc)
+    print_of_ports(msg.desc) # TODO: print_of_ports in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
+
     return 0
 
 
@@ -359,7 +360,7 @@ def print_ofpt_packet_out(msg):
            green(dissector.get_phy_port_id(msg.in_port.value)),
            msg.actions_len.value))
     if msg.actions_len is not 0:
-        print_actions(msg.actions)
+        print_actions(msg.actions) #TODO: print_actions in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
         print_data(msg.data)
     return 0
 
@@ -526,10 +527,14 @@ def print_ofpt_group_mod(msg):
             msg: OpenFlow message unpacked by python-openflow | PAGE 82
      """
      command = green(dissector.get_group_mod_command(msg.command.value))
-     type = green(dissector.get_group_type_command(msg.command.value))
+     type = green(dissector.get_group_mod_type(msg.command.value))
 
      print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s' %
           (command, type, msg.pad, green(msg.group_id.value)))
+
+    #TODO: MISSING PARSING OF BUCKET[] & ACTIONS
+     print(msg.bucket.__dict__)
+
      return 0
 
 
@@ -541,6 +546,8 @@ def print_ofpt_port_mod(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow | PAGE 84
     """
+
+   # print(msg.__dict__)
 
     def _print_port_mod_config_mask(variable, name):
         """The mask field is used to select bits in the config field to change.
@@ -562,7 +569,6 @@ def print_ofpt_port_mod(msg):
     _print_port_mod_config_mask(msg.config.value, 'config')
     _print_port_mod_config_mask(msg.mask.value, 'mask')
     _print_port_mod_config_mask(msg.advertise.value, 'advertise')
-
     return 0
 
 
@@ -574,8 +580,20 @@ def print_ofpt_table_mod(msg):
             Args:
                 msg: OpenFlow message unpacked by python-openflow
         """
+
+    # TODO: CONFIG FIELDS
+
+    config = dissector.get_table_mod_confi(msg.config.value)
+    for i in config:
+        print(dissector.get_table_mod_config(i), end='')
+        printed = True
+    else:
+        printed = _dont_print_0(printed)
+    print()
+
     print('TableMod Table_ID: %s Pad: %s Config: %s' %
           (green(msg.table_id.value), msg.pad, msg.config.value))
+
     return 0
 
 
@@ -643,6 +661,35 @@ def print_ofpt_queue_get_config_request(msg):
     string = 'Body - Port: %s Pad: %s'
 
     print(string % (msg.port, msg.pad))
+
+    #TODO: CHECK DISSECTOR FOR THESE, AND LOOK UP HOW TO TO ARRAYS.
+
+    # def print_ofpt_queue_reply_prop_payload(payload):
+    #     print('Payload: Rate %s Pad: %s' % (payload.rate, payload.pad))
+    #
+    # def print_ofpt_queue_reply_properties(qproperty):
+    #     print('Property: %s Length: %s Pad: %s' %
+    #           (qproperty.property, qproperty.length, qproperty.pad))
+    #     print_ofpt_queue_reply_prop_payload(qproperty.payload)
+    #
+    # def print_ofpt_queue_reply_queue(queue):
+    #     print('Queue_ID: %s Length: %s Pad: %s' %
+    #           (queue.queue_id, queue.length, queue.pad))
+    #     if len(queue.properties) == 0:
+    #         print('QueueGetConfigRes: No Properties')
+    #         return
+    #     for property in queue.properties:
+    #         print_ofpt_queue_reply_properties(property)
+    #
+    # print('QueueGetConfigRes Port: %s Pad: %s' %
+    #       (msg.port, msg.pad))
+    #
+    # if len(msg.queues) == 0:
+    #     print('QueueGetConfigRes: No Queues')
+    #     return
+    #
+    # for queue in msg.queues:
+    #     print_ofpt_queue_reply_queue(queue)
 
     return 0
 
