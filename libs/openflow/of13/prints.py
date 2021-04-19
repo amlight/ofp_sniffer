@@ -517,7 +517,6 @@ def print_instruction(instructions):
             print("Experimenter")
 
 
-
 # ################## OFPT_GROUP_MOD ############################
 
 
@@ -529,12 +528,18 @@ def print_ofpt_group_mod(msg):
      command = green(dissector.get_group_mod_command(msg.command.value))
      type = green(dissector.get_group_mod_type(msg.command.value))
 
-     d = msg.buckets._pyof_class.__dict__
+     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s\n'
+           'Bucket[lenght]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s' %
+           (command, type, msg.pad, green(msg.group_id.value), msg.buckets._pyof_class.length.value,
+            msg.buckets._pyof_class.weight.value, msg.buckets._pyof_class.watch_port.value,
+            msg.buckets._pyof_class.watch_group.value))
 
-     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s\n '
-           'Bucket[lenght]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s Bucket[actions]: %s' %
-          (command, type, msg.pad, green(msg.group_id.value),
-           d['length'], d['weight'], d['watch_port'], d['watch_group'], d['actions'] ))
+     if not msg.buckets._pyof_class.actions:
+         print("Bucket[actions]: None")
+     else:
+         print('Bucket[actions]:')
+         for action in msg.buckets._pyof_class.actions:
+             print(' %s,' % action)
 
      return 0
 
