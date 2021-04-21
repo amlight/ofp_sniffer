@@ -34,23 +34,23 @@ def prints_ofp(msg):
                      10: print_ofpt_packet_in,  # ok
                      11: print_ofpt_flow_removed,  # ok
                      12: print_ofpt_port_status,  # ok
-                     13: print_ofpt_packet_out,  # ok, but print_actions in part of "Multipurpose port functions" in 1.0. Can I use those functions here?
+                     13: print_ofpt_packet_out, # ok
                      14: print_ofpt_flow_mod,  # ok
-                     15: print_ofpt_group_mod, # pending
+                     15: print_ofpt_group_mod,  # pending
                      16: print_ofpt_port_mod,  # pending
-                     17: print_ofpt_table_mod, # ok
-                     18: print_ofpt_multipart_request, # pending
-                     19: print_ofpt_multipart_reply, # ON HOLD
-                     20: print_ofpt_barrier_request, #ok
-                     21: print_ofpt_barrier_reply, #ok
-                     22: print_ofpt_queue_get_config_request, #ok
-                     23: print_ofpt_queue_get_config_reply, # pending
-                     24: print_ofpt_role_request, # ON HOLD
-                     25: print_ofpt_role_reply, # ON HOLD
-                     26: print_ofpt_get_async_request, # ON HOLD
-                     27: print_ofpt_get_async_reply, # ON HOLD
-                     28: print_ofpt_set_async, # ON HOLD
-                     29: print_ofpt_meter_mod # ON HOLD ; pending error msg
+                     17: print_ofpt_table_mod,  # ok
+                     18: print_ofpt_multipart_request,  # ok, but missing payload
+                     19: print_ofpt_multipart_reply,  # ok, but missing payload
+                     20: print_ofpt_barrier_request,  # ok
+                     21: print_ofpt_barrier_reply,  # ok
+                     22: print_ofpt_queue_get_config_request,  # ok
+                     23: print_ofpt_queue_get_config_reply,  # pending
+                     24: print_ofpt_role_request,  # ON HOLD
+                     25: print_ofpt_role_reply,  # ON HOLD
+                     26: print_ofpt_get_async_request,  # ON HOLD
+                     27: print_ofpt_get_async_reply,  # ON HOLD
+                     28: print_ofpt_set_async,  # ON HOLD
+                     29: print_ofpt_meter_mod  # ON HOLD
                      }
 
         return msg_types[msg.header.message_type.value](msg)
@@ -342,6 +342,7 @@ def print_ofpt_port_status(msg):
     print('OpenFlow PortStatus - Reason: %s Pad: %s' %
           (msg.reason, msg.pad))
     print_of_ports(msg.desc)
+
     return 0
 
 
@@ -516,7 +517,6 @@ def print_instruction(instructions):
             print("Experimenter")
 
 
-
 # ################## OFPT_GROUP_MOD ############################
 
 
@@ -526,10 +526,21 @@ def print_ofpt_group_mod(msg):
             msg: OpenFlow message unpacked by python-openflow | PAGE 82
      """
      command = green(dissector.get_group_mod_command(msg.command.value))
-     type = green(dissector.get_group_type_command(msg.command.value))
+     type = green(dissector.get_group_mod_type(msg.command.value))
 
-     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s' %
-          (command, type, msg.pad, green(msg.group_id.value)))
+     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s\n'
+           'Bucket[lenght]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s' %
+           (command, type, msg.pad, green(msg.group_id.value), msg.buckets._pyof_class.length.value,
+            msg.buckets._pyof_class.weight.value, msg.buckets._pyof_class.watch_port.value,
+            msg.buckets._pyof_class.watch_group.value))
+
+     if not msg.buckets._pyof_class.actions:
+         print("Bucket[actions]: None")
+     else:
+         print('Bucket[actions]:')
+         for action in msg.buckets._pyof_class.actions:
+             print(' %s,' % action)
+
      return 0
 
 
@@ -574,8 +585,18 @@ def print_ofpt_table_mod(msg):
             Args:
                 msg: OpenFlow message unpacked by python-openflow
         """
+
+    config = dissector.get_table_mod_confi(msg.config.value)
+    for i in config:
+        print(dissector.get_table_mod_config(i), end='')
+        printed = True
+    else:
+        printed = _dont_print_0(printed)
+    print()
+
     print('TableMod Table_ID: %s Pad: %s Config: %s' %
           (green(msg.table_id.value), msg.pad, msg.config.value))
+
     return 0
 
 
@@ -588,9 +609,7 @@ def print_ofpt_multipart_request(msg):
 
     flags = green(dissector.get_multipart_request_flags(msg.flags.value))
 
-    # TODO: LOOK AT PAYLOAD
-
-    print(string % (msg.type, flags, msg.pad))
+    print(string % (msg.multipart_type, flags, msg.pad))
 
     return 0
 
@@ -602,11 +621,9 @@ def print_ofpt_multipart_reply(msg):
     # Print main multipart_reply options
     string = 'Body - Type: %s Flags: %s Pad: %s'
 
-    flags = green(dissector.get_multipart_rePLY_flags(msg.flags.value))
+    flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
 
-    # TODO: LOOK AT PAYLOAD
-
-    print(string % (msg.type, flags, msg.pad))
+    print(string % (msg.multipart_type, flags, msg.pad))
 
     return 0
 
