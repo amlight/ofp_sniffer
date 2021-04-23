@@ -454,6 +454,55 @@ def print_match_oxm(oxm):
         print('%s/%s' % (green(oxm.payload.value), green(oxm.payload.mask)))
 
 
+def print_action(action):
+    """Function to print the content of openflow actions"""
+    if action.action_type == 0:
+        port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
+        print(" Output Port %s Max_Len %s Pad %s" %
+              (green(port_name), action.max_length, print_pad(action.pad)))
+    # SetMPLSTTL
+    elif action.action_type == 15:
+        print("ATTENTION!!!!!")
+    # PUSH_VLAN
+    elif action.action_type == 17:
+        print(" Ethertype: %s" % green(hex(action.ethertype.value)))
+    # CopyTTLOut, CopyTTLIn, DecMPLSTTL, POP_VLAN, PopMPLS, DecNWTTL, PopPBB
+    elif action.action_type in [11, 12, 16, 18, 20, 24, 27]:
+        pass
+    # PushMPLS
+    elif action.action_type == 19:
+        print("ATTENTION!!!!!")
+    # SET_QUEUE
+    elif action.action_type == 21:
+        print(' Queue ID: %s' % green(action.queue_id.value))
+    # Group
+    elif action.action_type == 22:
+        print("ATTENTION!!!!!")
+    # SetNWTTL
+    elif action.action_type == 23:
+        print("ATTENTION!!!!!")
+    # SET_FIELD
+    elif action.action_type == 25:
+        # TODO: LEVERAGE FUNCTION BELOW IN THE FUTURE FOR ALL THE OXM_MATCH
+        # print_match_oxm(action.field)
+        if action.field.oxm_field == 6:  # VLAN
+            vlan = unpack('!H', action.field.oxm_value)[0] & 4095
+            print(" Set VLAN_VID: %s" % green(vlan))
+        elif action.field.oxm_field == 3:  # ETH_DST
+            print(" Set ETH_DST: %s" % green(libs.tcpiplib.prints.eth_addr(action.field.oxm_value)))
+        elif action.field.oxm_field == 4:  # ETH_SRC
+            print(" Set ETH_SRC: %s" % green(libs.tcpiplib.prints.eth_addr(action.field.oxm_value)))
+        else:
+            print("  ATTENTION!!!!!")
+            print(action.field.oxm_field)
+    # PushPBB
+    elif action.action_type == 26:
+        print("ATTENTION!!!!!")
+    # Experimenter
+    elif action.action_type == 65535:
+        print("ATTENTION!!!!!")
+
+
 def print_instruction(instructions):
     print('Flow Instructions:')
     for instruction in instructions:
@@ -461,7 +510,7 @@ def print_instruction(instructions):
               (dissector.get_instructions(instruction.instruction_type.value), instruction.length))
         # GotoTable
         if instruction.instruction_type.value == 1:
-            print(" Goto Table_ID: %s" % green(hex(instruction.table_id.value)))
+            print(" Goto Table_ID: %s" % green(instruction.table_id.value))
         # WriteMetadata
         if instruction.instruction_type.value == 2:
             print(" MetaData: %s MetaData_Mask: %s" %
@@ -470,45 +519,7 @@ def print_instruction(instructions):
         if instruction.instruction_type.value in [3,4,5]:
             for action in instruction.actions:
                 print('  Action - Type %s Length %s' % (green(action.action_type), action.length), end='')
-                if action.action_type == 0:
-                    port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
-                    print(" Port %s Max_Len %s Pad %s" %
-                          (green(port_name), action.max_length, print_pad(action.pad)))
-                # SetMPLSTTL
-                elif action.action_type == 15:
-                    print("ATTENTION!!!!!")
-                # PUSH_VLAN
-                elif action.action_type == 17:
-                    print(" Ethertype: %s" % green(hex(action.ethertype.value)))
-                # CopyTTLOut, CopyTTLIn, DecMPLSTTL, POP_VLAN, PopMPLS, DecNWTTL, PopPBB
-                elif action.action_type in [11,12,16,18,20,24,27]:
-                    pass
-                # PushMPLS
-                elif action.action_type == 19:
-                    print("ATTENTION!!!!!")
-                # SET_QUEUE
-                elif action.action_type == 21:
-                    print(' Queue ID: %s' % green(action.queue_id.value))
-                # Group
-                elif action.action_type == 22:
-                    print("ATTENTION!!!!!")
-                # SetNWTTL
-                elif action.action_type == 23:
-                    print("ATTENTION!!!!!")
-                # SET_FIELD
-                elif action.action_type == 25:
-                    if action.field.oxm_field == 6:  # VLAN
-                        vlan = unpack('!H', action.field.oxm_value)[0] & 4095
-                        print(" VLAN_VID: %s" % green(vlan))
-                    else:
-                        print("ATTENTION!!!!!")
-                        print(action.field.oxm_field)
-                # PushPBB
-                elif action.action_type == 26:
-                    print("ATTENTION!!!!!")
-                # Experimenter
-                elif action.action_type == 65535:
-                    print("ATTENTION!!!!!")
+                print_action(action)
         # Meter
         if instruction.instruction_type.value == 6:
             print("Meter_ID: %s" % green(hex(instruction.meter_id.value)))
@@ -521,27 +532,23 @@ def print_instruction(instructions):
 
 
 def print_ofpt_group_mod(msg):
-     """
+    """
         Args:
             msg: OpenFlow message unpacked by python-openflow | PAGE 82
-     """
-     command = green(dissector.get_group_mod_command(msg.command.value))
-     type = green(dissector.get_group_mod_type(msg.command.value))
+    """
+    command = green(dissector.get_group_mod_command(msg.command.value))
+    type = green(dissector.get_group_mod_type(msg.command.value))
 
-     print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s\n'
-           'Bucket[lenght]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s' %
-           (command, type, msg.pad, green(msg.group_id.value), msg.buckets._pyof_class.length.value,
-            msg.buckets._pyof_class.weight.value, msg.buckets._pyof_class.watch_port.value,
-            msg.buckets._pyof_class.watch_group.value))
+    print('GroupMod Command: %s Type: %s Pad: %s Group_id: %s\n'
+          'Bucket[lenght]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s' %
+          (command, type, msg.pad, green(msg.group_id.value), msg.buckets[0].length.value,
+           msg.buckets[0].weight.value, hex(msg.buckets[0].watch_port.value),
+           hex(msg.buckets[0].watch_group.value)))
+    print("Bucket[actions]:")
+    for action in msg.buckets[0].actions:
+        print_action(action)
 
-     if not msg.buckets._pyof_class.actions:
-         print("Bucket[actions]: None")
-     else:
-         print('Bucket[actions]:')
-         for action in msg.buckets._pyof_class.actions:
-             print(' %s,' % action)
-
-     return 0
+    return 0
 
 
 # ################## OFPT_PORT_MOD ############################
