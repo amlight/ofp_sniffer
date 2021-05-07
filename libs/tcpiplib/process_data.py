@@ -12,7 +12,7 @@ def dissect_data(data, start=0):
     """
         This function aims to dissect PacketIn and PacketOut data
         It assumes it is
-            Ethernet [vlan] (BDDP|LLDP|ARP|IP) [TCP|UDP]
+            Ethernet [qinq] [vlan] (BDDP|LLDP|ARP|IP) [TCP|UDP]
     Args:
         data: BinaryData
         start: offset
@@ -35,9 +35,8 @@ def dissect_data(data, start=0):
     etype = '0x0000'
 
     start += 14
-    if eth.protocol in [33024]:
-        # Frame has VLAN
-
+    if eth.protocol in [34984]:  # 0x88a8
+        # Frame has QinQ
         vlan = VLAN()
         vlan.parse(packet[start:start + 4])
         payload.append(vlan)
@@ -45,6 +44,23 @@ def dissect_data(data, start=0):
         start += 4
     else:
         etype = eth.protocol
+
+    # if there is no content, return
+    if len(packet[start:]) == 0:
+        return payload
+
+    if not start:  # In case there was a QinQ header.
+        start += 14
+    if etype in [33024] or eth.protocol in [33024]:
+        # Frame has VLAN
+        vlan = VLAN()
+        vlan.parse(packet[start:start + 4])
+        payload.append(vlan)
+        etype = vlan.protocol
+        start += 4
+    else:
+        if not etype:
+            etype = eth.protocol
 
     # if there is no content, return
     if len(packet[start:]) == 0:
@@ -126,7 +142,7 @@ def is_protocol(data, lldp=False, oess=False, arp=False):
         eth = data.pop(0)
         next_protocol = eth.protocol
 
-        if next_protocol in [33024]:
+        if next_protocol in [33024, 34984]:
             vlan = data.pop(0)
             if return_protocol:
                 return vlan.protocol

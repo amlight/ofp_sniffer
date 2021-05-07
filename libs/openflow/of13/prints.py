@@ -280,6 +280,11 @@ def print_data(data):
         libs.tcpiplib.prints.print_layer2(eth)
         next_protocol = eth.protocol
 
+        if next_protocol in [34984]:  # has QinQ
+            qinq = data.pop(0)
+            libs.tcpiplib.prints.print_qinq(qinq)
+            next_protocol = qinq.protocol
+
         if next_protocol in [33024]:
             vlan = data.pop(0)
             libs.tcpiplib.prints.print_vlan(vlan)

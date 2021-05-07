@@ -130,6 +130,17 @@ def print_layer2(eth):
            red(libs.tcpiplib.tcpip.get_ethertype(eth.protocol))))
 
 
+def print_qinq(vlan):
+    """
+        Print QINQ/VLAN fields
+    Args:
+        vlan: VLAN class
+    """
+    print('QinQ: PCP: %s CFI: %s VID: %s Protocol: %s' %
+          (vlan.pcp, vlan.cfi, red(vlan.vid),
+           red(get_ethertype(vlan.ethertype))))
+
+
 def print_vlan(vlan):
     """
         Print VLAN fields

@@ -21,6 +21,7 @@ def get_ethertype(etype):
               33024: 'VLAN',
               34925: 'IPv6',
               34887: 'MPLS',
+              34984: 'QinQ',
               35020: 'LLDP',
               35138: 'BBDP',
               34998: 'PRIVATE'}
