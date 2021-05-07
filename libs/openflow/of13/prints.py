@@ -471,7 +471,7 @@ def print_action(action):
         print(" Ethertype: %s" % green(hex(action.ethertype.value)))
     # CopyTTLOut, CopyTTLIn, DecMPLSTTL, POP_VLAN, PopMPLS, DecNWTTL, PopPBB
     elif action.action_type in [11, 12, 16, 18, 20, 24, 27]:
-        pass
+        print()
     # PushMPLS
     elif action.action_type == 19:
         print("ATTENTION!!!!!")
