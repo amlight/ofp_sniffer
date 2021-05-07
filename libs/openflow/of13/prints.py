@@ -380,7 +380,8 @@ def print_ofpt_flow_mod(msg):
     flags = green(dissector.get_flow_mod_flags(msg.flags.value))
     port = green(dissector.get_phy_port_no(msg.out_port.value))
     command = green(dissector.get_flow_mod_command(msg.command.value))
-    print(string % (msg.cookie, msg.cookie_mask,
+    print(string % (green(hex(msg.cookie.value)),
+                    hex(msg.cookie_mask.value),
                     msg.table_id, command, msg.idle_timeout,
                     msg.hard_timeout, green(msg.priority),
                     msg.buffer_id, port, msg.out_group,
