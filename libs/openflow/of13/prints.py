@@ -455,7 +455,7 @@ def print_match_oxm(oxm):
 def print_action(action):
     """Function to print the content of openflow actions"""
     if action.action_type == 0:
-        port_name = "Controller(4294967293)" if action.port == 4294967293 else action.port
+        port_name = dissector.get_phy_port_no(action.port.value)
         print(" Output Port %s Max_Len %s Pad %s" %
               (green(port_name), action.max_length, print_pad(action.pad)))
     # SetMPLSTTL
