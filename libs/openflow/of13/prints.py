@@ -4,6 +4,7 @@
 from struct import unpack
 from hexdump import hexdump
 from pyof.foundation.basic_types import BinaryData
+from pyof.foundation.basic_types import FixedTypeList
 import libs.tcpiplib.prints
 from libs.gen.prints import red, green, yellow
 from libs.openflow import of13
