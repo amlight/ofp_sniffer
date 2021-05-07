@@ -13,11 +13,9 @@ from libs.tcpiplib.process_data import dissect_data
 
 def prints_ofp(msg):
     """
-
     Args:
         msg: OpenFlow 1.3 message unpacked by python-openflow
     Returns:
-
     """
 
     try:
@@ -157,10 +155,8 @@ def print_ofpt_error(msg):
 
 
 def print_ofpt_echo_request(msg):
-    if not isinstance(msg.data, BinaryData) and len(msg.data) > 0:
-        print("Echo Request - Data: %s" % hexdump(msg.data))
-    elif isinstance(msg.data, BinaryData):
-        print("Echo Reply - Data: \"%s\"" % msg.data.value.decode("utf-8"))
+    if isinstance(msg.data, BinaryData) and len(msg.data) > 0:
+        print("Echo Request - Data: \"%s\"" % msg.data.value.decode("utf-8"))
     return 0
 
 
@@ -168,9 +164,7 @@ def print_ofpt_echo_request(msg):
 
 
 def print_ofpt_echo_reply(msg):
-    if not isinstance(msg.data, BinaryData) and len(msg.data) > 0:
-        print("Echo Reply - Data: %s" % hexdump(msg.data))
-    elif isinstance(msg.data, BinaryData):
+    if isinstance(msg.data, BinaryData) and len(msg.data) > 0:
         print("Echo Reply - Data: \"%s\"" % msg.data.value.decode("utf-8"))
     return 0
 
