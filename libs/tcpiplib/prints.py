@@ -47,11 +47,16 @@ def datapath_id(a):
     Returns:
         DPID in human format
     """
-    string = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x"
-    if isinstance(a, bytes):
-        a = a.decode("latin")
-    dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
-                     ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
+    if isinstance(a, str):
+        dpid = "%s:%s:%s:%s:%s:%s:%s:%s" % (
+            a[0:2], a[2:4], a[4:6], a[6:8], a[8:10], a[10:12], a[12:14], a[14:16])
+    else:
+        string = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x"
+        if isinstance(a, bytes):
+            a = a.decode("latin")
+        dpid = string % (ord(a[0]), ord(a[1]), ord(a[2]), ord(a[3]),
+                         ord(a[4]), ord(a[5]), ord(a[6]), ord(a[7]))
+
     return dpid
 
 
@@ -210,7 +215,7 @@ def print_lldp(lldp):
         if isinstance(lldp.c_id, bytes):
             lldp.c_id = lldp.c_id.decode("utf-8")
         print('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' %
-              (lldp.c_type, lldp.c_length, lldp.c_subtype, green(lldp.c_id)))
+              (lldp.c_type, lldp.c_length, lldp.c_subtype, green(datapath_id(lldp.c_id))))
     if lldp.p_type is 2:
         print('LLDP: Port Type(%s) Length: %s SubType: %s ID: %s' %
               (lldp.p_type, lldp.p_length, lldp.p_subtype, green(lldp.p_id)))

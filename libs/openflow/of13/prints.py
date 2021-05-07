@@ -32,7 +32,7 @@ def prints_ofp(msg):
                      10: print_ofpt_packet_in,  # ok
                      11: print_ofpt_flow_removed,  # ok
                      12: print_ofpt_port_status,  # ok
-                     13: print_ofpt_packet_out, # ok
+                     13: print_ofpt_packet_out,  # ok
                      14: print_ofpt_flow_mod,  # ok
                      15: print_ofpt_group_mod,  # pending
                      16: print_ofpt_port_mod,  # pending
@@ -348,14 +348,17 @@ def print_ofpt_packet_out(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow  ; PAGE 107 MANUAL
     """
-    print('PacketOut: buffer_id: %s in_port: %s actions_len: %s Padding: %s'
-          'Action: %s Data: %s' %
+    print('PacketOut: buffer_id: %s in_port: %s actions_len: %s' %
           (hex(msg.buffer_id.value),
-           green(dissector.get_phy_port_id(msg.in_port.value)),
+           green(dissector.get_phy_port_no(msg.in_port.value)),
            msg.actions_len.value))
     if msg.actions_len is not 0:
-        print_actions(msg.actions)
-        print_data(msg.data)
+        print(" Actions:")
+        for action in msg.actions:
+            print("  ", end="")
+            print_action(action)
+    print_data(msg.data)
+
     return 0
 
 

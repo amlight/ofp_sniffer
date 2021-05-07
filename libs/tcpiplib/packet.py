@@ -242,7 +242,10 @@ class LLDP:
 
         try:
             # Some OF applications (OESS and ONOS) send the DPID as strings...
-            self.c_id = chassis[0].decode("utf-8")
+            if isinstance(chassis[0], bytes):
+                self.c_id = chassis[0].hex()
+            else:
+                self.c_id = chassis[0].decode("utf-8")
         except UnicodeDecodeError:
             # and some as Hex (Kytos)
             self.c_id = chassis[0].hex()
