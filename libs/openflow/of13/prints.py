@@ -886,28 +886,28 @@ def print_ofpt_multipart_reply(msg):
             print('Multipart Reply Type Table(3):\nNo Tables')
             return
 
+    def print_ofpt_multipart_reply_port(port):
+        """
+
+        Args:
+            msg: OpenFlow message unpacked by python-openflow
+        """
+        flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
+        print('  Port(4): Flags: %s port_number: %s pad: %s rx_packets: %s tx_packets: %s rx_bytes: %s tx_bytes: %s'
+              'rx_dropped: %s tx_dropped: %s rx_errors: %s tx_errors: %s rx_frame_err: %s rx_over_err: %s'
+              'rx_crc_err: %s collisions: %s duration_sec: %s duration_nsec: %s\n' %
+              (flags, red(port.port_no), port.pad,
+               port.rx_packets, port.tx_packets, port.rx_bytes, port.tx_bytes,
+               port.rx_dropped, port.tx_dropped, port.rx_errors, port.tx_errors,
+               port.rx_frame_err, port.rx_over_err, port.rx_crc_err,
+               port.collisions, port.duration_sec, port.duration_nsec))
+
     def print_ofp_multipart_reply_port_array(msg):
         """
 
         Args:
             msg: OpenFlow message unpacked by python-openflow
         """
-
-        def print_ofpt_multipart_reply_port(port):
-            """
-
-            Args:
-                msg: OpenFlow message unpacked by python-openflow
-            """
-            flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-            print('  Port(4): Flags: %s port_number: %s pad: %s rx_packets: %s tx_packets: %s rx_bytes: %s tx_bytes: %s'
-                  'rx_dropped: %s tx_dropped: %s rx_errors: %s tx_errors: %s rx_frame_err: %s rx_over_err: %s'
-                  'rx_crc_err: %s collisions: %s duration_sec: %s duration_nsec: %s\n' %
-                  (flags, red(port.port_no), port.pad,
-                   port.rx_packets, port.tx_packets, port.rx_bytes, port.tx_bytes,
-                   port.rx_dropped, port.tx_dropped, port.rx_errors, port.tx_errors,
-                   port.rx_frame_err, port.rx_over_err, port.rx_crc_err,
-                   port.collisions, port.duration_sec, port.duration_nsec))
 
         if len(msg.body) == 0:
             print('Multipart Type Port(4):\nNo Ports')
@@ -1085,13 +1085,15 @@ def print_ofpt_multipart_reply(msg):
                     msg: OpenFlow message unpacked by python-openflow
         """
         flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-        port = green(dissector.get_phy_port_no(msg.port[0].value))
-        print('  Port_Desc(13): Flags: %s pad: %s port: %s' %
-              (flags, msg.pad, port))
+        print('  Port_Desc(13): Flags: %s pad: %s' %
+              (flags, msg.pad))
 
         if len(msg.body) == 0:
             print('Multipart Reply Type Port_Desc(13):\nNo port descriptions')
             return
+        else:
+            for port in msg.body:
+                print_ofp_phy_port(port)
 
     def print_ofpt_multipart_reply_experimenter(msg):
         """
@@ -1112,7 +1114,7 @@ def print_ofpt_multipart_reply(msg):
         print_ofpt_multipart_reply_table(msg)
     elif msg.multipart_type.value == 4:
         print_ofp_multipart_reply_port_array(msg)
-    elif msg.body_multipart == 5:
+    elif msg.multipart_type.value == 5:
         print_ofpt_multipart_reply_queue_array(msg)
     elif msg.multipart_type.value == 6:
         print_ofpt_multipart_reply_group(msg)
