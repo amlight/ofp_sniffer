@@ -299,7 +299,7 @@ def print_data(data):
         elif next_protocol in [2048]:
             ip = data.pop(0)
             libs.tcpiplib.prints.print_layer3(ip)
-            if ip.protocol is 6:
+            if ip.protocol == 6:
                 tcp = data.pop(0)
                 libs.tcpiplib.prints.print_tcp(tcp)
         elif next_protocol in [2054]:
@@ -358,7 +358,7 @@ def print_ofpt_packet_out(msg):
           (hex(msg.buffer_id.value),
            green(dissector.get_phy_port_no(msg.in_port.value)),
            msg.actions_len.value))
-    if msg.actions_len is not 0:
+    if msg.actions_len != 0:
         print(" Actions:")
         for action in msg.actions:
             print("  ", end="")

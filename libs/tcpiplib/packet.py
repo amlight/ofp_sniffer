@@ -229,7 +229,7 @@ class LLDP:
         chassis_raw = packet[:3]
         chassis = unpack('!HB', chassis_raw)
         self.c_type = chassis[0] >> 9
-        if self.c_type is not 1:
+        if self.c_type != 1:
             return {}
 
         self.c_length = chassis[0] & 0xFF
@@ -257,7 +257,7 @@ class LLDP:
         port_raw = packet[start:start + 3]
         port = unpack('!HB', port_raw)
         self.p_type = port[0] >> 9
-        if self.p_type is not 2:
+        if self.p_type != 2:
             return {}
         self.p_length = port[0] & 0xFF
         self.p_subtype = port[1]
@@ -265,11 +265,11 @@ class LLDP:
         # Get P_ID
         port_raw = packet[start + 3:start + 3 + length]
         # string = '!%ss' % length
-        if length is 1:
+        if length == 1:
             string = '!B'
-        elif length is 2:
+        elif length == 2:
             string = '!H'
-        elif length is 4:
+        elif length == 4:
             string = '!L'
         else:
             string = '!%ss' % length
@@ -282,7 +282,7 @@ class LLDP:
         ttl_raw = packet[start:start + 4]
         ttl = unpack('!HH', ttl_raw)
         self.t_type = ttl[0] >> 9
-        if self.t_type is not 3:
+        if self.t_type != 3:
             return {}
         self.t_length = ttl[0] & 0xFF
         self.t_ttl = ttl[1]

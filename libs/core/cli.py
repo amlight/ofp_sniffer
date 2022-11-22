@@ -62,7 +62,7 @@ def check_file_position(filename):
     """
     new_file = filename.partition(":")[0]
     position = filename.partition(":")[2]
-    return new_file, int(position) if len(position) is not 0 else 0
+    return new_file, int(position) if len(position) != 0 else 0
 
 
 def start_capture(capfile, infilter, dev):
@@ -91,7 +91,7 @@ def start_capture(capfile, infilter, dev):
         print("Exiting...")
         sys.exit(3)
 
-    if len(infilter) is 0:
+    if len(infilter) == 0:
         # Super specific filter to overcome the python-pcapy performance issue
         # reported on https://github.com/CoreSecurity/pcapy/issues/12
         # infilter = "tcp and port 6633 and (tcp[13] & 8!=0 or (tcp[13] & 1!=0 and tcp[13] & 16!=0))"

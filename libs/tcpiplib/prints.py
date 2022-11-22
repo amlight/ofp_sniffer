@@ -217,24 +217,24 @@ def print_lldp(lldp):
     Args:
         lldp: LLDP class
     """
-    if lldp.c_type is not 1 or lldp.p_type is not 2 \
-            or lldp.t_type is not 3 or lldp.e_type is not 0:
+    if lldp.c_type != 1 or lldp.p_type != 2 \
+            or lldp.t_type != 3 or lldp.e_type != 0:
         print('LLDP: Malformed packet')
         return
 
-    if lldp.c_type is 1:
+    if lldp.c_type == 1:
         if isinstance(lldp.c_id, bytes):
             lldp.c_id = lldp.c_id.decode("utf-8")
         print('LLDP: Chassis Type(%s) Length: %s SubType: %s ID: %s' %
               (lldp.c_type, lldp.c_length, lldp.c_subtype, green(datapath_id(lldp.c_id))))
-    if lldp.p_type is 2:
+    if lldp.p_type == 2:
         print('LLDP: Port Type(%s) Length: %s SubType: %s ID: %s' %
               (lldp.p_type, lldp.p_length, lldp.p_subtype, green(lldp.p_id)))
-    if lldp.t_type is 3:
+    if lldp.t_type == 3:
         print('LLDP: TTL(%s) Length: %s Seconds: %s' %
               (lldp.t_type, lldp.t_length, lldp.t_ttl))
 
-    if lldp.e_type is 0:
+    if lldp.e_type == 0:
         print('LLDP: END(%s) Length: %s' % (lldp.e_type, lldp.e_length))
 
 
