@@ -14,7 +14,7 @@ def save_to_file(log_file):
     """
         Change default output to be SaveFile()
     """
-    if len(log_file) is not 0:
+    if len(log_file) != 0:
         sys.stdout = SaveFile(log_file)
 
 

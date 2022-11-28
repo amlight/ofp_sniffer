@@ -260,7 +260,7 @@ def print_data(data):
         elif next_protocol in [2048]:
             ip = data.pop(0)
             libs.tcpiplib.prints.print_layer3(ip)
-            if ip.protocol is 6:
+            if ip.protocol == 6:
                 tcp = data.pop(0)
                 libs.tcpiplib.prints.print_tcp(tcp)
         elif next_protocol in [2054]:
@@ -318,7 +318,7 @@ def print_ofpt_packet_out(msg):
           (hex(msg.buffer_id.value),
            green(dissector.get_phy_port_id(msg.in_port.value)),
            msg.actions_len.value))
-    if msg.actions_len is not 0:
+    if msg.actions_len != 0:
         print_actions(msg.actions)
         print_data(msg.data)
 
@@ -349,11 +349,11 @@ def print_ofp_match(match):
     for match_item in match.__dict__:
         match_item_value = match.__dict__[match_item]
         if match_item_value.value not in [0, "00:00:00:00:00:00", "0.0.0.0", 65535]:
-            if match_item is 'dl_vlan' and match_item_value.value not in [65535]:
+            if match_item == 'dl_vlan' and match_item_value.value not in [65535]:
                 match_item_value = dissector.get_vlan(match_item_value.value)
-            elif match_item is 'wildcards':
+            elif match_item == 'wildcards':
                 match_item_value = hex(match_item_value.value)
-            elif match_item is 'dl_type' and match_item_value.value not in [65535]:
+            elif match_item == 'dl_type' and match_item_value.value not in [65535]:
                 match_item_value = libs.tcpiplib.tcpip.get_ethertype(match_item_value.value)
             elif match_item in ['pad1', 'pad2']:
                 continue

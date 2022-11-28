@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 
 """
     This code is the AmLight OpenFlow Sniffer
@@ -189,7 +189,7 @@ class RunSniffer(object):
                 # If a specific packet was selected, end here.
                 raise EndOfPcapFile
 
-        elif len(packet) is 0:
+        elif len(packet) == 0:
             return 3
 
         self.packet_count += 1

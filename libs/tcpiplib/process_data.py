@@ -95,7 +95,7 @@ def dissect_data(data, start=0):
         ip_addr = IP()
         ip_addr.parse(packet, start)
         payload.append(ip_addr)
-        if ip_addr.protocol is 6:
+        if ip_addr.protocol == 6:
             tcp = TCP()
             tcp.parse(packet, start + ip_addr.length)
             payload.append(tcp)
