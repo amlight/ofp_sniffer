@@ -1,6 +1,7 @@
 """
     OpenFlow 1.3 prints
 """
+import traceback
 from struct import unpack
 from hexdump import hexdump
 from pyof.foundation.basic_types import BinaryData
@@ -54,7 +55,8 @@ def prints_ofp(msg):
 
         return msg_types[msg.header.message_type.value](msg)
     except Exception as err:
-        print("Error: %s" % err)
+        err_msg = traceback.format_exc().replace("\n", ", ")
+        print("Error: %s -- %s" % (err, err_msg))
 
 
 def print_pad(pad):
@@ -438,7 +440,10 @@ def print_match_oxm(oxm):
 
         # NW_SRC or NW_DST
         elif oxm.oxm_field in [11, 12, 22, 23]:
-            oxm.oxm_value = libs.tcpiplib.prints.get_ip_from_long(oxm.oxm_value)
+            try:
+                oxm.oxm_value = libs.tcpiplib.prints.get_ip_from_long(oxm.oxm_value)
+            except:
+                pass
         # IPv6 Extensions
         elif oxm.oxm_field in [39]:
             extensions = of13.parser.parse_ipv6_extension_header(oxm.oxm_value)
@@ -620,7 +625,7 @@ def print_ofpt_multipart_request(msg):
                msg: OpenFlow message unpacked by python-openflow
     """
     multipart_type = "%s" % msg.multipart_type
-    print('Multipart_Req: Type: %s' % multipart_type.split('.')[1])
+    print('Multipart_Req: Type: %s' % multipart_type)
 
     def print_ofpt_multipart_request_description(msg):
         """
@@ -637,7 +642,7 @@ def print_ofpt_multipart_request(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow
         """
-        out_port = dissector.get_phy_port_no(msg.out_port.value)
+        out_port = dissector.get_phy_port_no(msg.body.out_port.value)
         flags = green(dissector.get_multipart_request_flags(msg.flags.value))
 
         if msg.multipart_type.value == 1:
@@ -647,10 +652,10 @@ def print_ofpt_multipart_request(msg):
 
         print('Flags: % s Pad: % s Table_id: % s Pad: % s Out_Port: % s Out_group: % s Pad: %s Cookie: %s '
               'Cookie_Mask: %s' %
-              (flags, msg.pad, msg.table_id.value, msg.pad, out_port,
-               msg.out_group, msg.pad, msg.cookie, msg.cookie_mask))
+              (flags, msg.pad, msg.body.table_id.value, msg.body.pad, out_port,
+               msg.body.out_group, msg.body.pad2, msg.body.cookie, msg.body.cookie_mask))
 
-        print_match_type(msg.match)
+        print_match_type(msg.body.match)
 
     def print_ofpt_multipart_request_table(msg):
         """
@@ -667,10 +672,10 @@ def print_ofpt_multipart_request(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow
         """
-        port_number = dissector.get_phy_port_no(msg.port_no.value)
+        port_number = dissector.get_phy_port_no(msg.body.port_no.value)
         flags = green(dissector.get_multipart_request_flags(msg.flags.value))
         print('  Port(4): Flags: %s Pad: %s Port_Number: %s Pad: %s' %
-              (flags, msg.pad, green(port_number), msg.pad))
+              (flags, msg.pad, green(port_number), msg.body.pad))
 
     def print_print_ofpt_multipart_request_queue(msg):
         """
@@ -678,10 +683,10 @@ def print_ofpt_multipart_request(msg):
         Args:
             msg: OpenFlow message unpacked by python-openflow
         """
-        port_number = dissector.get_phy_port_no(msg.port_no.value)
+        port_number = dissector.get_phy_port_no(msg.body.port_no.value)
         flags = green(dissector.get_multipart_request_flags(msg.flags.value))
         print('  Queue(5): Flags: %s Pad: %s Port_Number: %s Queue_id: %s' %
-              (flags, msg.pad, green(port_number), msg.queue_id))
+              (flags, msg.pad, green(port_number), msg.body.queue_id))
 
     def print_ofpt_multipart_request_group(msg):
         """
@@ -690,7 +695,7 @@ def print_ofpt_multipart_request(msg):
         """
         flags = green(dissector.get_multipart_request_flags(msg.flags.value))
         print('  Group(6): Flags: %s Pad: %s Group_ID: %s Pad: %s' %
-              (flags, msg.pad, msg.group_id, msg.pad))
+              (flags, msg.pad, msg.body.group_id, msg.body.pad))
 
     def print_ofpt_multipart_request_group_desc(msg):
         """
@@ -726,7 +731,7 @@ def print_ofpt_multipart_request(msg):
         """
         flags = green(dissector.get_multipart_request_flags(msg.flags.value))
         print('  Meter_Config(10): Flags: %s Pad: %s Meter_ID: %s Pad: %s' %
-              (flags, msg.pad, msg.meter_id, msg.pad))
+              (flags, msg.pad, msg.body.meter_id, msg.body.pad))
 
     def print_ofpt_multipart_request_meter_features(msg):
         """
@@ -745,8 +750,8 @@ def print_ofpt_multipart_request(msg):
         flags = green(dissector.get_multipart_request_flags(msg.flags.value))
         print('  Table_Features(12): Flags: %s Pad: %s Lenght: %s Table_ID: %s Pad: %s'
               'Name: %s Metadata_Match: %s Metadata_Write: %s Config: %s Max_entries: %s' %
-              (flags, msg.pad, msg.lenght, msg.table_id, msg.pad, msg.name,
-               msg.metadata_match, msg.metadata_write, msg.config, msg.max_entries))
+              (flags, msg.pad, msg.body.lenght, msg.body.table_id, msg.body.pad, msg.body.name,
+               msg.body.metadata_match, msg.body.metadata_write, msg.body.config, msg.body.max_entries))
 
         # TODO: Table_feature_prop: includes instructions
 
@@ -766,8 +771,8 @@ def print_ofpt_multipart_request(msg):
             msg: OpenFlow message unpacked by python-openflow
         """
         flags = green(dissector.get_multipart_request_flags(msg.flags.value))
-        print('  Experimenter(65535): Flags: %s Pad: %s  Experimenter_ID: %s  Experimenter_Type: %s' %
-              (flags, msg.pad, msg.experimenter_id.value, msg.experimenter_type))
+        print('  Experimenter(65535): Flags: %s Pad: %s  Experimenter: %s  Experimenter_Type: %s' %
+              (flags, msg.pad, msg.body.experimenter.value, msg.body.exp_type))
 
     if msg.multipart_type.value == 0:
         print_ofpt_multipart_request_description(msg)
@@ -810,7 +815,7 @@ def print_ofpt_multipart_reply(msg):
                 msg: OpenFlow message unpacked by python-openflow
     """
     multipart_type = "%s" % msg.multipart_type
-    print('Multipart_Reply: Type: %s' % multipart_type.split('.')[1])
+    print('Multipart_Reply: Type: %s' % multipart_type)
 
     if isinstance(msg.body, BinaryData) and len(msg.body) > 0:
         print("Multipart Request - Body: \"%s\"" % msg.body.decode("utf-8"))
@@ -824,8 +829,8 @@ def print_ofpt_multipart_reply(msg):
         flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
         print('  Description(0): Flags: %s mfr_desc: %s hw_desc: %s'
               'sw_desc: %s serial_num: %s dp_desc: %s' %
-              (flags, msg.mfr_desc, msg.hw_desc, msg.bsw_desc,
-               msg.serial_num, msg.dp_desc))
+              (flags, msg.body.mfr_desc, msg.body.hw_desc, msg.body.sw_desc,
+               msg.body.serial_num, msg.body.dp_desc))
 
     def print_ofpt_multipart_reply_flow_array(msg):
         """
@@ -851,7 +856,7 @@ def print_ofpt_multipart_reply(msg):
             print('Multipart_Reply ', end='')
             print_match_type(flow.match)
             print('Multipart_Reply ', end='')
-            print_action(flow.actions)
+            print_instruction(flow.instructions)
 
         if len(msg.body) == 0:
             print('Multipart Reply Flow(1):\nNo Flows')
@@ -860,17 +865,25 @@ def print_ofpt_multipart_reply(msg):
         for flow in msg.body:  # body attribute in OF1.3 is a binary data that shows empty (b'')
             print_ofpt_multipart_reply_flow(flow)
 
-    def print_ofpt_multipart_reply_aggregate(msg):
+    def print_ofpt_multipart_reply_aggregate_array(msg):
         """
-
         Args:
             msg: OpenFlow message unpacked by python-openflow
         """
-        flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-        print('  Aggregate(2): Flags: %s packet_count: %s, byte_count: %s flow_count: %s Pad: %s' %
-              (flags, msg.packet_count, msg.byte_count, msg.flow_count, msg.pad))  # Is msg.stats included in 1.3?
+        def print_ofpt_multipart_reply_aggregate(aggregate):
+            """aggregate: AggregateStatsReply unpacked by python-openflow"""
+            flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
+            print('  Aggregate(2): Flags: %s packet_count: %s, byte_count: %s flow_count: %s Pad: %s' %
+                (flags, aggregate.packet_count, aggregate.byte_count, aggregate.flow_count, aggregate.pad))
 
-    def print_ofpt_multipart_reply_table(msg):
+        if len(msg.body) == 0:
+            print('Multipart Reply Aggregate(2):\nNo Aggregate')
+            return
+
+        for aggregate in msg.body:
+            print_ofpt_multipart_reply_aggregate(aggregate)
+
+    def print_ofpt_multipart_reply_table(table):
         """
 
         Args:
@@ -879,12 +892,21 @@ def print_ofpt_multipart_reply(msg):
         flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
         print('  Table(3): Flags: %s table_id: %s pad: %s '
               ' active_count: %s lookup_count: %s matched_count: %s' %
-              (flags, msg.table_id.value, msg.pad,
-               msg.active_count.value, msg.lookup_count.value, msg.matched_count.value))
+              (flags, table.table_id.value, table.pad,
+               table.active_count.value, table.lookup_count.value, table.matched_count.value))
+
+    def print_ofpt_multipart_reply_table_array(msg):
+        """
+
+        Args:
+            msg: OpenFlow message unpacked by python-openflow
+        """
 
         if len(msg.body) == 0:
-            print('Multipart Reply Type Table(3):\nNo Tables')
+            print('Multipart Type Table(3):\nNo Table')
             return
+        for table in msg.body:
+            print_ofpt_multipart_reply_table(table)
 
     def print_ofpt_multipart_reply_port(port):
         """
@@ -942,42 +964,52 @@ def print_ofpt_multipart_reply(msg):
         for queue in msg.body:
             print_ofpt_multipart_reply_queue(queue)
         
-    def print_ofpt_multipart_reply_group(msg):
+    def print_ofpt_multipart_reply_group_array(msg):
         """
             Args:
                     msg: OpenFlow message unpacked by python-openflow
         """
-        flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-        print('  Group(6): Flags: %s length: %s pad: %s group_id: %s ref_count: %s '
-              'pad: %s packet_count: %s byte_count: %s duration_sec: %s duration_nsec: %s'
-              'bucket_counter[packet_count]: %s bucket_counter[byte_count]: %s' %
-              (flags, msg.length, msg.pad, msg.group_id, msg.ref_count, msg.pad,
-               msg.packet_count, msg.byte_count, msg.duration_sec, msg.duration_nsec,
-               msg.buckets[0].packet_count.value, msg.buckets[0].byte_count.value))
+        def print_ofpt_multipart_reply_group(group):
+            """group: GroupStats unpacked by python-openflow."""
+            flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
+            print('  Group(6): Flags: %s length: %s pad: %s group_id: %s ref_count: %s '
+                  'pad: %s packet_count: %s byte_count: %s duration_sec: %s duration_nsec: %s'
+                  'bucket_counter[packet_count]: %s bucket_counter[byte_count]: %s' %
+                  (flags, group.length, group.pad, group.group_id, group.ref_count, group.pad2,
+                   group.packet_count, group.byte_count, group.duration_sec, group.duration_nsec,
+                   group.bucket_stats[0].packet_count.value, group.bucket_stats[0].byte_count.value))
 
         if len(msg.body) == 0:
             print('Multipart Reply Type: Group(6):\nNo groups')
             return
+        
+        for group in msg.body:
+            print_ofpt_multipart_reply_group(group)
 
-    def print_ofpt_multipart_reply_group_desc(msg):
+    def print_ofpt_multipart_reply_group_desc_array(msg):
         """
             Args:
                     msg: OpenFlow message unpacked by python-openflow
         """
-        flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-        print('  Group_Desc(7): Flags: %s length: %s pad: %s group_id: %s'
-              'Bucket[length]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s' %
-              (flags, msg.length,  green(msg.group_id.value), msg.pad,
-               msg.buckets[0].length.value, msg.buckets[0].weight.value, hex(msg.buckets[0].watch_port.value),
-               hex(msg.buckets[0].watch_group.value)))
+        def print_ofpt_multipart_reply_group_desc(groupdesc):
+            """groupdesc: GroupDescStats message unpacked by pyof."""
+            flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
+            print('  Group_Desc(7): Flags: %s length: %s pad: %s group_id: %s'
+                  'Bucket[length]: %s Bucket[weight]: %s Bucket[watch_port]: %s Bucket[watch_group]: %s' %
+                  (flags, groupdesc.length,  green(groupdesc.group_id.value), groupdesc.pad,
+                   groupdesc.buckets[0].length.value, groupdesc.buckets[0].weight.value, hex(groupdesc.buckets[0].watch_port.value),
+                   hex(groupdesc.buckets[0].watch_group.value)))
 
-        print("Bucket[actions]:")
-        for action in msg.buckets[0].actions:
-            print_action(action)
+            print("Bucket[actions]:")
+            for action in groupdesc.buckets[0].actions:
+                print_action(action)
 
         if len(msg.body) == 0:
             print('Multipart Reply Type Group_Desc(7):\nNo group_desc')
             return
+
+        for groupdesc in msg.body:
+            print_ofpt_multipart_reply_group_desc(groupdesc)
 
     def print_ofpt_multipart_reply_group_features(msg):
         """
@@ -985,56 +1017,66 @@ def print_ofpt_multipart_reply(msg):
                     msg: OpenFlow message unpacked by python-openflow
         """
         flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-        print('  Group_Features(8): Flags: %s pad: %s capabilities: %s max_groups: %s actions: %s' %
-              (flags, msg.pad,  msg.capabilities, msg.max_groups, msg.actions))
+        print('  Group_Features(8): Flags: %s capabilities: %s max_groups1: %s max_groups2: %s max_groups3: %s max_groups4: %s actions1: %s actions2: %s actions3: %s actions4: %s' %
+              (flags, msg.body.capabilities, msg.body.max_groups1, msg.body.max_groups2, msg.body.max_groups3, msg.body.max_groups4, msg.body.actions1, msg.body.actions2, msg.body.actions3, msg.body.actions4))
 
         if len(msg.body) == 0:
             print('Multipart Reply Type Group_Features(8):\nNo group features')
             return
 
-    def print_ofpt_multipart_reply_meter(msg):
+    def print_ofpt_multipart_reply_meter_array(msg):
         """
             Args:
                     msg: OpenFlow message unpacked by python-openflow
         """
-        flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-        print('  Meter(9): Flags: %s meter_id: %s len: %s pad: %s flow_count: %s'
-              'packet_in_count: %s byte_in_count: %s duration_sec: %s duration_nsec: %s'
-              'meter_band_stats[packet_band_count]: %s meter_band_stats[byte_band_count]: %s' %
-              (flags, msg.meter_id, msg.len, msg.pad, msg.flow_count, msg.packet_in_count,
-               msg.byte_in_count, msg.duration_sec, msg.duration_nsec, msg.meter_band_stats[0].packet_band_count.value,
-               msg.meter_band_stats[0].byte_band_count.value))
+        def print_ofpt_multipart_reply_meter(meter):
+            """meter: MeterStats message unpacked by python-openflow."""
+            flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
+            print('  MeterStats(9): Flags: %s meter_id: %s len: %s pad: %s flow_count: %s'
+                  'packet_in_count: %s byte_in_count: %s duration_sec: %s duration_nsec: %s'
+                  'meter_band_stats[packet_band_count]: %s meter_band_stats[byte_band_count]: %s' %
+                  (flags, meter.meter_id, meter.length, meter.pad, meter.flow_count, meter.packet_in_count,
+                   meter.byte_in_count, meter.duration_sec, meter.duration_nsec, meter.band_stats[0].packet_band_count.value,
+                   meter.band_stats[0].byte_band_count.value))
 
         if len(msg.body) == 0:
             print('Multipart Reply Type Meter(9):\nNo meters')
             return
 
-    def print_ofpt_multipart_reply_meter_config(msg):
+        for meter in msg.body:
+            print_ofpt_multipart_reply_meter(meter)
+
+    def print_ofpt_multipart_reply_meter_config_array(msg):
         """
             Args:
                     msg: OpenFlow message unpacked by python-openflow
         """
-        flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
-        print('  Meter_Config(10): Flags: %s length: %s meter_id: %s' %
-              (flags, msg.len, msg.meter_id.value))
+        def print_ofpt_multipart_reply_meter_config(meter_config):
+            """meter_config: MeterConfig unpacked by python-openflow."""
+            flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
+            print('  Meter_Config(10): Flags: %s length: %s meter_id: %s' %
+                  (flags, meter_config.length, meter_config.meter_id.value))
 
-        for band in msg.meter_band_header[0].band:
-            if band.type == "drop":
-                print('Band[type]: %s Band[len]: %s Band[rate]: %s Band[burst_size]: %s Band[pad]: %s' %
-                      (band.type.value, band.len.value, band.rate.value, band.burst_size.value, band.pad))
-            if band.type == "dscp_remark":
-                print('Band[type]: %s Band[len]: %s Band[rate]: %s Band[burst_size]: %s Band[prec]: %s '
-                      'Band[pad]: %s' %
-                      (band.type.value, band.len.value, band.rate.value, band.burst_size.value, band.prec.value,
-                       band.pad))
-            if band.type == "experimenter":
-                print('Band[type]: %s Band[len]: %s Band[rate]: %s Band[burst_size]: %s Band[experimenter_id]: %s' %
-                      (band.type.value, band.len.value, band.rate.value, band.burst_size.value,
-                       band.experimenter_id.value))
+            for band in meter_config.bands:
+                if band.type == "drop":
+                    print('Band[type]: %s Band[len]: %s Band[rate]: %s Band[burst_size]: %s Band[pad]: %s' %
+                          (band.type.value, band.len.value, band.rate.value, band.burst_size.value, band.pad))
+                if band.type == "dscp_remark":
+                    print('Band[type]: %s Band[len]: %s Band[rate]: %s Band[burst_size]: %s Band[prec]: %s '
+                          'Band[pad]: %s' %
+                          (band.type.value, band.len.value, band.rate.value, band.burst_size.value, band.prec.value,
+                           band.pad))
+                if band.type == "experimenter":
+                    print('Band[type]: %s Band[len]: %s Band[rate]: %s Band[burst_size]: %s Band[experimenter_id]: %s' %
+                          (band.type.value, band.len.value, band.rate.value, band.burst_size.value,
+                           band.experimenter_id.value))
 
         if len(msg.body) == 0:
             print('Multipart Reply Type Meter_config(10):\nNo meter_configs')
             return
+
+        for meter_config in msg.body:
+            print_ofpt_multipart_reply_meter_config(meter_config)
 
     def print_ofpt_multipart_reply_meter_features(msg):
         """
@@ -1044,8 +1086,8 @@ def print_ofpt_multipart_reply(msg):
         flags = green(dissector.get_multipart_reply_flags(msg.flags.value))
         print('  Meter_Features(11): Flags: %s max_meter: %s band_type: %s capabilities: %s max_bands: %s'
               'max_color: %s pad: %s' %
-              (flags, msg.max_meter, msg.band_type, msg.capabilities, msg.max_bands, msg.max_color,
-               msg.pad))
+              (flags, msg.body.max_meter, msg.body.band_type, msg.body.capabilities, msg.body.max_bands, msg.body.max_color,
+               msg.body.pad))
 
         if len(msg.body) == 0:
             print('Multipart Reply Type Meter_Features(11):\nNo meter features')
@@ -1079,7 +1121,7 @@ def print_ofpt_multipart_reply(msg):
         for table_feature in msg.body:
             print_ofpt_multipart_reply_table_features(table_feature)
 
-    def print_ofpt_multipart_reply_port_desc(msg):
+    def print_ofpt_multipart_reply_port_desc_array(msg):
         """
             Args:
                     msg: OpenFlow message unpacked by python-openflow
@@ -1091,9 +1133,8 @@ def print_ofpt_multipart_reply(msg):
         if len(msg.body) == 0:
             print('Multipart Reply Type Port_Desc(13):\nNo port descriptions')
             return
-        else:
-            for port in msg.body:
-                print_ofp_phy_port(port)
+        for port in msg.body:
+            print_ofp_phy_port(port)
 
     def print_ofpt_multipart_reply_experimenter(msg):
         """
@@ -1109,29 +1150,29 @@ def print_ofpt_multipart_reply(msg):
     elif msg.multipart_type.value == 1:
         print_ofpt_multipart_reply_flow_array(msg)
     elif msg.multipart_type.value == 2:
-        print_ofpt_multipart_reply_aggregate(msg)
+        print_ofpt_multipart_reply_aggregate_array(msg)
     elif msg.multipart_type.value == 3:
-        print_ofpt_multipart_reply_table(msg)
+        print_ofpt_multipart_reply_table_array(msg)
     elif msg.multipart_type.value == 4:
         print_ofp_multipart_reply_port_array(msg)
     elif msg.multipart_type.value == 5:
         print_ofpt_multipart_reply_queue_array(msg)
     elif msg.multipart_type.value == 6:
-        print_ofpt_multipart_reply_group(msg)
+        print_ofpt_multipart_reply_group_array(msg)
     elif msg.multipart_type.value == 7:
-        print_ofpt_multipart_reply_group_desc(msg)
+        print_ofpt_multipart_reply_group_desc_array(msg)
     elif msg.multipart_type.value == 8:
         print_ofpt_multipart_reply_group_features(msg)
     elif msg.multipart_type.value == 9:
-        print_ofpt_multipart_reply_meter(msg)
+        print_ofpt_multipart_reply_meter_array(msg)
     elif msg.multipart_type.value == 10:
-        print_ofpt_multipart_reply_meter_config(msg)
+        print_ofpt_multipart_reply_meter_config_array(msg)
     elif msg.multipart_type.value == 11:
         print_ofpt_multipart_reply_meter_features(msg)
     elif msg.multipart_type.value == 12:
         print_ofpt_multipart_reply_table_features_array(msg)
     elif msg.multipart_type.value == 13:
-        print_ofpt_multipart_reply_port_desc(msg)
+        print_ofpt_multipart_reply_port_desc_array(msg)
     elif msg.multipart_type.value == 65535:
         print_ofpt_multipart_reply_experimenter(msg)
 

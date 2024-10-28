@@ -184,8 +184,7 @@ class OFStats(metaclass=Singleton):
             self.per_dev_packet_types[dpid] = self.init_type_packets(version)
             self.per_dev_packet_types[dpid]['total'] = 0
 
-        message_type = str(ofp.header.message_type)
-        message_type = message_type.split('.')[1]
+        message_type = ofp.header.message_type.name
         try:
             self.per_dev_packet_types[dpid][version][message_type] += 1
         except KeyError:
@@ -206,8 +205,7 @@ class OFStats(metaclass=Singleton):
         for of_msg in pkt.ofmsgs:
             # Supporting /ofp_stats/packet_totals
             version = str(of_msg.ofp.header.version.value)
-            message_type = str(of_msg.ofp.header.message_type)
-            message_type = message_type.split('.')[1]
+            message_type = of_msg.ofp.header.message_type.name
             try:
                 self.packet_types[version][message_type] += 1
             except KeyError:
