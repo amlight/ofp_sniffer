@@ -4,7 +4,7 @@ netaddr
 pcapy-ng
 python-openflow@https://github.com/kytos-ng/python-openflow/archive/2023.2.0.zip
 flask==2.3.3
-Werkzeug==2.3.8
+Werkzeug==3.0.6
 influxdb
 pyaml
 requests
