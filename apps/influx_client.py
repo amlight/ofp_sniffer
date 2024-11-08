@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import datetime
 import logging
 import requests
@@ -13,9 +14,9 @@ class InfluxClient(object):
     """Class responsible for connecting to InfluxDB and send data"""
 
     def __init__(self,
-                 host='localhost',
-                 port=8086,
-                 db='root',
+                 host=os.environ.get("OFP_SNIFFER_INFLUX_HOST", "localhost"),
+                 port=int(os.environ.get("OFP_SNIFFER_INFLUX_PORT", 8086)),
+                 db=os.environ.get("OFP_SNIFFER_INFLUX_DB", "root"),
                  trigger_event=''):
         """Connect to influxdb
 
@@ -89,23 +90,24 @@ class InfluxClient(object):
 
     def _update_per_dpid(self):
         """ This method updates stats per dpid on InfluxDB
-            TODO: currently, OFStats().per_dev_packet_type is empty
 
         """
-        dpids = OFStats().per_dev_packet_types.keys()
-        self.logger.debug("dpids: {0}".format(dpids))
-        for dpid in dpids:
-            json_body = [{
-                "measurement":
-                "OFP_messages",
-                "tags": {
-                    "dpid": dpid
-                },
-                "time":
-                "{0}".format(datetime.datetime.utcnow().isoformat('T')),
-                "fields":
-                OFStats().per_dev_packet_types[dpid]
-            }]
+        for dpid, ver_stats in OFStats().per_dev_packet_types.items():
+            json_body = []
+            for v, fields in ver_stats.items():
+                if not isinstance(fields, dict):
+                    continue
+                json_body.append({
+                    "measurement":
+                    "OFP_messages",
+                    "tags": {
+                        "dpid": dpid,
+                        "OFP_version": v
+                    },
+                    "time":
+                    "{0}".format(datetime.datetime.utcnow().isoformat('T')),
+                    "fields": fields
+                })
             self.logger.debug(json_body)
             self.db_client.write_points(json_body)
 
@@ -119,8 +121,7 @@ class InfluxClient(object):
             self.trigger_event.clear()
             try:
                 self._update_packet_types()
-                # TODO: increment per dpid too
-                # self._update_per_dpid()
+                self._update_per_dpid()
                 self._update_tcp_reconnects()
             except requests.exceptions.ConnectionError:
                 self.logger.error("couldn't write data to influxdb.")

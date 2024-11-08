@@ -10,6 +10,7 @@ import logging.config
 import time
 import threading
 import yaml
+import traceback
 from libs.core.printing import PrintingOptions
 from libs.core.sanitizer import Sanitizer
 from libs.core.topo_reader import TopoReader
@@ -104,7 +105,8 @@ class RunSniffer(object):
             exit_code = 1
 
         except Exception as exception:
-            print('Error on packet %s: %s ' % (self.packet_count, exception))
+            err = traceback.format_exc().replace("\n", ", ")
+            print('Error on packet %s: %s error: %s' % (self.packet_count, exception, err))
             exit_code = 2
 
         finally:

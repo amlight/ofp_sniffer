@@ -204,8 +204,8 @@ def print_openflow_header(ofp):
     version = libs.tcpiplib.tcpip.get_ofp_version(ofp.header.version.value)
     name_version = '%s(%s)' % (version, ofp.header.version.value)
 
-    name = "%s" % ofp.header.message_type
-    name_type = '%s(%s)' % (name.split('.')[1], ofp.header.message_type.value)
+    name = ofp.header.message_type.name
+    name_type = '%s(%s)' % (name, ofp.header.message_type.value)
 
     print('OpenFlow Version: %s Type: %s Length: %s  XID: %s' %
           (name_version, yellow(name_type), ofp.header.length, red(ofp.header.xid)))
