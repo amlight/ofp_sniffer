@@ -24,6 +24,7 @@ class OFProxy(metaclass=Singleton):
     def __init__(self):
         self.dpid_dict = dict()  # dpid to alias dict
         self.reverse_dpid_dict = dict()  # alias to dict
+        self.ip2alias = dict()
         self.proxy_db = dict()  # [ip, port] to alias dict
         self.active = False
         self.load_topology_dpids()
@@ -39,6 +40,12 @@ class OFProxy(metaclass=Singleton):
                 for switch in topo['switches']:
                     for dpid in topo['switches'][switch]['dpids']:
                         self.add_dpid(dpid, TopoReader().get_datapath_name(dpid))
+                    alias = topo["switches"][switch]["aliases"][0]
+                    for ip in topo["switches"][switch].get("ips", []):
+                        if ip in self.ip2alias:
+                            self.ip2alias[ip] = f"{self.ip2alias[ip]}|{alias}"
+                        else:
+                            self.ip2alias[ip] = alias
                 self.active = True
             except KeyError:
                 pass
@@ -120,6 +127,8 @@ class OFProxy(metaclass=Singleton):
         for ip_port, name in self.proxy_db.items():
             if ip_port == (ip_addr, port):
                 return '%s(%s)' % (ip_addr, name)
+        if ip_addr in self.ip2alias:
+            return f"{ip_addr}({self.ip2alias[ip_addr]})"
         return ip_addr
 
     def get_dpid(self, ip_addr, port):
