@@ -92,7 +92,7 @@ class InfluxClient(object):
         """ This method updates stats per dpid on InfluxDB
 
         """
-        for dpid, ver_stats in OFStats().per_dev_packet_types.items():
+        for dpid, ver_stats in OFStats().per_dev_packet_types.copy().items():
             json_body = []
             for v, fields in ver_stats.items():
                 if not isinstance(fields, dict):
